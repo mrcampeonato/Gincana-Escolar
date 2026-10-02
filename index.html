@@ -1,3 +1,10 @@
+Aqui está o seu arquivo `index.html` inteiramente pronto.
+
+Todas as alterações para integrar o Supabase foram aplicadas com as suas credenciais (`URL` e `KEY`), mantendo o design, funcionalidades e regras do sistema intactos.
+
+Você pode criar um arquivo no **Google Docs** para copiar e baixar este código facilmente?
+
+```html
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -6,6 +13,7 @@
 <title>Olimpíadas IN-NOVA 2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--bg:#f2f5f9;--card:#fff;--ink:#14213d;--mute:#5b6781;--line:#d8dfeb;--soft:#e9eef6;--t0:#3d9ad8;--t1:#c8283a;--t2:#d99a00;--t3:#2c4bc4;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1524;--card:#172034;--ink:#e9eefa;--mute:#98a6c3;--line:#2a3652;--soft:#202b44}}
@@ -116,7 +124,7 @@ const fresh=()=>({teams:['Argentina','Portugal','Espanha','França'],pts:[200,15
 let S;try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 S=Object.assign(fresh(),S||{});
 const T=[0,1,2,3],D={};
-let DB=null,U=[],cur=null,curC=0,tab='placar',flt='todas',first=true;
+let cur=null,curC=0,tab='placar',flt='todas',first=true;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const tn=i=>esc(S.teams[i]);
@@ -128,23 +136,88 @@ const ensureD=k=>{if(!D[k])D[k]=clone(S.res[k]||{})};
 function getPath(o,p){return p.split('.').reduce((a,k)=>a?.[k],o)}
 function setPath(o,path,val){const k=path.split('.');for(let n=0;n<k.length-1;n++){if(o[k[n]]==null)o[k[n]]=/^\d+$/.test(k[n+1])?[]:{};o=o[k[n]]}o[k[k.length-1]]=val}
 
+/* ---------- Configuração do Supabase ---------- */
+const SUPABASE_URL = 'https://eeqahersokenqsmfwpfb.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVlcWFoZXJzb2tlbnFzbWZ3cGZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MjgyNjksImV4cCI6MjEwNjUwNDI2OX0.5oErD8Un5o15G3Vow6YMfgb1d6pJhXdudkKjG4sHxZs';
+const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
 /* ---------- salvar / sincronizar ---------- */
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
-const fail=e=>alert('Não foi possível salvar no servidor: '+(e&&(e.message||e.code)||e));
-function saveAll(){save();if(DB)DB.doc('cfg/geral').set({teams:S.teams,pts:S.pts,fan:S.fan,ig:S.ig,insta:JSON.stringify(S.insta),fans:JSON.stringify(S.fans)}).catch(fail)}
-function persist(ci){
- save();if(!DB)return;
- DB.doc('res/'+cur.s+'_'+ci).set({d:JSON.stringify(S.res[rk(cur,ci)])}).catch(fail);
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)) } catch (e) { } };
+const fail = e => alert('Não foi possível salvar no servidor: ' + (e && (e.message || e.code) || JSON.stringify(e)));
+
+async function saveAll() {
+  save();
+  if (!supabase) return;
+  const payload = {
+    id: 'geral',
+    teams: S.teams,
+    pts: S.pts,
+    fan: S.fan,
+    ig: S.ig,
+    insta: S.insta,
+    fans: S.fans
+  };
+  const { error } = await supabase.from('cfg').upsert(payload);
+  if (error) fail(error);
 }
-function applyRes(id,d){const [sl,ci]=id.split('_'),a=BY[sl];if(!a||ci==null||!d||!d.d)return;try{S.res[rk(a,ci)]=JSON.parse(d.d)}catch(e){}}
-function applyCfg(d){if(!d)return;['teams','pts','fan','ig'].forEach(k=>d[k]!=null&&(S[k]=d[k]));try{if(d.insta)S.insta=JSON.parse(d.insta);if(d.fans)S.fans=JSON.parse(d.fans)}catch(e){}}
-const hasDraft=()=>cur&&!!D[rk(cur,curC)];
-const soft=()=>{if(!cur||!hasDraft())render()};
-function connect(){
- U.forEach(f=>f());U=[];if(!DB)return;
- U.push(DB.doc('cfg/geral').onSnapshot(s=>{if(s.exists)applyCfg(s.data());soft()},fail));
- if(cur)U.push(DB.doc('res/'+cur.s+'_'+curC).onSnapshot(s=>{applyRes(cur.s+'_'+curC,s.data());soft()},fail));
- else U.push(DB.collection('res').onSnapshot(s=>{s.docs.forEach(d=>applyRes(d.id,d.data()));soft()},fail));
+
+async function persist(ci) {
+  save();
+  if (!supabase) return;
+  const docId = cur.s + '_' + ci;
+  const payload = {
+    id: docId,
+    d: S.res[rk(cur, ci)] || {}
+  };
+  const { error } = await supabase.from('res').upsert(payload);
+  if (error) fail(error);
+}
+
+function applyRes(id, d) {
+  const parts = id.split('_');
+  const ci = parts.pop();
+  const sl = parts.join('_');
+  const a = BY[sl];
+  if (!a || ci == null || !d) return;
+  S.res[rk(a, ci)] = d;
+}
+
+function applyCfg(d) {
+  if (!d) return;
+  ['teams', 'pts', 'fan', 'ig', 'insta', 'fans'].forEach(k => {
+    if (d[k] != null) S[k] = d[k];
+  });
+}
+
+const hasDraft = () => cur && !!D[rk(cur, curC)];
+const soft = () => { if (!cur || !hasDraft()) render() };
+
+async function connect() {
+  if (!supabase) return;
+
+  const { data: cfgData } = await supabase.from('cfg').select('*').eq('id', 'geral').single();
+  if (cfgData) applyCfg(cfgData);
+
+  const { data: resData } = await supabase.from('res').select('*');
+  if (resData) {
+    resData.forEach(item => applyRes(item.id, item.d));
+  }
+  soft();
+
+  supabase.channel('schema-db-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'cfg' }, payload => {
+      if (payload.new) {
+        applyCfg(payload.new);
+        soft();
+      }
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'res' }, payload => {
+      if (payload.new) {
+        applyRes(payload.new.id, payload.new.d);
+        soft();
+      }
+    })
+    .subscribe();
 }
 
 /* ---------- cálculo (só resultados confirmados) ---------- */
@@ -212,14 +285,14 @@ const V={
  },
  insta(){
   const o=totals();
-  const days=Array.from({length:20},(_,d)=>`<div class="row"><strong style="width:56px">Dia ${d+1}</strong>${T.map(i=>`<label title="${tn(i)}"><input type="checkbox" data-ig="${i},${d}" ${S.insta[i][d]?'checked':''} aria-label="${tn(i)} dia ${d+1}"> <span class="dot" style="--c:var(--t${i});margin:0"></span></label>`).join(' ')}</div>`).join('');
+  const days=Array.from({length:20},(_,d)=>`<div class="row"><strong style="width:56px">Dia ${d+1}</strong>${T.map(i=>`<label title="${tn(i)}"><input type="checkbox" data-ig="${i},${d}" ${S.insta[i][d]?'checked':''} aria-label="${tn(i)} dia${d+1}"> <span class="dot" style="--c:var(--t${i});margin:0"></span></label>`).join(' ')}</div>`).join('');
   return`<section class="panel"><h2>Instagram</h2><p class="muted">Cada equipe pode postar 1× por dia durante os 20 dias. Vale ${S.ig} pontos por dia.</p><div class="row">${T.map(i=>`<span><span class="dot" style="--c:var(--t${i})"></span>${tn(i)}: <strong>${S.insta[i].filter(Boolean).length}</strong> posts · ${o.ig[i]} pts</span>`).join('')}</div><div class="grid-ig">${days}</div></section>`;
  },
  torc(){
   const o=totals(),list=S.fans.map((f,k)=>`<tr><td>${esc(f.name)}</td><td style="text-align:left"><span class="dot" style="--c:var(--t${f.team})"></span>${tn(f.team)}</td><td><button class="btn warn" data-delfan="${k}">Remover</button></td></tr>`).join('');
   return`<section class="panel"><h2>Torcida famosa</h2><p class="muted">Cada torcedor vale ${S.fan} pontos para a equipe escolhida.</p>
   <div class="row"><input id="fn" placeholder="Nome do torcedor(a)"><select id="ft">${T.map(i=>`<option value="${i}">${tn(i)}</option>`).join('')}</select><button class="btn" data-addfan>Adicionar</button></div>
-  <div class="row">${T.map(i=>`<span><span class="dot" style="--c:var(--t${i})"></span>${tn(i)}: <strong>${S.fans.filter(f=>+f.team===i).length}</strong> · ${o.fn[i]} pts</span>`).join('')}</div>
+  <div class="row">${T.map(i=>`<span><span class="dot" style="--c:var(--t${i})"></span>${tn(i)}: <strong>${S.fans.filter(f=>+f.team===i).length}</strong> ·${o.fn[i]} pts</span>`).join('')}</div>
   <div class="scroll"><table><thead><tr><th>Torcedor(a)</th><th style="text-align:left">Equipe</th><th></th></tr></thead><tbody>${list||'<tr><td colspan="3" class="muted">Nenhum torcedor cadastrado.</td></tr>'}</tbody></table></div></section>`;
  },
  cfg(){
@@ -287,10 +360,8 @@ function reopen(ci,x){const key=rk(cur,ci);ensureD(key);if(cur.t=='chav'){D[key]
 
 /* ---------- render e rotas ---------- */
 function render(){
- if(cur){page();$('sub').textContent=DB?'Sincronizado em tempo real':'Modo local (neste aparelho)';return}
- $('tabs').innerHTML=TABS.map(([k,n])=>`<button role="tab" data-tab="${k}" aria-selected="${tab==k}">${n}</button>`).join('');
- $('main').innerHTML=V[tab]();
- $('sub').textContent=`${totals().done} de ${ACTS.length*3} resultados confirmados · ${DB?'sincronizado':'modo local (neste aparelho)'}`;
+ if(cur){page();$('sub').textContent=supabase?'Sincronizado em tempo real':'Modo local (neste aparelho)';return}$('tabs').innerHTML=TABS.map(([k,n])=>`<button role="tab" data-tab="${k}" aria-selected="${tab==k}">${n}</button>`).join('');
+ $('main').innerHTML=V[tab]();$('sub').textContent=`${totals().done} de ${ACTS.length*3} resultados confirmados · ${supabase?'sincronizado':'modo local (neste aparelho)'}`;
  first=false;
 }
 function route(){const m=location.hash.match(/^#\/m\/([^/]+)(?:\/(\d))?$/);cur=m&&BY[m[1]]||null;curC=m&&m[2]&&+m[2]<CATS.length?+m[2]:0;connect();render();scrollTo(0,0)}
@@ -309,7 +380,17 @@ document.addEventListener('click',e=>{
  else if(g('addfan')!==undefined){const n=$('fn').value.trim();if(n){S.fans.push({name:n,team:+$('ft').value});saveAll();render()}}
  else if(g('delfan')!==undefined){S.fans.splice(+g('delfan'),1);saveAll();render()}
  else if(g('export')!==undefined){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'}));a.download='olimpiadas-backup.json';a.click()}
- else if(g('reset')!==undefined){if(confirm('Apagar os resultados e configurações deste aparelho'+(DB?' (e do servidor)':'')+'?')){S=fresh();saveAll();if(DB)ACTS.forEach(a=>CATS.forEach((c,ci)=>DB.doc('res/'+a.s+'_'+ci).delete().catch(()=>{})));render()}}
+ else if(g('reset')!==undefined){
+  if(confirm('Apagar os resultados e configurações deste aparelho e do servidor?')){
+    S=fresh();
+    saveAll();
+    if(supabase){
+      supabase.from('res').delete().neq('id', '').then(() => render());
+    } else {
+      render();
+    }
+  }
+ }
 });
 document.addEventListener('change',e=>{
  const el=e.target;
@@ -325,7 +406,8 @@ document.addEventListener('change',e=>{
  }
 });
 route();
-(async()=>{try{DB=await window.claude?.use?.('db')}catch(e){}if(DB){connect();render()}})();
 </script>
 </body>
 </html>
+
+```
