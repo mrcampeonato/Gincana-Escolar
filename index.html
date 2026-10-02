@@ -373,26 +373,14 @@ document.addEventListener('input', e => {
 
     if (!digitos) {
       el.value = '';
-      if (el.dataset.k && cur) {
-        const s = el.closest('[id^=sec]');
-        if (s) edit(+s.id.slice(3), el.dataset.k, '', `[data-k="${el.dataset.k}"]`);
-      }
       return;
     }
 
     // Pega os últimos 6 dígitos digitados e preenche com zeros à esquerda
     digitos = digitos.slice(-6).padStart(6, '0');
 
-    // Aplica a máscara fixa no padrão 00'00'00
-    const fmt = `${digitos.slice(0, 2)}'${digitos.slice(2, 4)}'${digitos.slice(4, 6)}`;
-
-    el.value = fmt;
-
-    // Atualiza o estado da aplicação em tempo real
-    if (el.dataset.k && cur) {
-      const s = el.closest('[id^=sec]');
-      if (s) edit(+s.id.slice(3), el.dataset.k, fmt, `[data-k="${el.dataset.k}"]`);
-    }
+    // Aplica a máscara no padrão 00'00'00 diretamente no elemento
+    el.value = `${digitos.slice(0, 2)}'${digitos.slice(2, 4)}'${digitos.slice(4, 6)}`;
   }
 });
 
