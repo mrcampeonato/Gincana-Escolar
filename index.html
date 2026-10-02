@@ -324,7 +324,7 @@ function secHTML(ci){
  if(a.t=='rank')h=T.map(t=>`<div class="row">${who(t)}${SEL('p.'+t,d.p?.[t],[['','—'],...[1,2,3,4].map(n=>[n,n+'º lugar'])],lock,T.filter(u=>u!=t).map(u=>String(d.p?.[u]||'')).filter(Boolean))}</div>`).join('');
  if(a.t=='pontos')h=`<p class="muted">Pontuação da arbitragem. Maior pontuação vence.</p>`+T.map(t=>`<div class="row">${who(t)}${I('v.'+t,d.v?.[t],`type="number" min="0" step="any" ${lock?'disabled':''}`)}</div>`).join('');
  if(a.t=='crit')h=`<p class="muted">Notas por critério (até 10). A soma define a classificação.</p><div class="scroll"><table><tbody>`+T.map(t=>`<tr><td>${who(t)}</td>${[0,1,2,3,4,5].map(k=>`<td>${I(`c.${t}.${k}`,d.c?.[t]?.[k],`type="number" min="0" max="10" step="any" style="width:62px" ${lock?'disabled':''}`)}</td>`).join('')}</tr>`).join('')+`</tbody></table></div>`;
- if(a.t=='marca'){const e=d.e&&d.e.length?d.e:[{}];h=`<p class="muted">Tempo em mm'ss'cc ou mm:ss. Vale o melhor tempo de cada equipe.</p>`+e.map((x,k)=>`<div class="row">${I(`e.${k}.n`,x.n,`placeholder="Atleta" ${lock?'disabled':''}`)}${SEL(`e.${k}.team`,x.team,TO(),lock)}${I(`e.${k}.t`,x.t,`placeholder="0'00'00" style="width:100px" ${lock?'disabled':''}`)}<button class="btn warn" data-rme="${k}" ${lock?'disabled':''} aria-label="Remover">×</button></div>`).join('')+`<div class="row"><button class="btn alt" data-adde ${lock?'disabled':''}>+ Atleta</button></div>`}
+ if(a.t=='marca'){const e=d.e&&d.e.length?d.e:[{}];h=`<p class="muted">Digite os números e pressione ESPAÇO para formatar no padrão 00'00'00. Vale o melhor tempo.</p>`+e.map((x,k)=>`<div class="row">${I(`e.${k}.n`,x.n,`placeholder="Atleta" ${lock?'disabled':''}`)}${SEL(`e.${k}.team`,x.team,TO(),lock)}${I(`e.${k}.t`,x.t,`placeholder="00'00'00" class="input-tempo" style="width:100px" ${lock?'disabled':''}`)}<button class="btn warn" data-rme="${k}" ${lock?'disabled':''} aria-label="Remover">×</button></div>`).join('')+`<div class="row"><button class="btn alt" data-adde ${lock?'disabled':''}>+ Atleta</button></div>`}
  if(a.t=='chav')return mrow('s1',chavM(d).s1,true,'Semifinal 1',d)+mrow('s2',chavM(d).s2,true,'Semifinal 2',d)+mrow('t3',chavM(d).t3,false,'Disputa de 3º lugar',d)+mrow('f',chavM(d).f,false,'Final',d)+pvHTML(a.t,d,true);
  const foot=lock?`<div class="row" style="margin-top:12px"><span class="ok">✔ Resultado confirmado</span><button class="btn alt" data-edit="">Editar</button></div>`:`<div class="row" style="margin-top:12px"><button class="btn" data-conf="" ${ready(a.t,d)?'':'disabled'}>Confirmar resultado final</button></div>`;
  return h+pvHTML(a.t,d,lock)+foot;
@@ -365,6 +365,22 @@ function render(){
 }
 function route(){const m=location.hash.match(/^#\/m\/([^/]+)(?:\/(\d))?$/);cur=m&&BY[m[1]]||null;curC=m&&m[2]&&+m[2]<CATS.length?+m[2]:0;connect();render();scrollTo(0,0)}
 addEventListener('hashchange',route);
+
+document.addEventListener('keydown', e => {
+ if ((e.key === ' ' || e.keyCode === 32) && e.target && e.target.classList.contains('input-tempo')) {
+  e.preventDefault();
+  const el = e.target;
+  let digitos = el.value.replace(/\D/g, '');
+  if (!digitos) return;
+  digitos = digitos.slice(0, 6).padStart(6, '0');
+  const fmt = `${digitos.slice(0, 2)}'${digitos.slice(2, 4)}'${digitos.slice(4, 6)}`;
+  el.value = fmt;
+  if (el.dataset.k && cur) {
+   const s = el.closest('[id^=sec]');
+   if (s) edit(+s.id.slice(3), el.dataset.k, fmt, `[data-k="${el.dataset.k}"]`);
+  }
+ }
+});
 
 document.addEventListener('click',e=>{
  const t=e.target.closest('button');if(!t)return;
