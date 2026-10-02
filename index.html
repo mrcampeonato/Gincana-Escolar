@@ -59,7 +59,7 @@ input[type=checkbox]{width:20px;height:20px;min-height:0}
 /* --- GRID CORRIGIDO PARA MODALIDADE DE MARCA (TEMPO) --- */
 .marca-header{
  display:grid;
- grid-template-columns:minmax(0, 1.2fr) minmax(0, 1fr) 76px 30px;
+ grid-template-columns:minmax(0, 1.2fr) minmax(0, 1fr) 80px 30px;
  gap:6px;
  font-weight:600;
  font-size:13px;
@@ -73,9 +73,13 @@ input[type=checkbox]{width:20px;height:20px;min-height:0}
  width:100%;
  display:block;
 }
+.marca-header span:first-child{
+ text-align:left;
+ padding-left:4px;
+}
 .marca-row{
  display:grid;
- grid-template-columns:minmax(0, 1.2fr) minmax(0, 1fr) 76px 30px;
+ grid-template-columns:minmax(0, 1.2fr) minmax(0, 1fr) 80px 30px;
  gap:6px;
  align-items:center;
  margin-bottom:8px;
@@ -86,7 +90,7 @@ input[type=checkbox]{width:20px;height:20px;min-height:0}
  padding:6px 4px;
  min-height:38px;
  width:100%;
- min-width:0; /* Garante que os campos não estourem a coluna no mobile */
+ min-width:0;
  box-sizing:border-box;
 }
 .marca-row input.input-tempo{
@@ -144,7 +148,7 @@ button:disabled,input:disabled,select:disabled{opacity:.45;cursor:not-allowed}
  table{min-width:100%}
  th,td{padding:6px 4px;font-size:13px}
  .marca-header, .marca-row {
-  grid-template-columns:minmax(0, 1.1fr) minmax(0, 1fr) 68px 28px;
+  grid-template-columns:minmax(0, 1.1fr) minmax(0, 1fr) 72px 28px;
   gap:4px;
  }
  .marca-header {
@@ -207,82 +211,82 @@ const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)) } catch 
 const fail = e => alert('Não foi possível salvar no servidor: ' + (e && (e.message || e.code) || JSON.stringify(e)));
 
 async function saveAll() {
-  save();
-  if (!db) return;
-  const payload = {
-    id: 'geral',
-    teams: S.teams,
-    pts: S.pts,
-    fan: S.fan,
-    ig: S.ig,
-    insta: S.insta,
-    fans: S.fans
-  };
-  const { error } = await db.from('cfg').upsert(payload);
-  if (error) fail(error);
+ save();
+ if (!db) return;
+ const payload = {
+   id: 'geral',
+   teams: S.teams,
+   pts: S.pts,
+   fan: S.fan,
+   ig: S.ig,
+   insta: S.insta,
+   fans: S.fans
+ };
+ const { error } = await db.from('cfg').upsert(payload);
+ if (error) fail(error);
 }
 
 async function persist(ci) {
-  save();
-  if (!db) return;
-  const docId = cur.s + '_' + ci;
-  const payload = {
-    id: docId,
-    d: S.res[rk(cur, ci)] || {}
-  };
-  const { error } = await db.from('res').upsert(payload);
-  if (error) fail(error);
+ save();
+ if (!db) return;
+ const docId = cur.s + '_' + ci;
+ const payload = {
+   id: docId,
+   d: S.res[rk(cur, ci)] || {}
+ };
+ const { error } = await db.from('res').upsert(payload);
+ if (error) fail(error);
 }
 
 function applyRes(id, d) {
-  const parts = id.split('_');
-  const ci = parts.pop();
-  const sl = parts.join('_');
-  const a = BY[sl];
-  if (!a || ci == null || !d) return;
-  S.res[rk(a, ci)] = d;
+ const parts = id.split('_');
+ const ci = parts.pop();
+ const sl = parts.join('_');
+ const a = BY[sl];
+ if (!a || ci == null || !d) return;
+ S.res[rk(a, ci)] = d;
 }
 
 function applyCfg(d) {
-  if (!d) return;
-  ['teams', 'pts', 'fan', 'ig', 'insta', 'fans'].forEach(k => {
-    if (d[k] != null) S[k] = d[k];
-  });
+ if (!d) return;
+ ['teams', 'pts', 'fan', 'ig', 'insta', 'fans'].forEach(k => {
+   if (d[k] != null) S[k] = d[k];
+ });
 }
 
 const hasDraft = () => cur && !!D[rk(cur, curC)];
 const soft = () => { if (!cur || !hasDraft()) render() };
 
 async function connect() {
-  if (!db) return;
+ if (!db) return;
 
-  const { data: cfgList } = await db.from('cfg').select('*').eq('id', 'geral');
-  if (cfgList && cfgList.length > 0) {
-    applyCfg(cfgList[0]);
-  }
+ const { data: cfgList } = await db.from('cfg').select('*').eq('id', 'geral');
+ if (cfgList && cfgList.length > 0) {
+   applyCfg(cfgList[0]);
+ }
 
-  const { data: resData } = await db.from('res').select('*');
-  if (resData) {
-    resData.forEach(item => applyRes(item.id, item.d));
-  }
-  soft();
+ const { data: resData } = await db.from('res').select('*');
+ if (resData) {
+   resData.forEach(item => applyRes(item.id, item.d));
+ }
+ soft();
 
-  db.removeAllChannels();
+ db.removeAllChannels();
 
-  db.channel('schema-db-changes')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'cfg' }, payload => {
-      if (payload.new) {
-        applyCfg(payload.new);
-        soft();
-      }
-    })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'res' }, payload => {
-      if (payload.new) {
-        applyRes(payload.new.id, payload.new.d);
-        soft();
-      }
-    })
-    .subscribe();
+ db.channel('schema-db-changes')
+   .on('postgres_changes', { event: '*', schema: 'public', table: 'cfg' }, payload => {
+     if (payload.new) {
+       applyCfg(payload.new);
+       soft();
+     }
+   })
+   .on('postgres_changes', { event: '*', schema: 'public', table: 'res' }, payload => {
+     if (payload.new) {
+       applyRes(payload.new.id, payload.new.d);
+       soft();
+     }
+   })
+   .subscribe();
 }
 
 /* ---------- cálculo (só resultados confirmados) ---------- */
@@ -348,7 +352,7 @@ const V={
   const rows=ACTS.filter(a=>flt=='todas'||a.t==flt).map(a=>`<div class="act"><div><a href="#/m/${a.s}/0"><strong>${esc(a.n)}</strong></a><small>${TN[a.t]}</small></div>${CATS.map((c,ci)=>{const p=place(a.t,S.res[rk(a,ci)]);return`<a class="cell ${p?'done':''}" href="#/m/${a.s}/${ci}"><span class="l">${c}</span>${chips(p)}</a>`}).join('')}</div>`).join('');
   return`<section class="panel"><h2>Modalidades e atividades</h2><p class="muted">Cada modalidade e cada categoria têm a sua própria página. Toque numa categoria para lançar o resultado.</p><div class="filters">${fl}</div><div class="acts">${rows}</div></section>`;
  },
-insta(){
+ insta(){
   const header = `<thead><tr><th style="text-align:left">Dia</th>${T.map(i=>`<th style="text-align:center"><span class="dot" style="--c:var(--t${i})"></span>${tn(i)}</th>`).join('')}</tr></thead>`;
   const rows = Array.from({length:20}, (_,d) => {
     const cols = T.map(i => `<td style="text-align:center"><input type="checkbox" data-ig="${i},${d}" ${S.insta[i][d]?'checked':''} aria-label="${tn(i)} dia ${d+1}"></td>`).join('');
@@ -397,7 +401,7 @@ function mrow(x,m,sel,label,d){
  const duel=(ka,va,kb,vb,dd,ta,tb)=>`<div class="duel"><div class="side">${ta||''}${ST(ka,va,dd)}</div><span class="x">×</span><div class="side">${tb||''}${ST(kb,vb,dd)}</div></div>`;
  return`<div class="match"><h3>${label}</h3>${duel(`m.${x}.sa`,m.sa,`m.${x}.sb`,m.sb,dis,sel?pick('a'):nm('a'),sel?pick('b'):nm('b'))}
  <p class="muted" style="margin:10px 0 4px">Desempate (se necessário)</p>${duel(`m.${x}.da`,m.da,`m.${x}.db`,m.db,dis||!tie)}
- <div class="row" style="margin-top:10px">${lock?`<span class="ok">✔ Resultado confirmado</span><button class="btn alt" data-edit="${x}">Editar</button>`:`<button class="btn" data-conf="${x}" ${win({...m,ok:true})?'':'disabled'}>Salvar resultado</button>`}</div></div>`;
+ <div class="row" style="margin-top:10px">${lock?`<span class="ok">✔ Resultado confirmed</span><button class="btn alt" data-edit="${x}">Editar</button>`:`<button class="btn" data-conf="${x}" ${win({...m,ok:true})?'':'disabled'}>Salvar resultado</button>`}</div></div>`;
 }
 function secHTML(ci){
  const a=cur,d=view(rk(a,ci)),lock=!!d.ok;let h='';
@@ -405,7 +409,6 @@ function secHTML(ci){
  if(a.t=='pontos')h=`<p class="muted">Pontuação da arbitragem. Maior pontuação vence.</p>`+T.map(t=>`<div class="row" style="justify-content:space-between">${who(t)}<div style="flex:1;max-width:140px">${I('v.'+t,d.v?.[t],`type="number" min="0" step="any" ${lock?'disabled':''}`)}</div></div>`).join('');
  if(a.t=='crit')h=`<p class="muted">Notas por critério (até 10). A soma define a classificação.</p><div class="scroll"><table><tbody>`+T.map(t=>`<tr><td>${who(t)}</td>${[0,1,2,3,4,5].map(k=>`<td>${I(`c.${t}.${k}`,d.c?.[t]?.[k],`type="number" min="0" max="10" step="any" style="width:48px" ${lock?'disabled':''}`)}</td>`).join('')}</tr>`).join('')+`</tbody></table></div>`;
  
- /* --- TELA MODALIDADE MARCA (TEMPO) --- */
  if(a.t=='marca'){
   const e=d.e&&d.e.length?d.e:[{}];
   h=`<p class="muted">Digite o nome do atleta, selecione a equipe e digite o tempo correspondente.</p>
@@ -425,7 +428,7 @@ function secHTML(ci){
   `<div class="row" style="margin-top:10px"><button class="btn alt" data-adde ${lock?'disabled':''}>+ Atleta</button></div>`;
  }
 
-if(a.t=='chav'){
+ if(a.t=='chav'){
   const isLocked = !!(d.m?.s1?.ok || d.m?.s2?.ok);
   const btnSortear = `<div class="row" style="margin-bottom:12px"><button class="btn alt" data-sortear="${ci}" ${isLocked?'disabled':''}>🎲 Sortear Semifinais</button></div>`;
   return btnSortear+mrow('s1',chavM(d).s1,true,'Semifinal 1',d)+mrow('s2',chavM(d).s2,true,'Semifinal 2',d)+mrow('t3',chavM(d).t3,false,'Disputa de 3º lugar',d)+mrow('f',chavM(d).f,false,'Final',d)+pvHTML(a.t,d,true);
@@ -444,12 +447,27 @@ function page(){
  $('main').innerHTML=`<div class="page-head"><a class="back" href="#/">← Voltar ao placar</a><h2 class="ptitle">${esc(cur.n)}</h2><p class="muted">${TN[cur.t]}</p></div><nav class="catnav" aria-label="Categorias">${links}</nav><section class="panel"><h2>${CATS[curC]}</h2><div id="sec${curC}"></div></section>`;
  sec(curC);
 }
+
+function updatePv(ci){
+ const key=rk(cur,ci), d=view(key), lock=!!d.ok;
+ const sEl=$('sec'+ci);if(!sEl)return;
+ const pvEl=sEl.querySelector('.pv');
+ if(pvEl) pvEl.outerHTML=pvHTML(cur.t,d,lock);
+ const confBtn=sEl.querySelector('[data-conf]');
+ if(confBtn && cur.t!=='chav') confBtn.disabled=!ready(cur.t,d);
+}
+
 function edit(ci,k,v,fs){
  const key=rk(cur,ci);ensureD(key);setPath(D[key],k,v);
- const mm=k.match(/^m\.(\w+)\.s[ab]$/);
- if(mm){const m=D[key].m[mm[1]];if(!(num(m.sa)!=null&&num(m.sa)===num(m.sb))){delete m.da;delete m.db}}
- sec(ci);if(fs){const e=document.querySelector(`#sec${ci} ${fs}`);e&&e.focus()}
+ if(cur.t=='chav'){
+  const mm=k.match(/^m\.(\w+)\.s[ab]$/);
+  if(mm){const m=D[key].m[mm[1]];if(!(num(m.sa)!=null&&num(m.sa)===num(m.sb))){delete m.da;delete m.db}}
+  sec(ci);if(fs){const e=document.querySelector(`#sec${ci} ${fs}`);e&&e.focus()}
+ }else{
+  updatePv(ci);
+ }
 }
+
 function confirmAct(ci,x){
  const key=rk(cur,ci);ensureD(key);const d=D[key];
  if(cur.t=='chav'){
@@ -470,20 +488,20 @@ function render(){
 function route(){const m=location.hash.match(/^#\/m\/([^/]+)(?:\/(\d))?$/);cur=m&&BY[m[1]]||null;curC=m&&m[2]&&+m[2]<CATS.length?+m[2]:0;connect();render();scrollTo(0,0)}
 addEventListener('hashchange',route);
 
-/* --- MÁSCARA AUTOMÁTICA DE TEMPO SEM PERDER FOCO --- */
+/* --- MÁSCARA AUTOMÁTICA DE TEMPO --- */
 document.addEventListener('input', e => {
-  if (e.target && e.target.classList.contains('input-tempo')) {
-    const el = e.target;
-    let digitos = el.value.replace(/\D/g, '');
+ if (e.target && e.target.classList.contains('input-tempo')) {
+  const el = e.target;
+  let digitos = el.value.replace(/\D/g, '');
 
-    if (!digitos) {
-      el.value = '';
-      return;
-    }
-
-    digitos = digitos.slice(-6).padStart(6, '0');
-    el.value = `${digitos.slice(0, 2)}'${digitos.slice(2, 4)}'${digitos.slice(4, 6)}`;
+  if (!digitos) {
+   el.value = '';
+   return;
   }
+
+  digitos = digitos.slice(-6).padStart(6, '0');
+  el.value = `${digitos.slice(0, 2)}'${digitos.slice(2, 4)}'${digitos.slice(4, 6)}`;
+ }
 });
 
 document.addEventListener('click',e=>{
@@ -511,13 +529,13 @@ document.addEventListener('click',e=>{
  else if(g('export')!==undefined){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'}));a.download='olimpiadas-backup.json';a.click()}
  else if(g('reset')!==undefined){
   if(confirm('Apagar os resultados e configurações deste aparelho e do servidor?')){
-    S=fresh();
-    saveAll();
-    if(db){
-      db.from('res').delete().neq('id', '').then(() => render());
-    } else {
-      render();
-    }
+   S=fresh();
+   saveAll();
+   if(db){
+    db.from('res').delete().neq('id', '').then(() => render());
+   } else {
+    render();
+   }
   }
  }
 });
