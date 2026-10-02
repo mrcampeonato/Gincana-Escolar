@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--bg:#f2f5f9;--card:#fff;--ink:#14213d;--mute:#5b6781;--line:#d8dfeb;--soft:#e9eef6;--t0:#3d9ad8;--t1:#c8283a;--t2:#d99a00;--t3:#2c4bc4;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root{--bg:#f2f5f9;--card:#fff;--ink:#14213d;--mute:#5b6781;--line:#d8dfeb;--soft:#e9eef6;--t0:#8ecbf5;--t1:#f5a3a3;--t2:#ffe27a;--t3:#a9bdf7;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1524;--card:#172034;--ink:#e9eefa;--mute:#98a6c3;--line:#2a3652;--soft:#202b44}}
 :root[data-theme="dark"]{--bg:#0e1524;--card:#172034;--ink:#e9eefa;--mute:#98a6c3;--line:#2a3652;--soft:#202b44}
 html{scroll-padding-top:env(safe-area-inset-top,0px);overflow-x:hidden}
@@ -24,7 +24,7 @@ header p{margin:6px 0 0;color:var(--mute);font-size:14px}
 #tabs:empty{margin:10px 0}
 #tabs a,.chipbtn{font:600 14px Figtree,sans-serif;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:8px 14px;cursor:pointer;min-height:40px;text-decoration:none;display:inline-flex;align-items:center}
 #tabs a[aria-current=page],.chipbtn[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--t0);outline-offset:2px}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid #3d9ad8;outline-offset:2px}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px;overflow:hidden}
 .panel h2{font-size:20px;margin-bottom:12px;text-align:center}
 .panel>p{text-align:center}
@@ -42,7 +42,14 @@ th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right;font-
 th:first-child,td:first-child{text-align:left}
 th{font-weight:600;color:var(--mute)}
 tfoot td{font-weight:800;border-bottom:0}
-.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--c);margin-right:6px}
+.pts-cat th:not(:first-child),.pts-cat td:not(:first-child){text-align:center}
+/* Nome da equipe sobre a cor da equipe, sempre com fonte preta */
+.tm{display:inline-block;background:var(--c);color:#000;border-radius:6px;padding:1px 8px;font-weight:600;line-height:1.35;max-width:100%;overflow-wrap:anywhere}
+.cfg-eq{width:100%;margin-bottom:12px}
+.cfg-eq input{font-weight:600}
+.sws{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;justify-content:center}
+.sw{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0}
+.sw[aria-pressed=true]{border:3px solid var(--ink);transform:scale(1.1)}
 .acts{display:grid;gap:8px}
 .act{display:grid;grid-template-columns:1fr repeat(3,auto);gap:6px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .act small{display:block;color:var(--mute)}
@@ -51,7 +58,7 @@ tfoot td{font-weight:800;border-bottom:0}
 .cell:hover{border-color:var(--ink)}
 .cell.done{border-style:solid}
 .cell span.l{display:block;color:var(--mute);margin-bottom:2px;font-size:10px}
-.chip{display:inline-block;min-width:18px;padding:1px 4px;margin:0 1px;border-radius:4px;background:var(--c);color:#fff;font-weight:800;font-size:11px}
+.chip{display:inline-block;min-width:18px;padding:1px 4px;margin:0 1px;border-radius:4px;background:var(--c);color:#000;font-weight:800;font-size:11px}
 .filters{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:10px}
 input,select{font:inherit;font-size:14px;min-height:40px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;width:100%;max-width:100%}
 input[type=number]{width:100%}
@@ -102,7 +109,7 @@ input[type=checkbox]{width:20px;height:20px;min-height:0}
 
 .btn{font:600 14px Figtree,sans-serif;border:1px solid var(--ink);background:var(--ink);color:var(--bg);border-radius:8px;padding:8px 12px;cursor:pointer;min-height:40px}
 .btn.alt{background:none;color:var(--ink)}
-.btn.warn{background:none;color:var(--t1);border-color:var(--t1)}
+.btn.warn{background:none;color:#c8283a;border-color:#c8283a}
 .match{padding:12px;border:1px solid var(--line);border-radius:10px;margin-bottom:10px}
 .match h3{font-size:15px;margin-bottom:10px;text-align:center}
 .muted{color:var(--mute);text-align:center;font-size:13px}
@@ -154,6 +161,36 @@ button:disabled,input:disabled,select:disabled{opacity:.45;cursor:not-allowed}
 .me-reg.on{border-color:var(--ink);background:var(--soft)}
 @media (max-width:620px){.me-row{grid-template-columns:minmax(0,1fr) 110px auto auto}.me-row.novo{grid-template-columns:minmax(0,1fr) 110px auto}}
 
+/* Partidas (em edição e finalizadas) no mesmo padrão de placar */
+.match.fim{border-color:#1f9d55;background:rgba(31,157,85,.07)}
+.fim-placar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:center;text-align:center}
+.fim-lado{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;width:100%;word-break:break-word;color:var(--ink);font:600 clamp(18px,5vw,30px)/1.1 'Bricolage Grotesque',Figtree,sans-serif}
+.fim-lado .tm{font-weight:inherit;padding:4px 12px;border-radius:10px;border:2px solid transparent}
+.fim-lado.win .tm{border-color:#000}
+.fim-lado.win{font-weight:800}
+.fim-vazio{color:var(--mute);font-size:.6em;font-weight:600}
+.fim-lado select{-webkit-appearance:none;appearance:none;width:100%;min-height:44px;padding:4px 2px;text-align:center;text-align-last:center;font:inherit;color:var(--ink);background:var(--card);border:1px dashed var(--mute);border-radius:8px;cursor:pointer}
+.fim-nums{display:flex;align-items:center;gap:8px;font:800 clamp(18px,5vw,30px) 'Bricolage Grotesque',sans-serif;font-variant-numeric:tabular-nums;color:var(--mute)}
+.fim-nums .win{color:var(--ink)}
+.fim-x{font-size:18px;color:var(--mute)}
+.fim-desemp{margin-top:12px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.fim-desemp>span{font:600 12px Figtree,sans-serif;color:var(--mute);text-transform:uppercase;letter-spacing:.05em}
+.fim-desemp-nums{display:flex;align-items:center;gap:8px;font:800 22px 'Bricolage Grotesque',sans-serif;font-variant-numeric:tabular-nums;color:var(--mute)}
+.fim-desemp-nums .win{color:var(--ink)}
+/* Placar editável: + em cima, número no meio, − embaixo */
+.vst{display:flex;flex-direction:column;align-items:center;gap:4px}
+.vst input{width:58px;min-height:46px;padding:2px;text-align:center;font:800 clamp(18px,5vw,30px) 'Bricolage Grotesque',sans-serif;color:var(--ink);-moz-appearance:textfield}
+.vst input::-webkit-outer-spin-button,.vst input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.vst .sb{width:46px;height:32px}
+.desemp-edit{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);text-align:center}
+.desemp-tit{display:block;font-weight:800;font-size:13px;margin-bottom:8px}
+.desemp-nums{display:flex;justify-content:center;align-items:center;gap:8px}
+.desemp-nums .st input{font:800 18px 'Bricolage Grotesque',sans-serif}
+@media (max-width:380px){.vst input{width:50px}.vst .sb{width:40px}}
+.fim-campos{border-left:3px solid #1f9d55;padding-left:10px}
+.fim-campos input:disabled,.fim-campos select:disabled{opacity:1;color:var(--ink);-webkit-text-fill-color:var(--ink);background:var(--card);border-color:var(--line);cursor:default}
+.fim-campos button:disabled{visibility:hidden}
+
 /* Janela do regulamento */
 .reg-dlg{border:1px solid var(--line);border-radius:14px;padding:0;width:min(680px,calc(100vw - 24px));max-height:calc(100vh - 48px);background:var(--card);color:var(--ink);overflow:hidden}
 .reg-dlg::backdrop{background:rgba(10,15,30,.55)}
@@ -192,7 +229,15 @@ let ACTS = [], BY = {};
 const KEY = 'olimpiadas-in-nova-2026-v2';
 const T = [0,1,2,3], D = {};
 
-const fresh = () => ({teams:['Argentina','Portugal','Espanha','França'],pts:[200,150,100,80],fan:200,ig:100,res:{},fans:[],insta:[0,1,2,3].map(()=>Array(20).fill(false)),
+/* Cores padrão das equipes (claras o bastante para texto preto) */
+const PALETA = [
+ ['#8ecbf5','Azul-celeste'],['#a9bdf7','Azul'],['#c7b3f5','Lilás'],['#f7b3d0','Rosa'],
+ ['#f5a3a3','Vermelho'],['#ffc38a','Laranja'],['#ffe27a','Amarelo'],['#d4ef8a','Lima'],
+ ['#a8e6b0','Verde'],['#9fe5d6','Menta'],['#8fe0ea','Turquesa'],['#d5dbe5','Cinza']
+];
+const CORES_PADRAO = ['#8ecbf5','#f5a3a3','#ffe27a','#a9bdf7'];
+
+const fresh = () => ({colors:CORES_PADRAO.slice(),teams:['Argentina','Portugal','Espanha','França'],pts:[200,150,100,80],fan:200,ig:100,res:{},fans:[],insta:[0,1,2,3].map(()=>Array(20).fill(false)),
  mods: JSON.parse(JSON.stringify(S && Array.isArray(S.mods) ? S.mods : MODS_PADRAO))});
 let S; try { S = JSON.parse(localStorage.getItem(KEY)) } catch (e) {}
 S = Object.assign(fresh(), S || {});
@@ -220,12 +265,12 @@ const ROUTES = {
 
 /* Colunas da tabela cfg que cada página precisa ler (requisição focada) */
 const COLS = {
- placar:  'teams,pts,fan,ig,insta,fans,mods',
- mod:     'teams,pts,mods',
- m:       'teams,pts,mods',
- insta:   'teams,ig,insta',
- torc:    'teams,fan,fans',
- cfg:     'teams,pts,fan,ig,mods',
+ placar:  'teams,pts,fan,ig,insta,fans,mods,colors',
+ mod:     'teams,pts,mods,colors',
+ m:       'teams,pts,mods,colors',
+ insta:   'teams,ig,insta,colors',
+ torc:    'teams,fan,fans,colors',
+ cfg:     'teams,pts,fan,ig,mods,colors',
  modedit: 'mods'
 };
 
@@ -236,6 +281,8 @@ let navTok = 0, carregando = false, pendente = false;
 const $ = id => document.getElementById(id);
 const esc = s => String(s??'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const tn = i => esc(S.teams[i]);
+const TM = i => `<span class="tm" style="--c:var(--t${i})">${tn(i)}</span>`;
+const corSel = (html, t) => t===''||t==null ? html : html.replace('<select ', `<select style="background:var(--t${t});color:#000;border-color:var(--t${t})" `);
 const num = v => v===''||v==null||isNaN(+v)?null:+v;
 const clone = o => JSON.parse(JSON.stringify(o));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -266,7 +313,8 @@ function removeRes(id) { const k = parseId(id); if (k) delete S.res[k]; }
 
 function applyCfg(d) {
  if (!d) return;
- ['teams', 'pts', 'fan', 'ig', 'insta', 'fans', 'mods'].forEach(k => { if (d[k] != null) S[k] = d[k]; });
+ ['teams', 'pts', 'fan', 'ig', 'insta', 'fans', 'mods', 'colors'].forEach(k => { if (d[k] != null) S[k] = d[k]; });
+ if (d.colors != null) aplicarCores();
  if (d.mods != null) { buildActs(); syncCur(); }
 }
 
@@ -319,7 +367,7 @@ const DB = {
  async saveAllCfg() {
   save();
   if (!db) return;
-  const payload = { id: 'geral', teams: S.teams, pts: S.pts, fan: S.fan, ig: S.ig, insta: S.insta, fans: S.fans };
+  const payload = { id: 'geral', teams: S.teams, pts: S.pts, fan: S.fan, ig: S.ig, insta: S.insta, fans: S.fans, colors: S.colors };
   const { error } = await db.from('cfg').upsert(payload);
   if (error) fail(error);
  },
@@ -423,7 +471,7 @@ function totals() {
 /* ==========================================================================
    4. COMPONENTES VISUAIS (VIEWS) — uma por página
    ========================================================================== */
-const chips = p => p ? T.map(i => p[i] ? `<span class="chip" style="--c:var(--t${i})" title="${tn(i)}">${p[i]}º</span>` : '').join('') : '—';
+const chips = p => p ? T.filter(i => p[i]).sort((a, b) => p[a] - p[b] || a - b).map(i => p[i] ? `<span class="chip" style="--c:var(--t${i})" title="${tn(i)}">${p[i]}º</span>` : '').join('') : '—';
 
 const Views = {
  placar() {
@@ -431,7 +479,7 @@ const Views = {
   const rows = order.map((i, k) => `<div class="rrow"><div class="rpos">${k+1}º</div><div><div class="rname">${tn(i)}</div><div class="bar" style="--c:var(--t${i});width:${Math.max(1, o.tot[i]/mx*100)}%"></div></div><div class="rpts">${o.tot[i]}</div></div>`).join('');
   const ln = (n, a) => `<tr><td>${n}</td>${a.map(v => `<td>${v}</td>`).join('')}</tr>`;
   return`<section class="panel ${first?'grow':''}"><h2>Classificação geral</h2><div class="race">${rows}</div></section>
-  <section class="panel"><h2>Pontos por categoria</h2><div class="scroll"><table><thead><tr><th>Categoria</th>${T.map(i => `<th><span class="dot" style="--c:var(--t${i})"></span>${tn(i)}</th>`).join('')}</tr></thead><tbody>
+  <section class="panel"><h2>Pontos por categoria</h2><div class="scroll"><table class="pts-cat"><thead><tr><th>Categoria</th>${T.map(i => `<th>${tn(i)}</th>`).join('')}</tr></thead><tbody>
   ${CATS.map(c => ln(c, o.cat[c])).join('')}${ln('Instagram', o.ig)}${ln('Torcida famosa', o.fn)}</tbody><tfoot><tr><td>Total geral</td>${o.tot.map(v => `<td>${v}</td>`).join('')}</tr></tfoot></table></div></section>`;
  },
 
@@ -442,7 +490,7 @@ const Views = {
  },
 
  insta() {
-  const header = `<thead><tr><th style="text-align:left">Dia</th>${T.map(i => `<th style="text-align:center"><span class="dot" style="--c:var(--t${i})"></span>${tn(i)}</th>`).join('')}</tr></thead>`;
+  const header = `<thead><tr><th style="text-align:left">Dia</th>${T.map(i => `<th style="text-align:center">${tn(i)}</th>`).join('')}</tr></thead>`;
   const rows = Array.from({length:20}, (_, d) => {
    const cols = T.map(i => `<td style="text-align:center"><input type="checkbox" data-ig="${i},${d}" ${S.insta[i]?.[d]?'checked':''} aria-label="${tn(i)} dia ${d+1}"></td>`).join('');
    return `<tr><td style="text-align:left;font-weight:600">Dia ${d+1}</td>${cols}</tr>`;
@@ -451,22 +499,22 @@ const Views = {
   return`<section class="panel">
    <h2>Instagram</h2>
    <p class="muted">Cada equipe pode postar 1× por dia durante os 20 dias. Vale ${S.ig} pontos por dia.</p>
-   <div class="row" style="font-size:13px;gap:8px;margin-bottom:12px">${T.map(i => `<span><span class="dot" style="--c:var(--t${i})"></span>${tn(i)}: <strong>${(S.insta[i] || []).filter(Boolean).length}</strong></span>`).join('')}</div>
+   <div class="row" style="font-size:13px;gap:8px;margin-bottom:12px">${T.map(i => `<span>${tn(i)}: <strong>${(S.insta[i] || []).filter(Boolean).length}</strong></span>`).join('')}</div>
    <div class="scroll"><table>${header}<tbody>${rows}</tbody></table></div>
   </section>`;
  },
 
  torc() {
   const fans = S.fans || [];
-  const list = fans.map((f, k) => `<tr><td>${esc(f.name)}</td><td style="text-align:left"><span class="dot" style="--c:var(--t${f.team})"></span>${tn(f.team)}</td><td><button class="btn warn" data-delfan="${k}">Remover</button></td></tr>`).join('');
+  const list = fans.map((f, k) => `<tr><td>${esc(f.name)}</td><td style="text-align:left">${tn(f.team)}</td><td><button class="btn warn" data-delfan="${k}">Remover</button></td></tr>`).join('');
   return`<section class="panel"><h2>Torcida famosa</h2><p class="muted">Cada torcedor vale ${S.fan} pontos para a equipe escolhida.</p>
   <div class="row"><input id="fn" placeholder="Nome do torcedor(a)"><select id="ft">${T.map(i => `<option value="${i}">${tn(i)}</option>`).join('')}</select><button class="btn" data-addfan>Adicionar</button></div>
-  <div class="row" style="font-size:13px;gap:8px">${T.map(i => `<span><span class="dot" style="--c:var(--t${i})"></span>${tn(i)}: <strong>${fans.filter(f => +f.team===i).length}</strong></span>`).join('')}</div>
+  <div class="row" style="font-size:13px;gap:8px">${T.map(i => `<span>${tn(i)}: <strong>${fans.filter(f => +f.team===i).length}</strong></span>`).join('')}</div>
   <div class="scroll"><table><thead><tr><th>Torcedor(a)</th><th style="text-align:left">Equipe</th><th></th></tr></thead><tbody>${list||'<tr><td colspan="3" class="muted">Nenhum torcedor cadastrado.</td></tr>'}</tbody></table></div></section>`;
  },
 
  cfg() {
-  return`<section class="panel"><h2>Equipes</h2><div class="row">${T.map(i => `<label style="display:flex;align-items:center;width:100%"><span class="dot" style="--c:var(--t${i})"></span><input data-cfg="teams.${i}" value="${esc(S.teams[i])}" aria-label="Equipe ${i+1}"></label>`).join('')}</div></section>
+  return`<section class="panel"><h2>Equipes</h2><p class="muted">Escolha a cor de cada equipe. Ela aparece como fundo do nome nos placares das partidas, por isso as cores são claras para o texto preto ficar sempre legível.</p><div class="row">${T.map(i => `<div class="cfg-eq"><input data-cfg="teams.${i}" value="${esc(S.teams[i])}" aria-label="Equipe ${i+1}"><div class="sws" role="group" aria-label="Cor da equipe ${i+1}">${PALETA.map(([c, n]) => `<button class="sw" data-sw="${i},${c}" style="background:${c}" aria-pressed="${corEquipe(i)==c}" title="${n}" aria-label="${n}"></button>`).join('')}</div></div>`).join('')}</div></section>
   <section class="panel"><h2>Pontos por posição</h2><div class="row" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${T.map(i => `<label style="font-size:12px">${i+1}º lugar <input type="number" min="0" data-cfg="pts.${i}" value="${S.pts[i]}"></label>`).join('')}</div>
   <div class="row" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><label style="font-size:12px">Pts torcedor <input type="number" min="0" data-cfg="fan" value="${S.fan}"></label><label style="font-size:12px">Pts dia post <input type="number" min="0" data-cfg="ig" value="${S.ig}"></label></div></section>
   <section class="panel"><h2>Dados</h2><p class="muted">Exporte um backup para guardar os resultados confirmados.</p><div class="row"><button class="btn" data-export>Exportar backup</button><button class="btn warn" data-reset>Zerar tudo</button></div></section>`;
@@ -478,18 +526,37 @@ const TO = () => [['','—'], ...T.map(i => [i, S.teams[i]])];
 const I = (k, v, x='') => `<input data-k="${k}" value="${esc(v??'')}" ${x}>`;
 const ST = (k, v, dis) => `<span class="st"><button class="sb" data-step="${k}" data-d="-1" ${dis?'disabled':''} aria-label="Diminuir">−</button><input data-k="${k}" type="number" min="0" step="1" inputmode="numeric" placeholder="–" value="${v??''}" ${dis?'disabled':''}><button class="sb" data-step="${k}" data-d="1" ${dis?'disabled':''} aria-label="Aumentar">+</button></span>`;
 const SEL = (k, v, opts, dis, taken=[]) => `<select data-k="${k}" ${dis?'disabled':''}>${opts.filter(([val]) => val===''||String(val)===String(v??'')||!taken.includes(String(val))).map(([val, l]) => `<option value="${val}" ${String(v??'')===String(val)?'selected':''}>${esc(l)}</option>`).join('')}</select>`;
-const who = t => `<span style="width:120px;display:inline-flex;align-items:center"><span class="dot" style="--c:var(--t${t})"></span>${tn(t)}</span>`;
+const who = t => `<span style="width:120px;display:inline-flex;align-items:center;font-weight:600">${tn(t)}</span>`;
 
+/* Placar de uma partida já finalizada (somente leitura) */
+function mfim(x, m, label) {
+ const w = win(m), ga = !!w && w[0] === +m.a, gb = !!w && w[0] === +m.b;
+ const lado = (t, g) => `<div class="fim-lado ${g?'win':''}">${TM(t)}</div>`;
+ const tie = num(m.sa) === num(m.sb);
+ return `<div class="match fim"><h3>${label}</h3>
+ <div class="fim-placar">${lado(m.a, ga)}<div class="fim-nums"><span class="${ga?'win':''}">${num(m.sa)}</span><span class="fim-x">×</span><span class="${gb?'win':''}">${num(m.sb)}</span></div>${lado(m.b, gb)}</div>
+ ${tie ? `<div class="fim-desemp"><span>Desempate</span><div class="fim-desemp-nums"><span class="${ga?'win':''}">${num(m.da)}</span><span class="fim-x">×</span><span class="${gb?'win':''}">${num(m.db)}</span></div></div>` : ''}
+ <div class="row" style="margin-top:10px"><button class="btn alt" data-edit="${x}">Editar</button></div></div>`;
+}
+
+/* Placar editável vertical: + em cima, número, − embaixo */
+const VST = (k, v, dis) => `<span class="vst"><button class="sb" data-step="${k}" data-d="1" ${dis?'disabled':''} aria-label="Aumentar">+</button><input data-k="${k}" type="number" min="0" step="1" inputmode="numeric" placeholder="–" value="${v??''}" ${dis?'disabled':''}><button class="sb" data-step="${k}" data-d="-1" ${dis?'disabled':''} aria-label="Diminuir">−</button></span>`;
+
+/* Partida em andamento: mesmo layout da finalizada, com os botões +/− */
 function mrow(x, m, sel, label, d) {
- m = m || {}; const lock = !!m.ok, has = m.a!=='' && m.a!=null && m.b!=='' && m.b!=null;
+ m = m || {};
+ if (m.ok && win(m)) return mfim(x, m, label);
+ const lock = !!m.ok, has = m.a!=='' && m.a!=null && m.b!=='' && m.b!=null;
  const tie = num(m.sa)!=null && num(m.sa)===num(m.sb), dis = lock || !has;
  const slots = ['s1','s2'].flatMap(s => ['a','b'].map(z => [s+z, d.m?.[s]?.[z]]));
  const pick = z => SEL(`m.${x}.${z}`, m[z], TO(), lock, slots.filter(s => s[0]!=x+z).map(s => s[1]).filter(v => v!==''&&v!=null).map(String));
- const nm = z => `<strong>${m[z]===''||m[z]==null?'—':tn(m[z])}</strong>`;
- const duel = (ka, va, kb, vb, dd, ta, tb) => `<div class="duel"><div class="side">${ta||''}${ST(ka, va, dd)}</div><span class="x">×</span><div class="side">${tb||''}${ST(kb, vb, dd)}</div></div>`;
- return`<div class="match"><h3>${label}</h3>${duel(`m.${x}.sa`, m.sa, `m.${x}.sb`, m.sb, dis, sel?pick('a'):nm('a'), sel?pick('b'):nm('b'))}
- <p class="muted" style="margin:10px 0 4px">Desempate (se necessário)</p>${duel(`m.${x}.da`, m.da, `m.${x}.db`, m.db, dis||!tie)}
- <div class="row" style="margin-top:10px">${lock?`<span class="ok">✔ Resultado confirmado</span><button class="btn alt" data-edit="${x}">Editar</button>`:`<button class="btn" data-conf="${x}" ${win({...m, ok:true})?'':'disabled'}>Salvar resultado</button>`}</div></div>`;
+ const vazio = z => m[z]==='' || m[z]==null;
+ const lado = z => `<div class="fim-lado">${sel ? corSel(pick(z), m[z]) : (vazio(z) ? '<span class="fim-vazio">A definir</span>' : TM(m[z]))}</div>`;
+ const desemp = has && tie ? `<div class="desemp-edit"><span class="desemp-tit">Empate! Informe o desempate</span><div class="desemp-nums">${ST(`m.${x}.da`, m.da, dis)}<span class="fim-x">×</span>${ST(`m.${x}.db`, m.db, dis)}</div></div>` : '';
+ return`<div class="match"><h3>${label}</h3>
+ <div class="fim-placar">${lado('a')}<div class="fim-nums">${VST(`m.${x}.sa`, m.sa, dis)}<span class="fim-x">×</span>${VST(`m.${x}.sb`, m.sb, dis)}</div>${lado('b')}</div>
+ ${desemp}
+ <div class="row" style="margin-top:12px">${lock?`<span class="ok">✔ Resultado confirmado</span><button class="btn alt" data-edit="${x}">Editar</button>`:`<button class="btn" data-conf="${x}" ${win({...m, ok:true})?'':'disabled'}>Salvar resultado</button>`}</div></div>`;
 }
 
 function secHTML(ci) {
@@ -518,12 +585,12 @@ function secHTML(ci) {
   return btnSortear + mrow('s1', chavM(d).s1, true, 'Semifinal 1', d) + mrow('s2', chavM(d).s2, true, 'Semifinal 2', d) + mrow('t3', chavM(d).t3, false, 'Disputa de 3º lugar', d) + mrow('f', chavM(d).f, false, 'Final', d) + pvHTML(a.t, d, true);
  }
  const foot = lock ? `<div class="row" style="margin-top:10px"><span class="ok">✔ Resultado confirmado</span><button class="btn alt" data-edit="">Editar</button></div>` : `<div class="row" style="margin-top:10px"><button class="btn" data-conf="" ${ready(a.t, d)?'':'disabled'}>Confirmar resultado final</button></div>`;
- return h + pvHTML(a.t, d, lock) + foot;
+ return (lock ? `<div class="fim-campos">${h}</div>` : h) + pvHTML(a.t, d, lock) + foot;
 }
 
 function pvHTML(t, d, final) {
  const p = t=='chav' ? place(t, d) : place(t, {...d, ok:true});
- return`<div class="pv"><strong>Classificação${final?'':' (prévia, ainda não salva)'}</strong>`+(p ? T.filter(i => p[i]).sort((x, y) => p[x] - p[y]).map(i => `<div><span>${p[i]}º · <span class="dot" style="--c:var(--t${i})"></span>${tn(i)}</span><strong>+${S.pts[p[i]-1]||0}</strong></div>`).join('') : '<div class="muted">Sem resultado confirmado.</div>')+`</div>`;
+ return`<div class="pv"><strong>Classificação${final?'':' (prévia, ainda não salva)'}</strong>`+(p ? T.filter(i => p[i]).sort((x, y) => p[x] - p[y]).map(i => `<div><span>${p[i]}º · ${tn(i)}</span><strong>+${S.pts[p[i]-1]||0}</strong></div>`).join('') : '<div class="muted">Sem resultado confirmado.</div>')+`</div>`;
 }
 
 /* ==========================================================================
@@ -937,6 +1004,29 @@ document.addEventListener('change', e => {
   }).then(() => apagarResultados(id)).then(render);
  }
 });
+
+/* ==========================================================================
+   8. CORES DAS EQUIPES (fundo nos placares e classificações, texto sempre preto)
+   ========================================================================== */
+function lum(h) {
+ const c = [1,3,5].map(i => parseInt(h.slice(i, i+2), 16) / 255).map(v => v <= .03928 ? v/12.92 : ((v + .055) / 1.055) ** 2.4);
+ return .2126*c[0] + .7152*c[1] + .0722*c[2];
+}
+/* Aceita só cores claras, com bom contraste para texto preto */
+function corOk(h) { return /^#[0-9a-f]{6}$/i.test(String(h || '')) && (lum(h) + .05) / .05 >= 7; }
+function corEquipe(i) { const c = (S.colors || [])[i]; return corOk(c) ? c.toLowerCase() : CORES_PADRAO[i]; }
+function aplicarCores() { T.forEach(i => document.documentElement.style.setProperty('--t' + i, corEquipe(i))); }
+
+/* Escolha da cor pela paleta (Configurações) */
+document.addEventListener('click', e => {
+ const b = e.target.closest('[data-sw]'); if (!b) return;
+ const [i, cor] = b.dataset.sw.split(','); if (!corOk(cor)) return;
+ b.closest('.sws').querySelectorAll('.sw').forEach(x => x.setAttribute('aria-pressed', x === b));
+ document.documentElement.style.setProperty('--t' + i, cor);
+ DB.patchCfg(['colors'], () => { S.colors = T.map(j => corEquipe(j)); S.colors[+i] = cor; aplicarCores(); }).then(softRender);
+});
+
+aplicarCores();
 
 /* Inicialização */
 route();
