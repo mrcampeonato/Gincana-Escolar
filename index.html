@@ -348,10 +348,24 @@ const V={
   const rows=ACTS.filter(a=>flt=='todas'||a.t==flt).map(a=>`<div class="act"><div><a href="#/m/${a.s}/0"><strong>${esc(a.n)}</strong></a><small>${TN[a.t]}</small></div>${CATS.map((c,ci)=>{const p=place(a.t,S.res[rk(a,ci)]);return`<a class="cell ${p?'done':''}" href="#/m/${a.s}/${ci}"><span class="l">${c}</span>${chips(p)}</a>`}).join('')}</div>`).join('');
   return`<section class="panel"><h2>Modalidades e atividades</h2><p class="muted">Cada modalidade e cada categoria têm a sua própria página. Toque numa categoria para lançar o resultado.</p><div class="filters">${fl}</div><div class="acts">${rows}</div></section>`;
  },
- insta(){
-  const o=totals();
-  const days=Array.from({length:20},(_,d)=>`<div class="row"><strong style="width:50px;font-size:13px">Dia ${d+1}</strong>${T.map(i=>`<label title="${tn(i)}"><input type="checkbox" data-ig="${i},${d}" ${S.insta[i][d]?'checked':''} aria-label="${tn(i)} dia${d+1}"> <span class="dot" style="--c:var(--t${i});margin:0"></span></label>`).join(' ')}</div>`).join('');
-  return`<section class="panel"><h2>Instagram</h2><p class="muted">Cada equipe pode postar 1× por dia durante os 20 dias. Vale ${S.ig} pontos por dia.</p><div class="row" style="font-size:13px;gap:8px">${T.map(i=>`<span><span class="dot" style="--c:var(--t${i})"></span>${tn(i)}: <strong>${S.insta[i].filter(Boolean).length}</strong></span>`).join('')}</div><div class="grid-ig">${days}</div></section>`;
+insta(){
+  const header = `<thead><tr><th style="text-align:left">Dia</th>${T.map(i=>`<th style="text-align:center"><span class="dot" style="--c:var(--t${i})"></span>${tn(i)}</th>`).join('')}</tr></thead>`;
+  const rows = Array.from({length:20}, (_,d) => {
+    const cols = T.map(i => `<td style="text-align:center"><input type="checkbox" data-ig="${i},${d}" ${S.insta[i][d]?'checked':''} aria-label="${tn(i)} dia ${d+1}"></td>`).join('');
+    return `<tr><td style="text-align:left;font-weight:600">Dia ${d+1}</td>${cols}</tr>`;
+  }).join('');
+
+  return`<section class="panel">
+    <h2>Instagram</h2>
+    <p class="muted">Cada equipe pode postar 1× por dia durante os 20 dias. Vale ${S.ig} pontos por dia.</p>
+    <div class="row" style="font-size:13px;gap:8px;margin-bottom:12px">${T.map(i=>`<span><span class="dot" style="--c:var(--t${i})"></span>${tn(i)}: <strong>${S.insta[i].filter(Boolean).length}</strong></span>`).join('')}</div>
+    <div class="scroll">
+      <table>
+        ${header}
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  </section>`;
  },
  torc(){
   const o=totals(),list=S.fans.map((f,k)=>`<tr><td>${esc(f.name)}</td><td style="text-align:left"><span class="dot" style="--c:var(--t${f.team})"></span>${tn(f.team)}</td><td><button class="btn warn" data-delfan="${k}">Remover</button></td></tr>`).join('');
