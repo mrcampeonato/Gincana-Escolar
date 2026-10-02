@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
@@ -132,7 +132,7 @@ function setPath(o,path,val){const k=path.split('.');for(let n=0;n<k.length-1;n+
 /* ---------- Configuração do Supabase ---------- */
 const SUPABASE_URL = 'https://eeqahersokenqsmfwpfb.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVlcWFoZXJzb2tlbnFzbWZ3cGZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MjgyNjksImV4cCI6MjEwNjUwNDI2OX0.5oErD8Un5o15G3Vow6YMfgb1d6pJhXdudkKjG4sHxZs';
-const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
 /* ---------- salvar / sincronizar ---------- */
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)) } catch (e) { } };
@@ -140,7 +140,7 @@ const fail = e => alert('Não foi possível salvar no servidor: ' + (e && (e.mes
 
 async function saveAll() {
   save();
-  if (!supabase) return;
+  if (!db) return;
   const payload = {
     id: 'geral',
     teams: S.teams,
@@ -150,19 +150,19 @@ async function saveAll() {
     insta: S.insta,
     fans: S.fans
   };
-  const { error } = await supabase.from('cfg').upsert(payload);
+  const { error } = await db.from('cfg').upsert(payload);
   if (error) fail(error);
 }
 
 async function persist(ci) {
   save();
-  if (!supabase) return;
+  if (!db) return;
   const docId = cur.s + '_' + ci;
   const payload = {
     id: docId,
     d: S.res[rk(cur, ci)] || {}
   };
-  const { error } = await supabase.from('res').upsert(payload);
+  const { error } = await db.from('res').upsert(payload);
   if (error) fail(error);
 }
 
@@ -186,18 +186,18 @@ const hasDraft = () => cur && !!D[rk(cur, curC)];
 const soft = () => { if (!cur || !hasDraft()) render() };
 
 async function connect() {
-  if (!supabase) return;
+  if (!db) return;
 
-  const { data: cfgData } = await supabase.from('cfg').select('*').eq('id', 'geral').single();
+  const { data: cfgData } = await db.from('cfg').select('*').eq('id', 'geral').single();
   if (cfgData) applyCfg(cfgData);
 
-  const { data: resData } = await supabase.from('res').select('*');
+  const { data: resData } = await db.from('res').select('*');
   if (resData) {
     resData.forEach(item => applyRes(item.id, item.d));
   }
   soft();
 
-  supabase.channel('schema-db-changes')
+  db.channel('schema-db-changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'cfg' }, payload => {
       if (payload.new) {
         applyCfg(payload.new);
@@ -353,8 +353,8 @@ function reopen(ci,x){const key=rk(cur,ci);ensureD(key);if(cur.t=='chav'){D[key]
 
 /* ---------- render e rotas ---------- */
 function render(){
- if(cur){page();$('sub').textContent=supabase?'Sincronizado em tempo real':'Modo local (neste aparelho)';return}$('tabs').innerHTML=TABS.map(([k,n])=>`<button role="tab" data-tab="${k}" aria-selected="${tab==k}">${n}</button>`).join('');
- $('main').innerHTML=V[tab]();$('sub').textContent=`${totals().done} de ${ACTS.length*3} resultados confirmados · ${supabase?'sincronizado':'modo local (neste aparelho)'}`;
+ if(cur){page();$('sub').textContent=db?'Sincronizado em tempo real':'Modo local (neste aparelho)';return}$('tabs').innerHTML=TABS.map(([k,n])=>`<button role="tab" data-tab="${k}" aria-selected="${tab==k}">${n}</button>`).join('');
+ $('main').innerHTML=V[tab]();$('sub').textContent=`${totals().done} de ${ACTS.length*3} resultados confirmados · ${db?'sincronizado':'modo local (neste aparelho)'}`;
  first=false;
 }
 function route(){const m=location.hash.match(/^#\/m\/([^/]+)(?:\/(\d))?$/);cur=m&&BY[m[1]]||null;curC=m&&m[2]&&+m[2]<CATS.length?+m[2]:0;connect();render();scrollTo(0,0)}
@@ -377,8 +377,8 @@ document.addEventListener('click',e=>{
   if(confirm('Apagar os resultados e configurações deste aparelho e do servidor?')){
     S=fresh();
     saveAll();
-    if(supabase){
-      supabase.from('res').delete().neq('id', '').then(() => render());
+    if(db){
+      db.from('res').delete().neq('id', '').then(() => render());
     } else {
       render();
     }
