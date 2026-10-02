@@ -411,7 +411,11 @@ function secHTML(ci){
   `<div class="row" style="margin-top:10px"><button class="btn alt" data-adde ${lock?'disabled':''}>+ Atleta</button></div>`;
  }
 
- if(a.t=='chav')return mrow('s1',chavM(d).s1,true,'Semifinal 1',d)+mrow('s2',chavM(d).s2,true,'Semifinal 2',d)+mrow('t3',chavM(d).t3,false,'Disputa de 3º lugar',d)+mrow('f',chavM(d).f,false,'Final',d)+pvHTML(a.t,d,true);
+if(a.t=='chav'){
+  const isLocked = !!(d.m?.s1?.ok || d.m?.s2?.ok);
+  const btnSortear = `<div class="row" style="margin-bottom:12px"><button class="btn alt" data-sortear="${ci}" ${isLocked?'disabled':''}>🎲 Sortear Semifinais</button></div>`;
+  return btnSortear+mrow('s1',chavM(d).s1,true,'Semifinal 1',d)+mrow('s2',chavM(d).s2,true,'Semifinal 2',d)+mrow('t3',chavM(d).t3,false,'Disputa de 3º lugar',d)+mrow('f',chavM(d).f,false,'Final',d)+pvHTML(a.t,d,true);
+ }
  const foot=lock?`<div class="row" style="margin-top:10px"><span class="ok">✔ Resultado confirmado</span><button class="btn alt" data-edit="">Editar</button></div>`:`<div class="row" style="margin-top:10px"><button class="btn" data-conf="" ${ready(a.t,d)?'':'disabled'}>Confirmar resultado final</button></div>`;
  return h+pvHTML(a.t,d,lock)+foot;
 }
@@ -478,6 +482,16 @@ document.addEventListener('click',e=>{
  else if(g('edit')!==undefined)reopen(ci,g('edit'));
  else if(g('adde')!==undefined){const key=rk(cur,ci);ensureD(key);D[key].e=(D[key].e&&D[key].e.length?D[key].e:[{}]).concat([{}]);sec(ci)}
  else if(g('rme')!==undefined){const key=rk(cur,ci);ensureD(key);(D[key].e=D[key].e||[{}]).splice(+g('rme'),1);sec(ci)}
+ else if(g('sortear')!==undefined){
+  const key=rk(cur,ci); ensureD(key);
+  const shuffled=[0,1,2,3].sort(()=>Math.random()-0.5);
+  D[key].m=D[key].m||{};
+  D[key].m.s1={...(D[key].m.s1||{}),a:shuffled[0],b:shuffled[1]};
+  D[key].m.s2={...(D[key].m.s2||{}),a:shuffled[2],b:shuffled[3]};
+  delete D[key].m.s1.sa; delete D[key].m.s1.sb; delete D[key].m.s1.da; delete D[key].m.s1.db;
+  delete D[key].m.s2.sa; delete D[key].m.s2.sb; delete D[key].m.s2.da; delete D[key].m.s2.db;
+  sec(ci);
+ }
  else if(g('addfan')!==undefined){const n=$('fn').value.trim();if(n){S.fans.push({name:n,team:+$('ft').value});saveAll();render()}}
  else if(g('delfan')!==undefined){S.fans.splice(+g('delfan'),1);saveAll();render()}
  else if(g('export')!==undefined){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'}));a.download='olimpiadas-backup.json';a.click()}
