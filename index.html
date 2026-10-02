@@ -18,10 +18,12 @@ h1,h2,h3{font-family:'Bricolage Grotesque',Figtree,system-ui,sans-serif;margin:0
 .wrap{width:100%;max-width:760px;margin:0 auto;padding:20px 12px 48px;overflow-x:hidden}
 header{text-align:center}
 header h1{font-size:clamp(24px,6vw,46px);font-weight:800;letter-spacing:-.02em}
+header h1 a{color:inherit;text-decoration:none}
 header p{margin:6px 0 0;color:var(--mute);font-size:14px}
-nav{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:18px 0}
-nav button,.chipbtn{font:600 14px Figtree,sans-serif;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:8px 14px;cursor:pointer;min-height:40px}
-nav button[aria-selected=true],.chipbtn[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+#tabs{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:18px 0}
+#tabs:empty{margin:10px 0}
+#tabs a,.chipbtn{font:600 14px Figtree,sans-serif;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:8px 14px;cursor:pointer;min-height:40px;text-decoration:none;display:inline-flex;align-items:center}
+#tabs a[aria-current=page],.chipbtn[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--t0);outline-offset:2px}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px;overflow:hidden}
 .panel h2{font-size:20px;margin-bottom:12px;text-align:center}
@@ -146,8 +148,8 @@ button:disabled,input:disabled,select:disabled{opacity:.45;cursor:not-allowed}
 </head>
 <body>
 <div class="wrap">
-<header><h1>Olimpíadas IN-NOVA 2026</h1><p id="sub"></p></header>
-<nav id="tabs" role="tablist"></nav>
+<header><h1><a href="#/">Olimpíadas IN-NOVA 2026</a></h1><p id="sub"></p></header>
+<nav id="tabs" aria-label="Seções"></nav>
 <main id="main"></main>
 </div>
 <script>
@@ -173,7 +175,28 @@ const fresh = () => ({teams:['Argentina','Portugal','Espanha','França'],pts:[20
 let S; try { S = JSON.parse(localStorage.getItem(KEY)) } catch (e) {}
 S = Object.assign(fresh(), S || {});
 
-let cur = null, curC = 0, tab = 'placar', flt = 'todas', first = true;
+/* Páginas do sistema: cada uma tem a sua própria URL (hash) */
+const TABS = [
+ ['placar','Placar geral','#/'],
+ ['mod','Modalidades','#/modalidades'],
+ ['insta','Instagram','#/instagram'],
+ ['torc','Torcida famosa','#/torcida'],
+ ['cfg','Configurações','#/configuracoes']
+];
+const ROUTES = Object.fromEntries(TABS.map(([k,,h]) => [h, k]));
+
+/* Colunas da tabela cfg que cada página precisa ler (requisição focada) */
+const COLS = {
+ placar: 'teams,pts,fan,ig,insta,fans',
+ mod:    'teams,pts',
+ m:      'teams,pts',
+ insta:  'teams,ig,insta',
+ torc:   'teams,fan,fans',
+ cfg:    'teams,pts,fan,ig'
+};
+
+let cur = null, curC = 0, pg = 'placar', flt = 'todas', first = true;
+let navTok = 0, carregando = false, pendente = false;
 
 /* Helper Utilities */
 const $ = id => document.getElementById(id);
@@ -181,6 +204,7 @@ const esc = s => String(s??'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;',
 const tn = i => esc(S.teams[i]);
 const num = v => v===''||v==null||isNaN(+v)?null:+v;
 const clone = o => JSON.parse(JSON.stringify(o));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const rk = (a, ci) => a.s+'|'+ci;
 const view = k => D[k] || S.res[k] || {};
 const ensureD = k => { if (!D[k]) D[k] = clone(S.res[k] || {}) };
@@ -188,7 +212,7 @@ function getPath(o, p) { return p.split('.').reduce((a,k) => a?.[k], o) }
 function setPath(o, path, val) { const k = path.split('.'); for (let n=0; n<k.length-1; n++) { if (o[k[n]]==null) o[k[n]] = /^\d+$/.test(k[n+1]) ? [] : {}; o = o[k[n]] } o[k[k.length-1]] = val }
 
 /* ==========================================================================
-   2. MÓDULO SUPABASE E DE REQUISIÇÕES FOCADAS
+   2. MÓDULO SUPABASE E DE REQUISIÇÕES FOCADAS POR PÁGINA
    ========================================================================== */
 const SUPABASE_URL = 'https://eeqahersokenqsmfwpfb.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVlcWFoZXJzb2tlbnFzbWZ3cGZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MjgyNjksImV4cCI6MjEwNjUwNDI2OX0.5oErD8Un5o15G3Vow6YMfgb1d6pJhXdudkKjG4sHxZs';
@@ -197,14 +221,14 @@ const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)) } catch (e) {} };
 const fail = e => alert('Não foi possível salvar no servidor: ' + (e && (e.message || e.code) || JSON.stringify(e)));
 
-function applyRes(id, d) {
- const parts = id.split('_');
+function parseId(id) {
+ const parts = String(id || '').split('_');
  const ci = parts.pop();
- const sl = parts.join('_');
- const a = BY[sl];
- if (!a || ci == null || !d) return;
- S.res[rk(a, ci)] = d;
+ const a = BY[parts.join('_')];
+ return a && ci != null ? rk(a, ci) : null;
 }
+function applyRes(id, d) { const k = parseId(id); if (k && d) S.res[k] = d; }
+function removeRes(id) { const k = parseId(id); if (k) delete S.res[k]; }
 
 function applyCfg(d) {
  if (!d) return;
@@ -212,25 +236,51 @@ function applyCfg(d) {
 }
 
 const DB = {
- async fetchCfg() {
+ /* Lê somente as colunas de cfg que a página atual usa */
+ async fetchCfg(cols) {
   if (!db) return;
-  const { data } = await db.from('cfg').select('*').eq('id', 'geral');
-  if (data && data.length) applyCfg(data[0]);
+  const { data, error } = await db.from('cfg').select(cols || '*').eq('id', 'geral');
+  if (!error && data && data.length) applyCfg(data[0]);
  },
 
+ /* Usado apenas pelo Placar geral e pela lista de Modalidades (somente leitura) */
  async fetchAllRes() {
   if (!db) return;
-  const { data } = await db.from('res').select('*');
-  if (data) data.forEach(item => applyRes(item.id, item.d));
+  const { data, error } = await db.from('res').select('*');
+  if (error || !data) return;
+  S.res = {};
+  data.forEach(item => applyRes(item.id, item.d));
  },
 
+ /* Usado pela página de uma modalidade/categoria específica */
  async fetchSingleRes(a, ci) {
   if (!db || !a) return;
   const docId = `${a.s}_${ci}`;
-  const { data } = await db.from('res').select('*').eq('id', docId);
+  const { data, error } = await db.from('res').select('*').eq('id', docId);
+  if (error) return;
   if (data && data.length) applyRes(data[0].id, data[0].d);
+  else delete S.res[rk(a, ci)];
  },
 
+ /* Grava somente as colunas alteradas, logo após reler a versão mais recente do servidor.
+    Assim, quem edita o Instagram não sobrescreve quem edita a Torcida ou as Configurações. */
+ async patchCfg(cols, mutate) {
+  try {
+   if (db) {
+    const { data, error } = await db.from('cfg').select(cols.join(',')).eq('id', 'geral');
+    if (!error && data && data.length) applyCfg(data[0]);
+   }
+   mutate();
+   save();
+   if (!db) return;
+   const payload = { id: 'geral' };
+   cols.forEach(c => payload[c] = S[c]);
+   const { error } = await db.from('cfg').upsert(payload);
+   if (error) fail(error);
+  } catch (e) { fail(e); }
+ },
+
+ /* Gravação completa: usada apenas ao zerar o sistema */
  async saveAllCfg() {
   save();
   if (!db) return;
@@ -248,22 +298,44 @@ const DB = {
   if (error) fail(error);
  },
 
+ /* Tempo real focado: cada página escuta somente o que exibe */
  setupRealtime() {
   if (!db) return;
   db.removeAllChannels();
-  db.channel('schema-db-changes')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'cfg' }, payload => {
-      if (payload.new) { applyCfg(payload.new); softRender(); }
-    })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'res' }, payload => {
-      if (payload.new) { applyRes(payload.new.id, payload.new.d); softRender(); }
-    })
-    .subscribe();
+  const nome = cur ? `olimp-m-${cur.s}-${curC}` : `olimp-${pg}`;
+  const ch = db.channel(nome);
+  const onRes = p => {
+   if (p.eventType === 'DELETE') { if (p.old && p.old.id) removeRes(p.old.id); }
+   else if (p.new) applyRes(p.new.id, p.new.d);
+   save(); softRender();
+  };
+  ch.on('postgres_changes', { event: '*', schema: 'public', table: 'cfg' }, p => {
+   if (p.new && p.new.id) { applyCfg(p.new); save(); softRender(); }
+  });
+  if (cur) {
+   ch.on('postgres_changes', { event: '*', schema: 'public', table: 'res', filter: `id=eq.${cur.s}_${curC}` }, onRes);
+  } else if (pg === 'placar' || pg === 'mod') {
+   ch.on('postgres_changes', { event: '*', schema: 'public', table: 'res' }, onRes);
+  }
+  ch.subscribe();
  }
 };
 
+/* Evita redesenhar a tela enquanto alguém está digitando ou com rascunho aberto */
 const hasDraft = () => cur && !!D[rk(cur, curC)];
-const softRender = () => { if (!cur || !hasDraft()) render() };
+const typing = () => {
+ const a = document.activeElement;
+ return !!a && $('main').contains(a) && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName) && a.type !== 'checkbox';
+};
+const softRender = () => {
+ if (carregando) return;
+ if (hasDraft()) return;
+ if (typing()) { pendente = true; return; }
+ render();
+};
+document.addEventListener('focusout', () => setTimeout(() => {
+ if (pendente && !typing()) { pendente = false; softRender(); }
+}, 0));
 
 /* ==========================================================================
    3. REGRAS DE NEGÓCIO E CÁLCULO
@@ -309,14 +381,13 @@ const ready = (t, d) => { const p = place(t, {...d, ok: true}); return t == 'mar
 function totals() {
  const cat = {}; let done = 0; CATS.forEach(c => cat[c] = [0,0,0,0]);
  ACTS.forEach(a => CATS.forEach((c, ci) => { const p = place(a.t, S.res[rk(a, ci)]); if (p) { done++; p.forEach((x, i) => { if (x) cat[c][i] += S.pts[x-1] || 0 }) } }));
- const ig = T.map(i => S.insta[i].filter(Boolean).length * S.ig), fn = T.map(i => S.fans.filter(f => +f.team === i).length * S.fan);
+ const ig = T.map(i => (S.insta[i] || []).filter(Boolean).length * S.ig), fn = T.map(i => (S.fans || []).filter(f => +f.team === i).length * S.fan);
  return {cat, ig, fn, done, tot: T.map(i => CATS.reduce((a, c) => a + cat[c][i], 0) + ig[i] + fn[i])};
 }
 
 /* ==========================================================================
-   4. COMPONENTES VISUAIS (VIEWS)
+   4. COMPONENTES VISUAIS (VIEWS) — uma por página
    ========================================================================== */
-const TABS = [['placar','Placar geral'],['mod','Modalidades'],['insta','Instagram'],['torc','Torcida famosa'],['cfg','Configurações']];
 const chips = p => p ? T.map(i => p[i] ? `<span class="chip" style="--c:var(--t${i})" title="${tn(i)}">${p[i]}º</span>` : '').join('') : '—';
 
 const Views = {
@@ -338,23 +409,24 @@ const Views = {
  insta() {
   const header = `<thead><tr><th style="text-align:left">Dia</th>${T.map(i => `<th style="text-align:center"><span class="dot" style="--c:var(--t${i})"></span>${tn(i)}</th>`).join('')}</tr></thead>`;
   const rows = Array.from({length:20}, (_, d) => {
-   const cols = T.map(i => `<td style="text-align:center"><input type="checkbox" data-ig="${i},${d}" ${S.insta[i][d]?'checked':''} aria-label="${tn(i)} dia ${d+1}"></td>`).join('');
+   const cols = T.map(i => `<td style="text-align:center"><input type="checkbox" data-ig="${i},${d}" ${S.insta[i]?.[d]?'checked':''} aria-label="${tn(i)} dia ${d+1}"></td>`).join('');
    return `<tr><td style="text-align:left;font-weight:600">Dia ${d+1}</td>${cols}</tr>`;
   }).join('');
 
   return`<section class="panel">
    <h2>Instagram</h2>
    <p class="muted">Cada equipe pode postar 1× por dia durante os 20 dias. Vale ${S.ig} pontos por dia.</p>
-   <div class="row" style="font-size:13px;gap:8px;margin-bottom:12px">${T.map(i => `<span><span class="dot" style="--c:var(--t${i})"></span>${tn(i)}: <strong>${S.insta[i].filter(Boolean).length}</strong></span>`).join('')}</div>
+   <div class="row" style="font-size:13px;gap:8px;margin-bottom:12px">${T.map(i => `<span><span class="dot" style="--c:var(--t${i})"></span>${tn(i)}: <strong>${(S.insta[i] || []).filter(Boolean).length}</strong></span>`).join('')}</div>
    <div class="scroll"><table>${header}<tbody>${rows}</tbody></table></div>
   </section>`;
  },
 
  torc() {
-  const list = S.fans.map((f, k) => `<tr><td>${esc(f.name)}</td><td style="text-align:left"><span class="dot" style="--c:var(--t${f.team})"></span>${tn(f.team)}</td><td><button class="btn warn" data-delfan="${k}">Remover</button></td></tr>`).join('');
+  const fans = S.fans || [];
+  const list = fans.map((f, k) => `<tr><td>${esc(f.name)}</td><td style="text-align:left"><span class="dot" style="--c:var(--t${f.team})"></span>${tn(f.team)}</td><td><button class="btn warn" data-delfan="${k}">Remover</button></td></tr>`).join('');
   return`<section class="panel"><h2>Torcida famosa</h2><p class="muted">Cada torcedor vale ${S.fan} pontos para a equipe escolhida.</p>
   <div class="row"><input id="fn" placeholder="Nome do torcedor(a)"><select id="ft">${T.map(i => `<option value="${i}">${tn(i)}</option>`).join('')}</select><button class="btn" data-addfan>Adicionar</button></div>
-  <div class="row" style="font-size:13px;gap:8px">${T.map(i => `<span><span class="dot" style="--c:var(--t${i})"></span>${tn(i)}: <strong>${S.fans.filter(f => +f.team===i).length}</strong></span>`).join('')}</div>
+  <div class="row" style="font-size:13px;gap:8px">${T.map(i => `<span><span class="dot" style="--c:var(--t${i})"></span>${tn(i)}: <strong>${fans.filter(f => +f.team===i).length}</strong></span>`).join('')}</div>
   <div class="scroll"><table><thead><tr><th>Torcedor(a)</th><th style="text-align:left">Equipe</th><th></th></tr></thead><tbody>${list||'<tr><td colspan="3" class="muted">Nenhum torcedor cadastrado.</td></tr>'}</tbody></table></div></section>`;
  },
 
@@ -390,7 +462,7 @@ function secHTML(ci) {
  if (a.t == 'rank') h = T.map(t => `<div class="row" style="justify-content:space-between">${who(t)}<div style="flex:1;max-width:180px">${SEL('p.'+t, d.p?.[t], [['','—'], ...[1,2,3,4].map(n => [n, n+'º lugar'])], lock, T.filter(u => u!=t).map(u => String(d.p?.[u]||'')).filter(Boolean))}</div></div>`).join('');
  if (a.t == 'pontos') h = `<p class="muted">Pontuação da arbitragem. Maior pontuação vence.</p>`+T.map(t => `<div class="row" style="justify-content:space-between">${who(t)}<div style="flex:1;max-width:140px">${I('v.'+t, d.v?.[t], `type="number" min="0" step="any" ${lock?'disabled':''}`)}</div></div>`).join('');
  if (a.t == 'crit') h = `<p class="muted">Notas por critério (até 10). A soma define a classificação.</p><div class="scroll"><table><tbody>`+T.map(t => `<tr><td>${who(t)}</td>${[0,1,2,3,4,5].map(k => `<td>${I(`c.${t}.${k}`, d.c?.[t]?.[k], `type="number" min="0" max="10" step="any" style="width:48px" ${lock?'disabled':''}`)}</td>`).join('')}</tr>`).join('')+`</tbody></table></div>`;
- 
+
  if (a.t == 'marca') {
   const e = d.e && d.e.length ? d.e : [{}];
   h = `<p class="muted">Digite o nome do atleta, selecione a equipe e digite o tempo correspondente.</p>
@@ -420,50 +492,76 @@ function pvHTML(t, d, final) {
 }
 
 /* ==========================================================================
-   5. CONTROLADORES E ROTEAMENTO DE MÓDULOS
+   5. CONTROLADORES E ROTEAMENTO DE PÁGINAS
    ========================================================================== */
 function sec(ci) { const el = $('sec'+ci); if (el) el.innerHTML = secHTML(ci); }
 
+function renderNav() {
+ $('tabs').innerHTML = TABS.map(([k, n, h]) => `<a href="${h}" ${pg==k?'aria-current="page"':''}>${n}</a>`).join('');
+}
+
+/* Página de uma modalidade: vinculada à página MODALIDADES */
 function page() {
  $('tabs').innerHTML = '';
  const links = CATS.map((c, ci) => `<a href="#/m/${cur.s}/${ci}" ${ci==curC?'aria-current="page"':''}>${c}</a>`).join('');
- $('main').innerHTML = `<div class="page-head"><a class="back" href="#/">← Voltar ao placar</a><h2 class="ptitle">${esc(cur.n)}</h2><p class="muted">${TN[cur.t]}</p></div><nav class="catnav" aria-label="Categorias">${links}</nav><section class="panel"><h2>${CATS[curC]}</h2><div id="sec${curC}"></div></section>`;
+ $('main').innerHTML = `<div class="page-head"><a class="back" href="#/modalidades">← Voltar às modalidades</a><h2 class="ptitle">${esc(cur.n)}</h2><p class="muted">${TN[cur.t]}</p></div><nav class="catnav" aria-label="Categorias">${links}</nav><section class="panel"><h2>${CATS[curC]}</h2><div id="sec${curC}"></div></section>`;
  sec(curC);
 }
 
+function setTitle(n) { document.title = n ? `${n} · Olimpíadas IN-NOVA 2026` : 'Olimpíadas IN-NOVA 2026'; }
+
 function render() {
+ pendente = false;
+ const sync = db ? 'sincronizado em tempo real' : 'modo local (neste aparelho)';
  if (cur) {
   page();
-  $('sub').textContent = db ? 'Sincronizado em tempo real' : 'Modo local (neste aparelho)';
+  setTitle(cur.n);
+  $('sub').textContent = sync.charAt(0).toUpperCase() + sync.slice(1);
   return;
  }
- $('tabs').innerHTML = TABS.map(([k, n]) => `<button role="tab" data-tab="${k}" aria-selected="${tab==k}">${n}</button>`).join('');
- $('main').innerHTML = Views[tab]();$('sub').textContent = `${totals().done} de ${ACTS.length*3} resultados confirmados · ${db?'sincronizado':'modo local'}`;
- first = false;
+ renderNav();
+ $('main').innerHTML = Views[pg]();
+ setTitle(pg == 'placar' ? '' : TABS.find(x => x[0] == pg)[1]);
+ $('sub').textContent = (pg == 'placar' || pg == 'mod')
+  ? `${totals().done} de ${ACTS.length*3} resultados confirmados · ${db ? 'sincronizado' : 'modo local'}`
+  : sync.charAt(0).toUpperCase() + sync.slice(1);
+ if (pg == 'placar') first = false;
+}
+
+function loadingView() {
+ if (cur) $('tabs').innerHTML = ''; else renderNav();
+ $('main').innerHTML = `<section class="panel"><p class="muted">Carregando dados atualizados…</p></section>`;
 }
 
 async function route() {
- const m = location.hash.match(/^#\/m\/([^/]+)(?:\/(\d))?$/);
+ const tok = ++navTok, h = location.hash;
+ const m = h.match(/^#\/m\/([^/]+)(?:\/(\d))?$/);
  cur = m && BY[m[1]] || null;
  curC = m && m[2] && +m[2] < CATS.length ? +m[2] : 0;
+ pg = cur ? 'mod' : (ROUTES[h] || 'placar');
+ pendente = false;
+
+ /* Páginas com edição só abrem depois de buscar a versão mais recente do servidor */
+ const editavel = !!cur || pg == 'insta' || pg == 'torc' || pg == 'cfg';
+ carregando = editavel && !!db;
+ if (carregando) loadingView(); else render();
+ scrollTo(0, 0);
 
  DB.setupRealtime();
- await DB.fetchCfg();
+ try {
+  await DB.fetchCfg(COLS[cur ? 'm' : pg]);
+  if (cur) await DB.fetchSingleRes(cur, curC);
+  else if (pg == 'placar' || pg == 'mod') await DB.fetchAllRes();
+  save();
+ } catch (e) { console.error(e); }
 
- if (cur) {
-  // Requisição Focada: carrega apenas os dados da modalidade ativa
-  await DB.fetchSingleRes(cur, curC);
- } else {
-  // Requisição Geral: carrega os dados completos para o Placar
-  await DB.fetchAllRes();
- }
-
- render();
- scrollTo(0, 0);
+ if (tok !== navTok) return; // o usuário já navegou para outra página
+ if (carregando) { carregando = false; render(); }
+ else softRender();
 }
 addEventListener('hashchange', route);
 
-/* Ações de Edição e Confirmação */
+/* Ações de Edição e Confirmação (páginas de modalidade) */
 function edit(ci, k, v, fs) {
  const key = rk(cur, ci); ensureD(key); setPath(D[key], k, v);
  const mm = k.match(/^m\.(\w+)\.s[ab]$/);
@@ -493,6 +591,15 @@ function reopen(ci, x) {
  sec(ci);
 }
 
+/* Backup: busca tudo do servidor antes de exportar, já que cada página carrega só o que usa */
+async function exportar() {
+ try { await DB.fetchCfg('*'); await DB.fetchAllRes(); save(); } catch (e) { console.error(e); }
+ const a = document.createElement('a');
+ a.href = URL.createObjectURL(new Blob([JSON.stringify(S)], {type:'application/json'}));
+ a.download = 'olimpiadas-backup.json';
+ a.click();
+}
+
 /* ==========================================================================
    6. EVENT LISTENERS & MÁSCARAS
    ========================================================================== */
@@ -509,8 +616,7 @@ document.addEventListener('input', e => {
 document.addEventListener('click', e => {
  const t = e.target.closest('button'); if (!t) return;
  const g = n => t.dataset[n], s = t.closest('[id^=sec]'), ci = s ? +s.id.slice(3) : null;
- if (g('tab')) { tab = g('tab'); render(); }
- else if (g('flt')) { flt = g('flt'); render(); }
+ if (g('flt')) { flt = g('flt'); render(); }
  else if (g('step')) { const key = rk(cur, ci), c = num(getPath(view(key), g('step'))), n = c==null ? (+g('d')>0?1:0) : Math.max(0, c + +g('d')); edit(ci, g('step'), n, `[data-step="${g('step')}"][data-d="${g('d')}"]`); }
  else if (g('conf')!==undefined) confirmAct(ci, g('conf'));
  else if (g('edit')!==undefined) reopen(ci, g('edit'));
@@ -526,14 +632,32 @@ document.addEventListener('click', e => {
   delete D[key].m.s2.sa; delete D[key].m.s2.sb; delete D[key].m.s2.da; delete D[key].m.s2.db;
   sec(ci);
  }
- else if (g('addfan')!==undefined) { const n = $('fn').value.trim(); if (n) { S.fans.push({name: n, team: +$('ft').value}); DB.saveAllCfg(); render(); } }
- else if (g('delfan')!==undefined) { S.fans.splice(+g('delfan'), 1); DB.saveAllCfg(); render(); }
- else if (g('export')!==undefined) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(S)], {type:'application/json'})); a.download = 'olimpiadas-backup.json'; a.click(); }
+ else if (g('addfan')!==undefined) {
+  const n = $('fn').value.trim(), team = +$('ft').value; if (!n) return;
+  t.disabled = true;
+  DB.patchCfg(['fans'], () => {
+   S.fans = S.fans || [];
+   S.fans.push({id: uid(), name: n, team});
+  }).then(render);
+ }
+ else if (g('delfan')!==undefined) {
+  const alvo = (S.fans || [])[+g('delfan')]; if (!alvo) return;
+  t.disabled = true;
+  DB.patchCfg(['fans'], () => {
+   S.fans = S.fans || [];
+   const k = S.fans.findIndex(f => alvo.id ? f.id === alvo.id : (f.name === alvo.name && +f.team === +alvo.team));
+   if (k > -1) S.fans.splice(k, 1);
+  }).then(render);
+ }
+ else if (g('export')!==undefined) exportar();
  else if (g('reset')!==undefined) {
   if (confirm('Apagar os resultados e configurações deste aparelho e do servidor?')) {
-   S = fresh(); DB.saveAllCfg();
-   if (db) db.from('res').delete().neq('id', '').then(() => render());
-   else render();
+   S = fresh(); Object.keys(D).forEach(k => delete D[k]);
+   (async () => {
+    await DB.saveAllCfg();
+    if (db) { const { error } = await db.from('res').delete().neq('id', ''); if (error) fail(error); }
+    render();
+   })();
   }
  }
 });
@@ -545,11 +669,21 @@ document.addEventListener('change', e => {
   if (el.type == 'number' && v !== '') v = el.dataset.k.startsWith('v.') || el.dataset.k.startsWith('c.') ? Math.max(0, +v) : Math.max(0, Math.floor(+v));
   edit(+s.id.slice(3), el.dataset.k, v, `[data-k="${el.dataset.k}"]`);
  }
- else if (el.dataset.ig) { const [i, d] = el.dataset.ig.split(','); S.insta[+i][+d] = el.checked; DB.saveAllCfg(); render(); }
+ else if (el.dataset.ig) {
+  const [i, d] = el.dataset.ig.split(',').map(Number), marcado = el.checked;
+  el.disabled = true;
+  DB.patchCfg(['insta'], () => {
+   S.insta = S.insta || [];
+   S.insta[i] = S.insta[i] || Array(20).fill(false);
+   S.insta[i][d] = marcado;
+  }).then(render);
+ }
  else if (el.dataset.cfg) {
-  const k = el.dataset.cfg.split('.'), v = k[0]=='teams' ? (el.value.trim() || S.teams[+k[1]]) : Math.max(0, +el.value||0);
-  if (k.length == 2) S[k[0]][+k[1]] = v; else S[k[0]] = v;
-  DB.saveAllCfg(); render();
+  const k = el.dataset.cfg.split('.'), bruto = el.value;
+  DB.patchCfg([k[0]], () => {
+   const v = k[0]=='teams' ? (bruto.trim() || S.teams[+k[1]]) : Math.max(0, +bruto||0);
+   if (k.length == 2) S[k[0]][+k[1]] = v; else S[k[0]] = v;
+  }).then(softRender);
  }
 });
 
