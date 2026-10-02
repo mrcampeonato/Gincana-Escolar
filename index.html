@@ -144,6 +144,12 @@ button:disabled,input:disabled,select:disabled{opacity:.45;cursor:not-allowed}
  .btn-del {width:28px}
 }
 @media (max-width:380px){.st{gap:2px}.sb{width:34px;height:34px}.st input{width:38px}}
+/* Editor de modalidades */
+.me-row{display:grid;grid-template-columns:minmax(0,1fr) 150px auto;gap:6px;align-items:center;margin-bottom:8px}
+.me-row input,.me-row select{min-width:0}
+.me-grupo{font-size:15px;margin:18px 0 8px}
+.me-grupo span{color:var(--mute);font-weight:400;font-size:13px}
+@media (max-width:620px){.me-row{grid-template-columns:minmax(0,1fr) 118px auto}}
 </style>
 </head>
 <body>
@@ -166,14 +172,25 @@ const L = {
 };
 const TN = {chav:'Chaveamento',rank:'Ranking',marca:'Marca (tempo)',crit:'Critérios',pontos:'Pontuação'};
 const slug = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-const ACTS = Object.keys(L).flatMap(t => L[t].map(n => ({n, t, s: slug(n)})));
-const BY = Object.fromEntries(ACTS.map(a => [a.s, a]));
+/* Lista padrão de modalidades (usada só enquanto nada foi salvo no servidor).
+   O "id" é fixo: é ele que liga a modalidade aos resultados na tabela res. */
+const MODS_PADRAO = Object.keys(L).flatMap(t => L[t].map(n => ({id: slug(n), n, t})));
+let ACTS = [], BY = {};
 const KEY = 'olimpiadas-in-nova-2026-v2';
 const T = [0,1,2,3], D = {};
 
-const fresh = () => ({teams:['Argentina','Portugal','Espanha','França'],pts:[200,150,100,80],fan:200,ig:100,res:{},fans:[],insta:[0,1,2,3].map(()=>Array(20).fill(false))});
+const fresh = () => ({teams:['Argentina','Portugal','Espanha','França'],pts:[200,150,100,80],fan:200,ig:100,res:{},fans:[],insta:[0,1,2,3].map(()=>Array(20).fill(false)),
+ mods: JSON.parse(JSON.stringify(S && Array.isArray(S.mods) ? S.mods : MODS_PADRAO))});
 let S; try { S = JSON.parse(localStorage.getItem(KEY)) } catch (e) {}
 S = Object.assign(fresh(), S || {});
+
+/* Monta ACTS e BY a partir da lista de modalidades salva */
+function buildActs() {
+ const lista = Array.isArray(S.mods) ? S.mods : MODS_PADRAO;
+ ACTS = lista.filter(m => m && m.id && m.n && TN[m.t]).map(m => ({n: m.n, t: m.t, s: m.id}));
+ BY = Object.fromEntries(ACTS.map(a => [a.s, a]));
+}
+buildActs();
 
 /* Páginas do sistema: cada uma tem a sua própria URL (hash) */
 const TABS = [
@@ -183,16 +200,20 @@ const TABS = [
  ['torc','Torcida famosa','#/torcida'],
  ['cfg','Configurações','#/configuracoes']
 ];
-const ROUTES = Object.fromEntries(TABS.map(([k,,h]) => [h, k]));
+const ROUTES = {
+ ...Object.fromEntries(TABS.map(([k,,h]) => [h, k])),
+ '#/configuracoes/modalidades': 'modedit'   // página vinculada às Configurações
+};
 
 /* Colunas da tabela cfg que cada página precisa ler (requisição focada) */
 const COLS = {
- placar: 'teams,pts,fan,ig,insta,fans',
- mod:    'teams,pts',
- m:      'teams,pts',
- insta:  'teams,ig,insta',
- torc:   'teams,fan,fans',
- cfg:    'teams,pts,fan,ig'
+ placar:  'teams,pts,fan,ig,insta,fans,mods',
+ mod:     'teams,pts,mods',
+ m:       'teams,pts,mods',
+ insta:   'teams,ig,insta',
+ torc:    'teams,fan,fans',
+ cfg:     'teams,pts,fan,ig,mods',
+ modedit: 'mods'
 };
 
 let cur = null, curC = 0, pg = 'placar', flt = 'todas', first = true;
@@ -232,7 +253,8 @@ function removeRes(id) { const k = parseId(id); if (k) delete S.res[k]; }
 
 function applyCfg(d) {
  if (!d) return;
- ['teams', 'pts', 'fan', 'ig', 'insta', 'fans'].forEach(k => { if (d[k] != null) S[k] = d[k]; });
+ ['teams', 'pts', 'fan', 'ig', 'insta', 'fans', 'mods'].forEach(k => { if (d[k] != null) S[k] = d[k]; });
+ if (d.mods != null) { buildActs(); syncCur(); }
 }
 
 const DB = {
@@ -497,7 +519,8 @@ function pvHTML(t, d, final) {
 function sec(ci) { const el = $('sec'+ci); if (el) el.innerHTML = secHTML(ci); }
 
 function renderNav() {
- $('tabs').innerHTML = TABS.map(([k, n, h]) => `<a href="${h}" ${pg==k?'aria-current="page"':''}>${n}</a>`).join('');
+ const ativa = pg == 'modedit' ? 'cfg' : pg;
+ $('tabs').innerHTML = TABS.map(([k, n, h]) => `<a href="${h}" ${ativa==k?'aria-current="page"':''}>${n}</a>`).join('');
 }
 
 /* Página de uma modalidade: vinculada à página MODALIDADES */
@@ -521,7 +544,7 @@ function render() {
  }
  renderNav();
  $('main').innerHTML = Views[pg]();
- setTitle(pg == 'placar' ? '' : TABS.find(x => x[0] == pg)[1]);
+ setTitle(pg == 'placar' ? '' : pg == 'modedit' ? 'Editar modalidades' : TABS.find(x => x[0] == pg)[1]);
  $('sub').textContent = (pg == 'placar' || pg == 'mod')
   ? `${totals().done} de ${ACTS.length*3} resultados confirmados · ${db ? 'sincronizado' : 'modo local'}`
   : sync.charAt(0).toUpperCase() + sync.slice(1);
@@ -536,13 +559,20 @@ function loadingView() {
 async function route() {
  const tok = ++navTok, h = location.hash;
  const m = h.match(/^#\/m\/([^/]+)(?:\/(\d))?$/);
+
+ /* Modalidade criada em outro aparelho e ainda desconhecida aqui: busca a lista antes */
+ if (m && !BY[m[1]] && db) {
+  try { await DB.fetchCfg('mods'); } catch (e) { console.error(e); }
+  if (tok !== navTok) return;
+ }
+
  cur = m && BY[m[1]] || null;
  curC = m && m[2] && +m[2] < CATS.length ? +m[2] : 0;
  pg = cur ? 'mod' : (ROUTES[h] || 'placar');
  pendente = false;
 
  /* Páginas com edição só abrem depois de buscar a versão mais recente do servidor */
- const editavel = !!cur || pg == 'insta' || pg == 'torc' || pg == 'cfg';
+ const editavel = !!cur || pg == 'insta' || pg == 'torc' || pg == 'cfg' || pg == 'modedit';
  carregando = editavel && !!db;
  if (carregando) loadingView(); else render();
  scrollTo(0, 0);
@@ -684,6 +714,122 @@ document.addEventListener('change', e => {
    const v = k[0]=='teams' ? (bruto.trim() || S.teams[+k[1]]) : Math.max(0, +bruto||0);
    if (k.length == 2) S[k[0]][+k[1]] = v; else S[k[0]] = v;
   }).then(softRender);
+ }
+});
+
+/* ==========================================================================
+   7. EDITOR DE MODALIDADES (página vinculada às Configurações)
+   ========================================================================== */
+const listaMods = () => clone(Array.isArray(S.mods) ? S.mods : MODS_PADRAO);
+const mesmoNome = (a, b) => slug(a) === slug(b);
+
+/* Gera um id único e permanente para uma nova modalidade */
+function novoId(nome, lista) {
+ const base = slug(nome) || 'modalidade', usados = new Set(lista.map(x => x.id));
+ let id = base, n = 2;
+ while (usados.has(id)) id = `${base}-${n++}`;
+ return id;
+}
+
+/* Se a modalidade aberta foi excluída ou mudou de tipo em outro aparelho */
+function syncCur() {
+ if (!cur) return;
+ const atual = BY[cur.s];
+ if (!atual || atual.t !== cur.t) CATS.forEach((_, ci) => delete D[rk(cur, ci)]);
+ if (!atual) { cur = null; if (location.hash.startsWith('#/m/')) location.hash = '#/modalidades'; return; }
+ cur = atual;
+}
+
+/* Apaga os resultados de uma modalidade nas três categorias */
+async function apagarResultados(id) {
+ CATS.forEach((_, ci) => { delete S.res[id + '|' + ci]; delete D[id + '|' + ci]; });
+ save();
+ if (!db) return;
+ const { error } = await db.from('res').delete().in('id', CATS.map((_, ci) => `${id}_${ci}`));
+ if (error) fail(error);
+}
+
+/* Atalho para o editor dentro da página de Configurações */
+const cfgOriginal = Views.cfg;
+Views.cfg = () => `<section class="panel"><h2>Modalidades</h2><p class="muted">${ACTS.length} modalidades cadastradas. Inclua, renomeie, exclua ou mude o tipo de cada uma.</p><div class="row"><a class="btn" href="#/configuracoes/modalidades" style="text-decoration:none;display:inline-flex;align-items:center">Editar modalidades</a></div></section>` + cfgOriginal();
+
+Views.modedit = () => {
+ const tipos = Object.keys(TN);
+ const opts = v => tipos.map(t => `<option value="${t}" ${t==v?'selected':''}>${TN[t]}</option>`).join('');
+ const grupos = tipos.map(t => {
+  const itens = ACTS.filter(a => a.t == t);
+  if (!itens.length) return '';
+  return `<h3 class="me-grupo">${TN[t]} <span>(${itens.length})</span></h3>` + itens.map(a => `
+  <div class="me-row">
+   <input data-mn="${a.s}" value="${esc(a.n)}" aria-label="Nome da modalidade">
+   <select data-mt="${a.s}" aria-label="Tipo de ${esc(a.n)}">${opts(a.t)}</select>
+   <button class="btn warn btn-del" data-mdel="${a.s}" aria-label="Excluir ${esc(a.n)}">×</button>
+  </div>`).join('');
+ }).join('');
+ return `<div class="page-head"><a class="back" href="#/configuracoes">← Voltar às configurações</a></div>
+ <section class="panel"><h2>Nova modalidade</h2>
+  <div class="me-row"><input id="mnovo" placeholder="Nome da modalidade"><select id="mtnovo" aria-label="Tipo">${opts('chav')}</select><button class="btn" data-madd>Adicionar</button></div>
+ </section>
+ <section class="panel"><h2>Modalidades cadastradas (${ACTS.length})</h2>
+  <p class="muted">Mudar o nome mantém os resultados. Mudar o tipo ou excluir apaga os resultados dessa modalidade nas três categorias.</p>
+  ${grupos || '<p class="muted">Nenhuma modalidade cadastrada.</p>'}
+ </section>`;
+};
+
+document.addEventListener('click', e => {
+ const t = e.target.closest('button');
+ if (!t || cur || pg !== 'modedit') return;
+
+ if (t.dataset.madd !== undefined) {
+  const nome = $('mnovo').value.trim(), tipo = $('mtnovo').value;
+  if (!nome) { $('mnovo').focus(); return; }
+  if (!TN[tipo]) return;
+  let repetido = false;
+  t.disabled = true;
+  DB.patchCfg(['mods'], () => {
+   S.mods = listaMods();
+   if (S.mods.some(x => mesmoNome(x.n, nome))) { repetido = true; return; }
+   S.mods.push({id: novoId(nome, S.mods), n: nome, t: tipo});
+   buildActs();
+  }).then(() => { if (repetido) alert(`Já existe uma modalidade chamada "${nome}".`); render(); });
+ }
+
+ else if (t.dataset.mdel) {
+  const id = t.dataset.mdel, a = BY[id]; if (!a) return;
+  if (!confirm(`Excluir "${a.n}"?\nOs resultados lançados dessa modalidade nas três categorias também serão apagados.`)) return;
+  t.disabled = true;
+  DB.patchCfg(['mods'], () => { S.mods = listaMods().filter(x => x.id !== id); buildActs(); })
+   .then(() => apagarResultados(id))
+   .then(render);
+ }
+});
+
+document.addEventListener('change', e => {
+ const el = e.target;
+ if (cur || pg !== 'modedit') return;
+
+ if (el.dataset.mn) {
+  const id = el.dataset.mn, nome = el.value.trim(), a = BY[id]; if (!a) return;
+  if (!nome) { el.value = a.n; return; }
+  if (nome === a.n) return;
+  if (ACTS.some(x => x.s !== id && mesmoNome(x.n, nome))) { alert(`Já existe uma modalidade chamada "${nome}".`); el.value = a.n; return; }
+  DB.patchCfg(['mods'], () => {
+   S.mods = listaMods();
+   const x = S.mods.find(y => y.id === id); if (x) x.n = nome;
+   buildActs();
+  }).then(softRender);
+ }
+
+ else if (el.dataset.mt) {
+  const id = el.dataset.mt, tipo = el.value, a = BY[id];
+  if (!a || !TN[tipo] || tipo === a.t) return;
+  if (!confirm(`Mudar "${a.n}" de ${TN[a.t]} para ${TN[tipo]}?\nOs resultados já lançados dessa modalidade nas três categorias serão apagados, porque o formato é diferente.`)) { el.value = a.t; return; }
+  el.disabled = true;
+  DB.patchCfg(['mods'], () => {
+   S.mods = listaMods();
+   const x = S.mods.find(y => y.id === id); if (x) x.t = tipo;
+   buildActs();
+  }).then(() => apagarResultados(id)).then(render);
  }
 });
 
