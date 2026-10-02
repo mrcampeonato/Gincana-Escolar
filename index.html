@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Olimpíadas IN-NOVA 2026</title>
+<title>Olimpíadas IN-NOVA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -531,8 +531,9 @@ function page() {
  sec(curC);
 }
 
-function setTitle(n) { document.title = n ? `${n} · Olimpíadas IN-NOVA 2026` : 'Olimpíadas IN-NOVA 2026'; }
-
+/* Título da aba fixo em todas as páginas: usa o que estiver na tag <title> */
+const TITULO_PADRAO = document.title;
+function setTitle() { document.title = TITULO_PADRAO; }
 function render() {
  pendente = false;
  const sync = db ? 'sincronizado em tempo real' : 'modo local (neste aparelho)';
