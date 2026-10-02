@@ -188,8 +188,11 @@ const soft = () => { if (!cur || !hasDraft()) render() };
 async function connect() {
   if (!db) return;
 
-  const { data: cfgData } = await db.from('cfg').select('*').eq('id', 'geral').single();
-  if (cfgData) applyCfg(cfgData);
+  // Removido o .single() para evitar o erro 406 caso a tabela esteja vazia
+  const { data: cfgList } = await db.from('cfg').select('*').eq('id', 'geral');
+  if (cfgList && cfgList.length > 0) {
+    applyCfg(cfgList[0]);
+  }
 
   const { data: resData } = await db.from('res').select('*');
   if (resData) {
