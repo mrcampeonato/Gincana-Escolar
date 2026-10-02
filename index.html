@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Olimpíadas IN-NOVA</title>
+<title>Olimpíadas IN-NOVA 2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -145,11 +145,24 @@ button:disabled,input:disabled,select:disabled{opacity:.45;cursor:not-allowed}
 }
 @media (max-width:380px){.st{gap:2px}.sb{width:34px;height:34px}.st input{width:38px}}
 /* Editor de modalidades */
-.me-row{display:grid;grid-template-columns:minmax(0,1fr) 150px auto;gap:6px;align-items:center;margin-bottom:8px}
+.me-row{display:grid;grid-template-columns:minmax(0,1fr) 150px auto auto;gap:6px;align-items:center;margin-bottom:8px}
+.me-row.novo{grid-template-columns:minmax(0,1fr) 150px auto}
 .me-row input,.me-row select{min-width:0}
 .me-grupo{font-size:15px;margin:18px 0 8px}
 .me-grupo span{color:var(--mute);font-weight:400;font-size:13px}
-@media (max-width:620px){.me-row{grid-template-columns:minmax(0,1fr) 118px auto}}
+.me-reg{border-color:var(--line);font-size:16px}
+.me-reg.on{border-color:var(--ink);background:var(--soft)}
+@media (max-width:620px){.me-row{grid-template-columns:minmax(0,1fr) 110px auto auto}.me-row.novo{grid-template-columns:minmax(0,1fr) 110px auto}}
+
+/* Janela do regulamento */
+.reg-dlg{border:1px solid var(--line);border-radius:14px;padding:0;width:min(680px,calc(100vw - 24px));max-height:calc(100vh - 48px);background:var(--card);color:var(--ink);overflow:hidden}
+.reg-dlg::backdrop{background:rgba(10,15,30,.55)}
+.reg-box{display:flex;flex-direction:column;max-height:calc(100vh - 50px)}
+.reg-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.reg-head h2{font-size:18px}
+.reg-body{padding:16px;overflow:auto;white-space:pre-wrap;line-height:1.6;font-size:15px}
+.reg-body textarea{width:100%;min-height:50vh;font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;resize:vertical}
+.reg-foot{display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid var(--line)}
 </style>
 </head>
 <body>
@@ -187,7 +200,7 @@ S = Object.assign(fresh(), S || {});
 /* Monta ACTS e BY a partir da lista de modalidades salva */
 function buildActs() {
  const lista = Array.isArray(S.mods) ? S.mods : MODS_PADRAO;
- ACTS = lista.filter(m => m && m.id && m.n && TN[m.t]).map(m => ({n: m.n, t: m.t, s: m.id}));
+ ACTS = lista.filter(m => m && m.id && m.n && TN[m.t]).map(m => ({n: m.n, t: m.t, s: m.id, r: !!m.r}));
  BY = Object.fromEntries(ACTS.map(a => [a.s, a]));
 }
 buildActs();
@@ -527,13 +540,15 @@ function renderNav() {
 function page() {
  $('tabs').innerHTML = '';
  const links = CATS.map((c, ci) => `<a href="#/m/${cur.s}/${ci}" ${ci==curC?'aria-current="page"':''}>${c}</a>`).join('');
- $('main').innerHTML = `<div class="page-head"><a class="back" href="#/modalidades">← Voltar às modalidades</a><h2 class="ptitle">${esc(cur.n)}</h2><p class="muted">${TN[cur.t]}</p></div><nav class="catnav" aria-label="Categorias">${links}</nav><section class="panel"><h2>${CATS[curC]}</h2><div id="sec${curC}"></div></section>`;
+ const btnReg = cur.r ? `<div class="row" style="margin-top:8px"><button class="btn alt" data-verreg>📄 Ver regulamento</button></div>` : '';
+ $('main').innerHTML = `<div class="page-head"><a class="back" href="#/modalidades">← Voltar às modalidades</a><h2 class="ptitle">${esc(cur.n)}</h2><p class="muted">${TN[cur.t]}</p>${btnReg}</div><nav class="catnav" aria-label="Categorias">${links}</nav><section class="panel"><h2>${CATS[curC]}</h2><div id="sec${curC}"></div></section>`;
  sec(curC);
 }
 
 /* Título da aba fixo em todas as páginas: usa o que estiver na tag <title> */
 const TITULO_PADRAO = document.title;
 function setTitle() { document.title = TITULO_PADRAO; }
+
 function render() {
  pendente = false;
  const sync = db ? 'sincronizado em tempo real' : 'modo local (neste aparelho)';
@@ -719,7 +734,7 @@ document.addEventListener('change', e => {
 });
 
 /* ==========================================================================
-   7. EDITOR DE MODALIDADES (página vinculada às Configurações)
+   7. EDITOR DE MODALIDADES E REGULAMENTOS (página vinculada às Configurações)
    ========================================================================== */
 const listaMods = () => clone(Array.isArray(S.mods) ? S.mods : MODS_PADRAO);
 const mesmoNome = (a, b) => slug(a) === slug(b);
@@ -750,9 +765,86 @@ async function apagarResultados(id) {
  if (error) fail(error);
 }
 
+/* Regulamentos: tabela própria (reg), lida só quando alguém abre o regulamento */
+const REG = {
+ async get(id) {
+  if (!db) return (S.regs || {})[id] || '';
+  const { data, error } = await db.from('reg').select('txt').eq('id', id);
+  if (error) throw error;
+  return data && data.length ? (data[0].txt || '') : '';
+ },
+ async set(id, txt) {
+  if (!db) {
+   S.regs = S.regs || {};
+   if (txt) S.regs[id] = txt; else delete S.regs[id];
+   save(); return true;
+  }
+  const { error } = txt
+   ? await db.from('reg').upsert({ id, txt, updated_at: new Date().toISOString() })
+   : await db.from('reg').delete().eq('id', id);
+  if (error) { fail(error); return false; }
+  return true;
+ }
+};
+
+/* Janela (dialog) usada tanto para consultar quanto para editar o regulamento */
+document.body.insertAdjacentHTML('beforeend', '<dialog id="regdlg" class="reg-dlg" aria-label="Regulamento"></dialog>');
+let regTok = 0, regOriginal = '';
+const regSujo = () => { const t = $('regtxt'); return !!t && t.value.trim() !== regOriginal.trim(); };
+
+function abrirReg(a, editar) {
+ const dlg = $('regdlg'), tok = ++regTok;
+ regOriginal = '';
+ dlg.innerHTML = `<div class="reg-box">
+  <div class="reg-head"><h2>Regulamento · ${esc(a.n)}</h2><button class="btn alt" data-regfechar aria-label="Fechar">✕</button></div>
+  <div class="reg-body" id="regcorpo"><p class="muted">Carregando…</p></div>
+  ${editar ? `<div class="reg-foot"><button class="btn alt" data-regfechar>Cancelar</button><button class="btn" data-regsalvar="${a.s}" disabled>Salvar regulamento</button></div>` : ''}
+ </div>`;
+ if (!dlg.open) dlg.showModal();
+ REG.get(a.s).then(txt => {
+  if (tok !== regTok || !dlg.open) return;
+  const corpo = $('regcorpo');
+  if (editar) {
+   regOriginal = txt;
+   corpo.innerHTML = `<textarea id="regtxt" placeholder="Cole ou digite aqui o regulamento da modalidade…">${esc(txt)}</textarea>`;
+   dlg.querySelector('[data-regsalvar]').disabled = false;
+   $('regtxt').focus();
+  } else {
+   corpo.innerHTML = txt ? esc(txt) : '<p class="muted">Regulamento ainda não cadastrado.</p>';
+  }
+ }).catch(e => {
+  console.error(e);
+  if (tok === regTok) $('regcorpo').innerHTML = '<p class="muted">Não foi possível carregar o regulamento. Tente novamente.</p>';
+ });
+}
+
+function fecharReg() {
+ if (regSujo() && !confirm('Descartar as alterações do regulamento?')) return;
+ $('regdlg').close();
+}
+
+async function salvarReg(id, btn) {
+ const txt = ($('regtxt') ? $('regtxt').value : '').trim();
+ btn.disabled = true; btn.textContent = 'Salvando…';
+ if (!await REG.set(id, txt)) { btn.disabled = false; btn.textContent = 'Salvar regulamento'; return; }
+ /* Marca na lista de modalidades se existe regulamento (só um indicador leve, o texto fica na tabela reg) */
+ await DB.patchCfg(['mods'], () => {
+  S.mods = listaMods();
+  const x = S.mods.find(y => y.id === id);
+  if (x) { if (txt) x.r = 1; else delete x.r; }
+  buildActs();
+ });
+ regOriginal = txt;
+ $('regdlg').close();
+ render();
+}
+
+$('regdlg').addEventListener('cancel', e => { if (regSujo() && !confirm('Descartar as alterações do regulamento?')) e.preventDefault(); });
+$('regdlg').addEventListener('click', e => { if (e.target === $('regdlg') && !$('regtxt')) $('regdlg').close(); });
+
 /* Atalho para o editor dentro da página de Configurações */
 const cfgOriginal = Views.cfg;
-Views.cfg = () => `<section class="panel"><h2>Modalidades</h2><p class="muted">${ACTS.length} modalidades cadastradas. Inclua, renomeie, exclua ou mude o tipo de cada uma.</p><div class="row"><a class="btn" href="#/configuracoes/modalidades" style="text-decoration:none;display:inline-flex;align-items:center">Editar modalidades</a></div></section>` + cfgOriginal();
+Views.cfg = () => `<section class="panel"><h2>Modalidades</h2><p class="muted">${ACTS.length} modalidades cadastradas. Inclua, renomeie, exclua, mude o tipo ou cadastre o regulamento de cada uma.</p><div class="row"><a class="btn" href="#/configuracoes/modalidades" style="text-decoration:none;display:inline-flex;align-items:center">Editar modalidades</a></div></section>` + cfgOriginal();
 
 Views.modedit = () => {
  const tipos = Object.keys(TN);
@@ -764,19 +856,30 @@ Views.modedit = () => {
   <div class="me-row">
    <input data-mn="${a.s}" value="${esc(a.n)}" aria-label="Nome da modalidade">
    <select data-mt="${a.s}" aria-label="Tipo de ${esc(a.n)}">${opts(a.t)}</select>
+   <button class="btn alt btn-del me-reg ${a.r?'on':''}" data-mreg="${a.s}" title="${a.r?'Editar regulamento':'Cadastrar regulamento'}" aria-label="Regulamento de ${esc(a.n)}">📄</button>
    <button class="btn warn btn-del" data-mdel="${a.s}" aria-label="Excluir ${esc(a.n)}">×</button>
   </div>`).join('');
  }).join('');
  return `<div class="page-head"><a class="back" href="#/configuracoes">← Voltar às configurações</a></div>
  <section class="panel"><h2>Nova modalidade</h2>
-  <div class="me-row"><input id="mnovo" placeholder="Nome da modalidade"><select id="mtnovo" aria-label="Tipo">${opts('chav')}</select><button class="btn" data-madd>Adicionar</button></div>
+  <div class="me-row novo"><input id="mnovo" placeholder="Nome da modalidade"><select id="mtnovo" aria-label="Tipo">${opts('chav')}</select><button class="btn" data-madd>Adicionar</button></div>
  </section>
  <section class="panel"><h2>Modalidades cadastradas (${ACTS.length})</h2>
-  <p class="muted">Mudar o nome mantém os resultados. Mudar o tipo ou excluir apaga os resultados dessa modalidade nas três categorias.</p>
+  <p class="muted">📄 abre o regulamento (destacado quando já existe). Mudar o nome mantém os resultados. Mudar o tipo ou excluir apaga os resultados dessa modalidade nas três categorias.</p>
   ${grupos || '<p class="muted">Nenhuma modalidade cadastrada.</p>'}
  </section>`;
 };
 
+/* Cliques do regulamento (funcionam na página da modalidade e no editor) */
+document.addEventListener('click', e => {
+ const t = e.target.closest('button'); if (!t) return;
+ if (t.dataset.verreg !== undefined && cur) abrirReg(cur, false);
+ else if (t.dataset.mreg && !cur && pg === 'modedit') { const a = BY[t.dataset.mreg]; if (a) abrirReg(a, true); }
+ else if (t.dataset.regfechar !== undefined) fecharReg();
+ else if (t.dataset.regsalvar) salvarReg(t.dataset.regsalvar, t);
+});
+
+/* Cliques do editor de modalidades */
 document.addEventListener('click', e => {
  const t = e.target.closest('button');
  if (!t || cur || pg !== 'modedit') return;
@@ -797,10 +900,11 @@ document.addEventListener('click', e => {
 
  else if (t.dataset.mdel) {
   const id = t.dataset.mdel, a = BY[id]; if (!a) return;
-  if (!confirm(`Excluir "${a.n}"?\nOs resultados lançados dessa modalidade nas três categorias também serão apagados.`)) return;
+  if (!confirm(`Excluir "${a.n}"?\nOs resultados lançados dessa modalidade nas três categorias e o regulamento também serão apagados.`)) return;
   t.disabled = true;
   DB.patchCfg(['mods'], () => { S.mods = listaMods().filter(x => x.id !== id); buildActs(); })
    .then(() => apagarResultados(id))
+   .then(() => REG.set(id, ''))
    .then(render);
  }
 });
@@ -824,7 +928,7 @@ document.addEventListener('change', e => {
  else if (el.dataset.mt) {
   const id = el.dataset.mt, tipo = el.value, a = BY[id];
   if (!a || !TN[tipo] || tipo === a.t) return;
-  if (!confirm(`Mudar "${a.n}" de ${TN[a.t]} para ${TN[tipo]}?\nOs resultados já lançados dessa modalidade nas três categorias serão apagados, porque o formato é diferente.`)) { el.value = a.t; return; }
+  if (!confirm(`Mudar "${a.n}" de ${TN[a.t]} para ${TN[tipo]}?\nOs resultados já lançados dessa modalidade nas três categorias serão apagados, porque o formato é diferente. O regulamento é mantido.`)) { el.value = a.t; return; }
   el.disabled = true;
   DB.patchCfg(['mods'], () => {
    S.mods = listaMods();
