@@ -1,1 +1,353 @@
-# Gincana-Escolar
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Olimpíadas IN-NOVA 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f5f9;--card:#fff;--ink:#14213d;--mute:#5b6781;--line:#d8dfeb;--soft:#e9eef6;--t0:#3d9ad8;--t1:#c8283a;--t2:#d99a00;--t3:#2c4bc4;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1524;--card:#172034;--ink:#e9eefa;--mute:#98a6c3;--line:#2a3652;--soft:#202b44}}
+:root[data-theme="dark"]{--bg:#0e1524;--card:#172034;--ink:#e9eefa;--mute:#98a6c3;--line:#2a3652;--soft:#202b44}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 Figtree,system-ui,sans-serif}
+h1,h2,h3{font-family:'Bricolage Grotesque',Figtree,system-ui,sans-serif;margin:0;line-height:1.1}
+.wrap{max-width:980px;margin:0 auto;padding:20px 16px 48px}
+header h1{font-size:clamp(28px,6vw,46px);font-weight:800;letter-spacing:-.02em}
+header p{margin:6px 0 0;color:var(--mute)}
+nav{display:flex;gap:6px;overflow-x:auto;margin:18px 0;padding-bottom:4px}
+nav button,.chipbtn{font:600 15px Figtree,sans-serif;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:8px 16px;cursor:pointer;white-space:nowrap}
+nav button[aria-selected=true],.chipbtn[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--t0);outline-offset:2px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+.panel h2{font-size:22px;margin-bottom:12px}
+.race{display:grid;gap:10px}
+.rrow{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center}
+.rpos{font:800 28px 'Bricolage Grotesque',sans-serif;color:var(--mute);text-align:center}
+.rname{font-weight:600;margin-bottom:4px}
+.bar{height:22px;border-radius:6px;background:var(--c);transform-origin:left;min-width:4px}
+.grow .bar{animation:g .9s cubic-bezier(.2,.8,.2,1) both}
+@keyframes g{from{transform:scaleX(0)}}
+.rpts{font:800 26px 'Bricolage Grotesque',sans-serif;font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:480px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:600;color:var(--mute);font-size:14px}
+tfoot td{font-weight:800;border-bottom:0}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--c);margin-right:6px}
+.acts{display:grid;gap:8px}
+.act{display:grid;grid-template-columns:1fr repeat(3,auto);gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.act small{display:block;color:var(--mute)}
+.cell{border:1px dashed var(--line);background:var(--soft);color:var(--ink);border-radius:10px;padding:6px 8px;cursor:pointer;min-width:92px;text-align:center;font:600 12px Figtree,sans-serif}
+.cell.done{border-style:solid}
+.cell span.l{display:block;color:var(--mute);margin-bottom:3px}
+.chip{display:inline-block;min-width:22px;padding:1px 5px;margin:0 1px;border-radius:5px;background:var(--c);color:#fff;font-weight:800;font-size:12px}
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+input,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;max-width:100%}
+input[type=number]{width:88px}
+input[type=checkbox]{width:20px;height:20px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.btn{font:600 15px Figtree,sans-serif;border:1px solid var(--ink);background:var(--ink);color:var(--bg);border-radius:8px;padding:8px 14px;cursor:pointer}
+.btn.alt{background:none;color:var(--ink)}
+.btn.warn{background:none;color:var(--t1);border-color:var(--t1)}
+dialog{width:min(660px,94vw);max-height:90vh;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--ink);padding:20px}
+dialog::backdrop{background:rgba(8,12,24,.6)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.match{padding:10px;border:1px solid var(--line);border-radius:10px;margin-bottom:10px}
+.match h3{font-size:15px;margin-bottom:8px}
+.muted{color:var(--mute)}
+.pv{margin-top:14px;padding:12px;background:var(--soft);border-radius:10px}
+.pv div{display:flex;justify-content:space-between;padding:3px 0}
+.grid-ig{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 16px}
+@media (max-width:620px){.act{grid-template-columns:1fr 1fr 1fr}.act>div:first-child{grid-column:1/-1}.cell{min-width:0}}
+@media (prefers-reduced-motion:reduce){.grow .bar{animation:none}}
+
+a.act{color:inherit;text-decoration:none}a.act:hover .cell{border-color:var(--ink)}
+.back{display:inline-block;margin-bottom:12px;color:var(--ink);font-weight:600}
+.ptitle{font-size:clamp(24px,5vw,36px);font-weight:800}
+.st{display:inline-flex;align-items:center;gap:4px}
+.st input{width:56px;text-align:center}
+.sb{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--soft);color:var(--ink);font:700 20px/1 Figtree,sans-serif;cursor:pointer}
+button:disabled,input:disabled,select:disabled{opacity:.45;cursor:not-allowed}
+.ok{color:#1f9d55;font-weight:600}
+
+body{display:flex;justify-content:center}
+.wrap{width:100%;max-width:760px;margin:0 auto}
+header{text-align:center}
+nav{flex-wrap:wrap;justify-content:center;overflow:visible}
+.row{justify-content:center}
+.filters{justify-content:center}
+.btn,.sb,nav button,.chipbtn{min-height:44px}
+.sb{width:44px}
+input,select{font-size:16px;min-height:44px}
+.st input{width:52px;padding:7px 4px}
+.panel h2,.panel>p{text-align:center}
+.muted{text-align:center}
+.race,.pv{max-width:100%}
+.act .cell{text-decoration:none;display:block}
+.act>div:first-child a{color:inherit;text-decoration:none}
+.catnav{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:12px 0 16px}
+.catnav a{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:10px 16px;font-weight:600;text-decoration:none;min-height:44px;display:inline-flex;align-items:center}
+.catnav a[aria-current=page]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.page-head{text-align:center}
+.duel{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:start;justify-items:center;text-align:center}
+.side{display:grid;gap:8px;justify-items:center;width:100%}
+.side select,.side strong{max-width:100%;width:100%;text-align:center}
+.x{font-weight:800;padding-top:10px}
+.match{padding:14px}
+.match h3{text-align:center;margin-bottom:12px}
+.tbl{min-width:0}
+@media (max-width:620px){
+ .wrap{padding:14px 12px 40px}
+ .panel{padding:14px;border-radius:12px}
+ .rpts{font-size:22px}
+ .rrow{grid-template-columns:28px 1fr auto}
+ .act{grid-template-columns:repeat(3,1fr)}
+ .act>div:first-child{text-align:center}
+ .cell{padding:8px 4px}
+ table{min-width:420px}
+}
+@media (max-width:380px){.st{gap:2px}.sb{width:40px}.st input{width:44px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><h1>Olimpíadas IN-NOVA 2026</h1><p id="sub"></p></header>
+<nav id="tabs" role="tablist"></nav>
+<main id="main"></main>
+</div>
+<script>
+const CATS=['6º-7º ANO','8º ANO','9º EM'];
+const L={
+ rank:['Abertura Temática','Bandeira','Chamada','Escola Limpa','Fair Play','Grito de Paz','Mascote','Organização','Torcida','Uniforme','Torta Na Cara','The Voice'],
+ chav:['Basquetebol Misto','Kings League','FIFA','Futebol Society Masc','Futevôlei','Futmesa','Futsal Misto','Pique Bandeirinha','Queimada','Tênis Dupla Mista','Vôlei de Areia Fem','Vôlei de Areia Masc','Voleibol Quadra Fem','Voleibol Quadra Masc','Tênis de Mesa'],
+ marca:['Escalada','Natação Fem','Natação Masc','Pedal Kart','Prova do Balde (invertida)','Atletismo Masculino','Atletismo Feminino'],
+ crit:['Free Fire','Operações Matemáticas','Prova dos Sentidos','Soletrando','Ciências','Do Lixo ao Luxo','Master Chef'],
+ pontos:['Boliche Humano','Adedonha']
+};
+const TN={chav:'Chaveamento',rank:'Ranking',marca:'Marca (tempo)',crit:'Critérios',pontos:'Pontuação'};
+const slug=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+const ACTS=Object.keys(L).flatMap(t=>L[t].map(n=>({n,t,s:slug(n)})));
+const BY=Object.fromEntries(ACTS.map(a=>[a.s,a]));
+const KEY='olimpiadas-in-nova-2026-v2';
+const fresh=()=>({teams:['Argentina','Portugal','Espanha','França'],pts:[200,150,100,80],fan:200,ig:100,res:{},fans:[],insta:[0,1,2,3].map(()=>Array(20).fill(false))});
+let S;try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+S=Object.assign(fresh(),S||{});
+const T=[0,1,2,3],D={};
+let DB=null,U=[],cur=null,curC=0,tab='placar',flt='todas',first=true;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const tn=i=>esc(S.teams[i]);
+const num=v=>v===''||v==null||isNaN(+v)?null:+v;
+const clone=o=>JSON.parse(JSON.stringify(o));
+const rk=(a,ci)=>a.s+'|'+ci;
+const view=k=>D[k]||S.res[k]||{};
+const ensureD=k=>{if(!D[k])D[k]=clone(S.res[k]||{})};
+function getPath(o,p){return p.split('.').reduce((a,k)=>a?.[k],o)}
+function setPath(o,path,val){const k=path.split('.');for(let n=0;n<k.length-1;n++){if(o[k[n]]==null)o[k[n]]=/^\d+$/.test(k[n+1])?[]:{};o=o[k[n]]}o[k[k.length-1]]=val}
+
+/* ---------- salvar / sincronizar ---------- */
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const fail=e=>alert('Não foi possível salvar no servidor: '+(e&&(e.message||e.code)||e));
+function saveAll(){save();if(DB)DB.doc('cfg/geral').set({teams:S.teams,pts:S.pts,fan:S.fan,ig:S.ig,insta:JSON.stringify(S.insta),fans:JSON.stringify(S.fans)}).catch(fail)}
+function persist(ci){
+ save();if(!DB)return;
+ DB.doc('res/'+cur.s+'_'+ci).set({d:JSON.stringify(S.res[rk(cur,ci)])}).catch(fail);
+}
+function applyRes(id,d){const [sl,ci]=id.split('_'),a=BY[sl];if(!a||ci==null||!d||!d.d)return;try{S.res[rk(a,ci)]=JSON.parse(d.d)}catch(e){}}
+function applyCfg(d){if(!d)return;['teams','pts','fan','ig'].forEach(k=>d[k]!=null&&(S[k]=d[k]));try{if(d.insta)S.insta=JSON.parse(d.insta);if(d.fans)S.fans=JSON.parse(d.fans)}catch(e){}}
+const hasDraft=()=>cur&&!!D[rk(cur,curC)];
+const soft=()=>{if(!cur||!hasDraft())render()};
+function connect(){
+ U.forEach(f=>f());U=[];if(!DB)return;
+ U.push(DB.doc('cfg/geral').onSnapshot(s=>{if(s.exists)applyCfg(s.data());soft()},fail));
+ if(cur)U.push(DB.doc('res/'+cur.s+'_'+curC).onSnapshot(s=>{applyRes(cur.s+'_'+curC,s.data());soft()},fail));
+ else U.push(DB.collection('res').onSnapshot(s=>{s.docs.forEach(d=>applyRes(d.id,d.data()));soft()},fail));
+}
+
+/* ---------- cálculo (só resultados confirmados) ---------- */
+function crank(vals,asc){
+ const ix=vals.map((v,i)=>[v,i]).filter(x=>x[0]!=null);if(!ix.length)return null;
+ const p=[null,null,null,null];ix.forEach(([v,i])=>p[i]=1+ix.filter(([w])=>asc?w<v:w>v).length);return p;
+}
+function ptime(s){
+ s=String(s||'').trim();if(!s)return null;
+ if(!/['’:]/.test(s))return num(s.replace(',','.'));
+ const p=s.split(/['’:]/).map(Number);if(p.some(isNaN))return null;
+ return p.length==2?p[0]*60+p[1]:p[0]*60+p[1]+(p[2]||0)/100;
+}
+function win(m){
+ if(!m||!m.ok||m.a===''||m.b===''||m.a==null||m.b==null)return null;
+ const sa=num(m.sa),sb=num(m.sb);if(sa==null||sb==null)return null;
+ let w;if(sa!=sb)w=sa>sb;else{const da=num(m.da),db=num(m.db);if(da==null||db==null||da==db)return null;w=da>db}
+ return w?[+m.a,+m.b]:[+m.b,+m.a];
+}
+function chavM(d){
+ const m=d.m||{},w1=win(m.s1),w2=win(m.s2);
+ return{s1:m.s1||{},s2:m.s2||{},t3:{...m.t3,a:w1?w1[1]:'',b:w2?w2[1]:''},f:{...m.f,a:w1?w1[0]:'',b:w2?w2[0]:''}};
+}
+function place(t,d){
+ if(!d)return null;
+ if(t=='chav'){
+  const x=chavM(d),wf=win(x.f),wt=win(x.t3),p=[null,null,null,null];
+  if(wf){p[wf[0]]=1;p[wf[1]]=2}if(wt){p[wt[0]]=3;p[wt[1]]=4}
+  return p.some(v=>v)?p:null;
+ }
+ if(!d.ok)return null;
+ if(t=='rank'){const r=T.map(i=>num(d.p?.[i])||null);return r.some(x=>x)?r:null}
+ if(t=='pontos')return crank(T.map(i=>num(d.v?.[i])),false);
+ if(t=='crit')return crank(T.map(i=>{const c=d.c?.[i];return c&&c.some(x=>x!==''&&x!=null)?c.reduce((a,b)=>a+(+b||0),0):null}),false);
+ if(t=='marca'){
+  const b=[null,null,null,null];
+  (d.e||[]).forEach(e=>{const s=ptime(e?.t);if(s!=null&&e.team!==''&&e.team!=null){const i=+e.team;if(b[i]==null||s<b[i])b[i]=s}});
+  return crank(b,true);
+ }
+}
+const ready=(t,d)=>{const p=place(t,{...d,ok:true});return t=='marca'?!!p:!!p&&p.every(Boolean)};
+function totals(){
+ const cat={};let done=0;CATS.forEach(c=>cat[c]=[0,0,0,0]);
+ ACTS.forEach(a=>CATS.forEach((c,ci)=>{const p=place(a.t,S.res[rk(a,ci)]);if(p){done++;p.forEach((x,i)=>{if(x)cat[c][i]+=S.pts[x-1]||0})}}));
+ const ig=T.map(i=>S.insta[i].filter(Boolean).length*S.ig),fn=T.map(i=>S.fans.filter(f=>+f.team===i).length*S.fan);
+ return{cat,ig,fn,done,tot:T.map(i=>CATS.reduce((a,c)=>a+cat[c][i],0)+ig[i]+fn[i])};
+}
+
+/* ---------- placar / listas ---------- */
+const TABS=[['placar','Placar geral'],['mod','Modalidades'],['insta','Instagram'],['torc','Torcida famosa'],['cfg','Configurações']];
+const chips=p=>p?T.map(i=>p[i]?`<span class="chip" style="--c:var(--ti)"title="{tn(i)}">${p[i]}º</span>`:'').join(''):'—';
+const V={
+ placar(){
+  const o=totals(),order=T.slice().sort((a,b)=>o.tot[b]-o.tot[a]),mx=Math.max(1,...o.tot);
+  const rows=order.map((i,k)=>`<div class="rrow"><div class="rpos">k+1º</div><div><divclass="rname">{tn(i)}</div><div class="bar" style="--c:var(--ti);width:{Math.max(1,o.tot[i]/mx*100)}%"></div></div><div class="rpts">${o.tot[i]}</div></div>`).join('');
+  const ln=(n,a)=>`<tr><td>n</td>{a.map(v=>`<td>${v}</td>`).join('')}</tr>`;
+  return`<section class="panel first?'grow':''"><h2>Classificaçãogeral</h2><divclass="race">{rows}</div></section>
+  <section class="panel"><h2>Pontos por categoria</h2><div class="scroll"><table><thead><tr><th>Categoria</th>${T.map(i=>`<th><span class="dot" style="--c:var(--t${i})"></span>${tn(i)}</th>`).join('')}</tr></thead><tbody>
+  CATS.map(c=>ln(c,o.cat[c])).join(''){ln('Instagram',o.ig)}ln('Torcidafamosa',o.fn)</tbody><tfoot><tr><td>Totalgeral</td>{o.tot.map(v=>`<td>${v}</td>`).join('')}</tr></tfoot></table></div></section>`;
+ },
+ mod(){
+  const fl=['todas',...Object.keys(TN)].map(k=>`<button class="chipbtn" data-flt="k"aria-pressed="{flt==k}">${k=='todas'?'Todas':TN[k]}</button>`).join('');
+  const rows=ACTS.filter(a=>flt=='todas'||a.t==flt).map(a=>`<div class="act"><div><a href="#/m/a.s/0"><strong>{esc(a.n)}</strong></a><small>TN[a.t]</small></div>{CATS.map((c,ci)=>{const p=place(a.t,S.res[rk(a,ci)]);return`<a class="cell p?'done':''"href="#/m/{a.s}/ci"><spanclass="l">{c}</span>${chips(p)}</a>`}).join('')}</div>`).join('');
+  return`<section class="panel"><h2>Modalidades e atividades</h2><p class="muted">Cada modalidade e cada categoria têm a sua própria página. Toque numa categoria para lançar o resultado.</p><div class="filters">fl</div><divclass="acts">{rows}</div></section>`;
+ },
+ insta(){
+  const o=totals();
+  const days=Array.from({length:20},(_,d)=>`<div class="row"><strong style="width:56px">Dia d+1</strong>{T.map(i=>`<label title="tn(i)"><inputtype="checkbox"data-ig="{i},${d}" S.insta[i][d]?'checked':''aria-label="{tn(i)} dia d+1"><spanclass="dot"style="--c:var(--t{i});margin:0"></span></label>`).join(' ')}</div>`).join('');
+  return`<section class="panel"><h2>Instagram</h2><p class="muted">Cada equipe pode postar 1× por dia durante os 20 dias. Vale S.igpontospordia.</p><divclass="row">{T.map(i=>`<span><span class="dot" style="--c:var(--ti)"></span>{tn(i)}: <strong>${S.insta[i].filter(Boolean).length}</strong> posts · ${o.ig[i]} pts</span>`).join('')}</div><div class="grid-ig">${days}</div></section>`;
+ },
+ torc(){
+  const o=totals(),list=S.fans.map((f,k)=>`<tr><td>esc(f.name)</td><tdstyle="text-align:left"><spanclass="dot"style="--c:var(--t{f.team})"></span>tn(f.team)</td><td><buttonclass="btnwarn"data-delfan="{k}">Remover</button></td></tr>`).join('');
+  return`<section class="panel"><h2>Torcida famosa</h2><p class="muted">Cada torcedor vale ${S.fan} pontos para a equipe escolhida.</p>
+  <div class="row"><input id="fn" placeholder="Nome do torcedor(a)"><select id="ft">${T.map(i=>`<option value="${i}">${tn(i)}</option>`).join('')}</select><button class="btn" data-addfan>Adicionar</button></div>
+  <div class="row">${T.map(i=>`<span><span class="dot" style="--c:var(--t${i})"></span>tn(i):<strong>{S.fans.filter(f=>+f.team===i).length}</strong> · ${o.fn[i]} pts</span>`).join('')}</div>
+  <div class="scroll"><table><thead><tr><th>Torcedor(a)</th><th style="text-align:left">Equipe</th><th></th></tr></thead><tbody>${list||'<tr><td colspan="3" class="muted">Nenhum torcedor cadastrado.</td></tr>'}</tbody></table></div></section>`;
+ },
+ cfg(){
+  return`<section class="panel"><h2>Equipes</h2><div class="row">${T.map(i=>`<label><span class="dot" style="--c:var(--t${i})"></span><input data-cfg="teams.i"value="{esc(S.teams[i])}" aria-label="Equipe ${i+1}"></label>`).join('')}</div></section>
+  <section class="panel"><h2>Pontos por posição</h2><div class="row">${T.map(i=>`<label>${i+1}º lugar <input type="number" min="0" data-cfg="pts.i"value="{S.pts[i]}"></label>`).join('')}</div>
+  <div class="row"><label>Pontos por torcedor <input type="number" min="0" data-cfg="fan" value="S.fan"></label><label>Pontospordiapostado<inputtype="number"min="0"data-cfg="ig"value="{S.ig}"></label></div></section>
+  <section class="panel"><h2>Dados</h2><p class="muted">Exporte um backup para guardar os resultados confirmados.</p><div class="row"><button class="btn" data-export>Exportar backup</button><button class="btn warn" data-reset>Zerar tudo</button></div></section>`;
+ }
+};
+
+/* ---------- página de uma modalidade ---------- */
+const TO=()=>[['','—'],...T.map(i=>[i,S.teams[i]])];
+const I=(k,v,x='')=>`<input data-k="k"value="{esc(v??'')}" ${x}>`;
+const ST=(k,v,dis)=>`<span class="st"><button class="sb" data-step="${k}" data-d="-1" dis?'disabled':''aria-label="Diminuir">-</button><inputdata-k="{k}" type="number" min="0" step="1" inputmode="numeric" placeholder="–" value="${v??''}" dis?'disabled':''><buttonclass="sb"data-step="{k}" data-d="1" ${dis?'disabled':''} aria-label="Aumentar">+</button></span>`;
+const SEL=(k,v,opts,dis,taken=[])=>`<select data-k="${k}" dis?'disabled':''>{opts.filter(([val])=>val===''||String(val)===String(v??'')||!taken.includes(String(val))).map(([val,l])=>`<option value="${val}" String(v??'')===String(val)?'selected':''>{esc(l)}</option>`).join('')}</select>`;
+const who=t=>`<span style="width:130px"><span class="dot" style="--c:var(--tt)"></span>{tn(t)}</span>`;
+function mrow(x,m,sel,label,d){
+ m=m||{};const lock=!!m.ok,has=m.a!==''&&m.a!=null&&m.b!==''&&m.b!=null;
+ const tie=num(m.sa)!=null&&num(m.sa)===num(m.sb),dis=lock||!has;
+ const slots=['s1','s2'].flatMap(s=>['a','b'].map(z=>[s+z,d.m?.[s]?.[z]]));
+ const pick=z=>SEL(`m.x.{z}`,m[z],TO(),lock,slots.filter(s=>s[0]!=x+z).map(s=>s[1]).filter(v=>v!==''&&v!=null).map(String));
+ const nm=z=>`<strong>${m[z]===''||m[z]==null?'—':tn(m[z])}</strong>`;
+ const duel=(ka,va,kb,vb,dd,ta,tb)=>`<div class="duel"><div class="side">ta||''{ST(ka,va,dd)}</div><span class="x">×</span><div class="side">tb||''{ST(kb,vb,dd)}</div></div>`;
+ return`<div class="match"><h3>label</h3>{duel(`m.x.sa`,m.sa,`m.{x}.sb`,m.sb,dis,sel?pick('a'):nm('a'),sel?pick('b'):nm('b'))}
+ <p class="muted" style="margin:12px 0 6px">Desempate (só se empatar)</p>${duel(`m.${x}.da`,m.da,`m.${x}.db`,m.db,dis||!tie)}
+ <div class="row" style="margin-top:12px">${lock?`<span class="ok">✔ Partida confirmada</span><button class="btn alt" data-edit="${x}">Editar</button>`:`<button class="btn" data-conf="${x}" ${win({...m,ok:true})?'':'disabled'}>Confirmar partida</button>`}</div></div>`;
+}
+function secHTML(ci){
+ const a=cur,d=view(rk(a,ci)),lock=!!d.ok;let h='';
+ if(a.t=='rank')h=T.map(t=>`<div class="row">who(t){SEL('p.'+t,d.p?.[t],[['','—'],...[1,2,3,4].map(n=>[n,n+'º lugar'])],lock,T.filter(u=>u!=t).map(u=>String(d.p?.[u]||'')).filter(Boolean))}</div>`).join('');
+ if(a.t=='pontos')h=`<p class="muted">Pontuação da arbitragem. Maior pontuação vence.</p>`+T.map(t=>`<div class="row">who(t){I('v.'+t,d.v?.[t],`type="number" min="0" step="any" ${lock?'disabled':''}`)}</div>`).join('');
+ if(a.t=='crit')h=`<p class="muted">Notas por critério (até 10). A soma define a classificação.</p><div class="scroll"><table><tbody>`+T.map(t=>`<tr><td>who(t)</td>{[0,1,2,3,4,5].map(k=>`<td>${I(`c.${t}.${k}`,d.c?.[t]?.[k],`type="number" min="0" max="10" step="any" style="width:62px" ${lock?'disabled':''}`)}</td>`).join('')}</tr>`).join('')+`</tbody></table></div>`;
+ if(a.t=='marca'){const e=d.e&&d.e.length?d.e:[{}];h=`<p class="muted">Tempo em mm'ss'cc ou mm:ss. Vale o melhor tempo de cada equipe.</p>`+e.map((x,k)=>`<div class="row">${I(`e.${k}.n`,x.n,`placeholder="Atleta" ${lock?'disabled':''}`)}${SEL(`e.${k}.team`,x.team,TO(),lock)}${I(`e.${k}.t`,x.t,`placeholder="0'00'00" style="width:100px" ${lock?'disabled':''}`)}<button class="btn warn" data-rme="${k}" ${lock?'disabled':''} aria-label="Remover">×</button></div>`).join('')+`<button class="btn alt" data-adde ${lock?'disabled':''}>+ Atleta</button>`}
+ if(a.t=='chav'){const x=chavM(d);return h=mrow('s1',x.s1,true,'Semifinal 1',d)+mrow('s2',x.s2,true,'Semifinal 2',d)+mrow('t3',x.t3,false,'Disputa de 3º lugar',d)+mrow('f',x.f,false,'Final',d)+pvHTML(a.t,d,true)}
+ const foot=lock?`<div class="row" style="margin-top:12px"><span class="ok">✔ Resultado confirmado</span><button class="btn alt" data-edit="">Editar</button></div>`:`<div class="row" style="margin-top:12px"><button class="btn" data-conf="" ${ready(a.t,d)?'':'disabled'}>Confirmar resultado final</button></div>`;
+ return h+pvHTML(a.t,d,lock)+foot;
+}
+function pvHTML(t,d,final){
+ const p=t=='chav'?place(t,d):place(t,{...d,ok:true});
+ return`<div class="pv"><strong>Classificaçãofinal?'':'(prévia,aindanãosalva)'</strong>`+(p?T.filter(i=>p[i]).sort((x,y)=>p[x]-p[y]).map(i=>`<div><span>{p[i]}º · <span class="dot" style="--c:var(--ti)"></span>{tn(i)}</span><strong>+${S.pts[p[i]-1]||0}</strong></div>`).join(''):'<div class="muted">Sem resultado confirmado.</div>')+`</div>`;
+}
+const sec=ci=>{const el=$('sec'+ci);if(el)el.innerHTML=secHTML(ci)};
+function page(){
+ $('tabs').innerHTML='';
+ const links=CATS.map((c,ci)=>`<a href="#/m/cur.s/{ci}" ci==curC?'aria-current="page"':''>{c}</a>`).join('');
+ ('main').innerHTML=`<divclass="page-head"><aclass="back"href="#/">←Voltaraoplacar</a><h2class="ptitle">{esc(cur.n)}</h2><p class="muted">TN[cur.t]</p></div><navclass="catnav"aria-label="Categorias">{links}</nav><section class="panel"><h2>CATS[curC]</h2><divid="sec{curC}"></div></section>`;
+ sec(curC);
+}
+function edit(ci,k,v,fs){
+ const key=rk(cur,ci);ensureD(key);setPath(D[key],k,v);
+ const mm=k.match(/^m\.(\w+)\.s[ab]$/);
+ if(mm){const m=D[key].m[mm[1]];if(!(num(m.sa)!=null&&num(m.sa)===num(m.sb))){delete m.da;delete m.db}}
+ sec(ci);if(fs){const e=document.querySelector(`#sec${ci} ${fs}`);e&&e.focus()}
+}
+function confirmAct(ci,x){
+ const key=rk(cur,ci);ensureD(key);const d=D[key];
+ if(cur.t=='chav'){
+  d.m=d.m||{};const v=chavM(d);const m={...(x=='s1'||x=='s2'?d.m[x]:v[x]),ok:true};if(!win(m))return;
+  d.m[x]=m;const sm=(S.res[key]=S.res[key]||{}).m=S.res[key].m||{};sm[x]=clone(m);
+  if(x=='s1'||x=='s2'){delete sm.t3;delete sm.f;delete d.m.t3;delete d.m.f}
+ }else{if(!ready(cur.t,d))return;d.ok=true;S.res[key]=clone(d);delete D[key]}
+ persist(ci);sec(ci);
+}
+function reopen(ci,x){const key=rk(cur,ci);ensureD(key);if(cur.t=='chav')D[key].m[x].ok=false;else D[key].ok=false;sec(ci)}
+
+/* ---------- render e rotas ---------- */
+function render(){
+ if(cur){page();$('sub').textContent=DB?'Sincronizado em tempo real':'Modo local (neste aparelho)';return}
+ ('tabs').innerHTML=TABS.map(([k,n])=>`<buttonrole="tab"data-tab="{k}" aria-selected="tab==k">{n}</button>`).join('');
+ $('main').innerHTML=V[tab]();
+ ('sub').textContent=`{totals().done} de ${ACTS.length*3} resultados confirmados · ${DB?'sincronizado':'modo local (neste aparelho)'}`;
+ first=false;
+}
+function route(){const m=location.hash.match(/^#\/m\/([^/]+)(?:\/(\d))?$/);cur=m&&BY[m[1]]||null;curC=m&&m[2]&&+m[2]<CATS.length?+m[2]:0;connect();render();scrollTo(0,0)}
+addEventListener('hashchange',route);
+
+document.addEventListener('click',e=>{
+ const t=e.target.closest('button');if(!t)return;
+ const g=n=>t.dataset[n],s=t.closest('[id^=sec]'),ci=s?+s.id.slice(3):null;
+ if(g('tab')){tab=g('tab');render()}
+ else if(g('flt')){flt=g('flt');render()}
+ else if(g('step')){const key=rk(cur,ci),c=num(getPath(view(key),g('step'))),n=c==null?(+g('d')>0?1:0):Math.max(0,c+ +g('d'));edit(ci,g('step'),n,`[data-step="g('step')"][data-d="{g('d')}"]`)}
+ else if(g('conf')!==undefined)confirmAct(ci,g('conf'));
+ else if(g('edit')!==undefined)reopen(ci,g('edit'));
+ else if(g('adde')!==undefined){const key=rk(cur,ci);ensureD(key);D[key].e=(D[key].e&&D[key].e.length?D[key].e:[{}]).concat([{}]);sec(ci)}
+ else if(g('rme')!==undefined){const key=rk(cur,ci);ensureD(key);(D[key].e=D[key].e||[{}]).splice(+g('rme'),1);sec(ci)}
+ else if(g('addfan')!==undefined){const n=$('fn').value.trim();if(n){S.fans.push({name:n,team:+$('ft').value});saveAll();render()}}
+ else if(g('delfan')!==undefined){S.fans.splice(+g('delfan'),1);saveAll();render()}
+ else if(g('export')!==undefined){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'}));a.download='olimpiadas-backup.json';a.click()}
+ else if(g('reset')!==undefined){if(confirm('Apagar os resultados e configurações deste aparelho'+(DB?' (e do servidor)':'')+'?')){S=fresh();saveAll();if(DB)ACTS.forEach(a=>CATS.forEach((c,ci)=>DB.doc('res/'+a.s+'_'+ci).delete().catch(()=>{})));render()}}
+});
+document.addEventListener('change',e=>{
+ const el=e.target;
+ if(el.dataset.k&&cur){
+  const s=el.closest('[id^=sec]');let v=el.value;
+  if(el.type=='number'&&v!=='')v=el.dataset.k.startsWith('v.')||el.dataset.k.startsWith('c.')?Math.max(0,+v):Math.max(0,Math.floor(+v));
+  edit(+s.id.slice(3),el.dataset.k,v,`[data-k="${el.dataset.k}"]`);
+ }
+ else if(el.dataset.ig){const [i,d]=el.dataset.ig.split(',');S.insta[+i][+d]=el.checked;saveAll();render()}
+ else if(el.dataset.cfg){
+  const k=el.dataset.cfg.split('.'),v=k[0]=='teams'?(el.value.trim()||S.teams[+k[1]]):Math.max(0,+el.value||0);
+  if(k.length==2)S[k[0]][+k[1]]=v;else S[k[0]]=v;saveAll();render();
+ }
+});
+route();
+(async()=>{try{DB=await window.claude?.use?.('db')}catch(e){}if(DB){connect();render()}})();
+</script>
+</body>
+</html>
+
