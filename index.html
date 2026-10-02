@@ -382,8 +382,8 @@ function mrow(x,m,sel,label,d){
  const nm=z=>`<strong>${m[z]===''||m[z]==null?'—':tn(m[z])}</strong>`;
  const duel=(ka,va,kb,vb,dd,ta,tb)=>`<div class="duel"><div class="side">${ta||''}${ST(ka,va,dd)}</div><span class="x">×</span><div class="side">${tb||''}${ST(kb,vb,dd)}</div></div>`;
  return`<div class="match"><h3>${label}</h3>${duel(`m.${x}.sa`,m.sa,`m.${x}.sb`,m.sb,dis,sel?pick('a'):nm('a'),sel?pick('b'):nm('b'))}
- <p class="muted" style="margin:10px 0 4px">Desempate (só se empatar)</p>${duel(`m.${x}.da`,m.da,`m.${x}.db`,m.db,dis||!tie)}
- <div class="row" style="margin-top:10px">${lock?`<span class="ok">✔ Partida confirmada</span><button class="btn alt" data-edit="${x}">Editar</button>`:`<button class="btn" data-conf="${x}" ${win({...m,ok:true})?'':'disabled'}>Confirmar partida</button>`}</div></div>`;
+ <p class="muted" style="margin:10px 0 4px">Desempate (se necessário)</p>${duel(`m.${x}.da`,m.da,`m.${x}.db`,m.db,dis||!tie)}
+ <div class="row" style="margin-top:10px">${lock?`<span class="ok">✔ Resultado confirmado</span><button class="btn alt" data-edit="${x}">Editar</button>`:`<button class="btn" data-conf="${x}" ${win({...m,ok:true})?'':'disabled'}>Salvar resultado</button>`}</div></div>`;
 }
 function secHTML(ci){
  const a=cur,d=view(rk(a,ci)),lock=!!d.ok;let h='';
