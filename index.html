@@ -200,6 +200,10 @@ async function connect() {
   }
   soft();
 
+  // Remove o canal antigo caso já exista uma conexão ativa
+  db.removeAllChannels();
+
+  // Cria e inscreve o canal com todos os ouvintes encadeados antes do .subscribe()
   db.channel('schema-db-changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'cfg' }, payload => {
       if (payload.new) {
@@ -213,8 +217,7 @@ async function connect() {
         soft();
       }
     })
-    .subscribe();
-}
+    .subscribe();}
 
 /* ---------- cálculo (só resultados confirmados) ---------- */
 function crank(vals,asc){
