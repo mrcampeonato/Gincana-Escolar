@@ -186,12 +186,14 @@ button:disabled,input:disabled,select:disabled,.csel:disabled{opacity:.45;cursor
 .match.fim{border-color:#1f9d55;background:rgba(31,157,85,.07)}
 .fim-placar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:center;text-align:center}
 .fim-lado{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;width:100%;white-space:nowrap;color:var(--ink);font:600 clamp(18px,5vw,30px)/1.1 'Bricolage Grotesque',Figtree,sans-serif}
-.fim-lado .tm{font-weight:inherit;padding:4px 12px;border-radius:10px;border:2px solid transparent}
+/* Nome no placar: mesmo tamanho de caixa em andamento e finalizada (igual à lista de escolha) */
+.fim-lado .tm{display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;box-sizing:border-box;font-weight:inherit;padding:4px 8px;border-radius:10px;border:2px solid transparent}
+.tm-t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fim-lado.win .tm{border-color:#000}
 .fim-lado.win{font-weight:800}
 .fim-vazio{color:var(--mute);font-size:.6em;font-weight:600}
 .fim-lado select,
-.fim-lado .csel{-webkit-appearance:none;appearance:none;width:100%;min-height:44px;padding:4px 2px;text-align:center;text-align-last:center;font:inherit;color:var(--ink);background:var(--card);border:1px dashed var(--mute);border-radius:8px;cursor:pointer}
+.fim-lado .csel{-webkit-appearance:none;appearance:none;width:100%;min-height:44px;box-sizing:border-box;padding:4px 8px;text-align:center;text-align-last:center;font:inherit;color:var(--ink);background:var(--card);border:2px dashed var(--mute);border-radius:10px;cursor:pointer}
 .fim-nums{display:flex;align-items:center;gap:8px;font:800 clamp(18px,5vw,30px) 'Bricolage Grotesque',sans-serif;font-variant-numeric:tabular-nums;color:var(--mute)}
 .fim-nums .win{color:var(--ink)}
 .fim-x{font-size:18px;color:var(--mute)}
@@ -239,7 +241,7 @@ select[data-csel]{position:absolute!important;width:1px!important;height:1px!imp
 
 /* Placar das partidas no celular: nome em cima e placar embaixo,
    nome sempre em uma linha e nada passando da largura da tela */
-.fim-lado .tm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.fim-lado .tm{max-width:100%}
 @media (max-width:620px){
  .fim-placar{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-areas:"la x lb" "sa x sb";column-gap:8px;row-gap:10px}
  .fim-placar>.fim-lado:first-child{grid-area:la}
@@ -249,7 +251,6 @@ select[data-csel]{position:absolute!important;width:1px!important;height:1px!imp
  .fim-placar>.fim-nums>.fim-x{grid-area:x;align-self:center}
  .fim-placar>.fim-nums>:last-child{grid-area:sb;justify-self:center}
  .fim-lado{font-size:clamp(15px,4.8vw,22px)}
- .fim-lado .tm{padding:4px 8px}
  .vst{flex-direction:row;gap:4px}
  .vst .sb[data-d="-1"]{order:-1}
  .vst .sb[data-d="1"]{order:1}
@@ -350,7 +351,7 @@ let navTok = 0, carregando = false, pendente = false;
 const $ = id => document.getElementById(id);
 const esc = s => String(s??'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const tn = i => esc(S.teams[i]);
-const TM = i => `<span class="tm" style="--c:var(--t${i})">${tn(i)}</span>`;
+const TM = i => `<span class="tm" style="--c:var(--t${i})"><span class="tm-t">${tn(i)}</span></span>`;
 const corSel = (html, t) => t===''||t==null ? html : html.replace('<select ', `<select style="background:var(--t${t});color:#000;border-color:var(--t${t})" `);
 const num = v => v===''||v==null||isNaN(+v)?null:+v;
 const clone = o => JSON.parse(JSON.stringify(o));
