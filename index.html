@@ -415,6 +415,13 @@ select[data-csel]{position:absolute!important;width:1px!important;height:1px!imp
 [hidden]{display:none!important}
 .mem-form .nv-chip{display:inline-flex;color:var(--ink)}
 .mem-form .ag-por{display:flex;color:var(--ink)}
+
+/* Editor: cada modalidade num cartão, com as opções do tipo dentro dele */
+.me-item{border:1px solid color-mix(in srgb,var(--line) 60%,var(--mute));border-radius:12px;padding:10px;margin-bottom:10px;background:var(--card);box-shadow:0 1px 3px rgba(20,33,61,.08)}
+.me-item .me-row{margin-bottom:0}
+.me-item .me-sub,.me-item .me-sub1{margin:8px 0 0;padding-top:8px;border-top:1px dashed var(--line)}
+.me-item.oculta{background:var(--soft)}
+.nv-crit .crit-grid{margin-top:0}
 </style>
 </head>
 <body>
@@ -1185,7 +1192,7 @@ Views.cfg = () => `<section class="panel"><h2>Modalidades</h2><p class="muted">$
 Views.modedit = () => {
  const tipos = Object.keys(TN);
  const opts = v => tipos.map(t => `<option value="${t}" ${t==v?'selected':''}>${TN[t]}</option>`).join('');
- const linha = a => `
+ const linhaBase = a => `
   <div class="me-row ${a.oc ? 'oculta' : ''}">
    <input data-mn="${a.s}" value="${esc(a.n)}" aria-label="Nome da modalidade">
    <select data-mt="${a.s}" aria-label="Tipo de ${esc(a.n)}">${opts(a.t)}</select>
@@ -1198,6 +1205,7 @@ Views.modedit = () => {
    <select data-mu="${a.s}" aria-label="Medida de ${esc(a.n)}"><option value="tempo" ${a.u=='tempo'?'selected':''}>Medida: Tempo</option><option value="dist" ${a.u=='dist'?'selected':''}>Medida: Distância</option></select>
    <select data-mi="${a.s}" aria-label="Modo de ${esc(a.n)}"><option value="0" ${!a.inv?'selected':''}>Normal (${a.u=='dist'?'maior distância':'menor tempo'} vence)</option><option value="1" ${a.inv?'selected':''}>Invertido (${a.u=='dist'?'menor distância':'maior tempo'} vence)</option></select>
   </div>` : ''}${a.t == 'extra' ? `<div class="me-sub1"><label class="ex-cfg">Pontos padrão por lançamento<input type="number" min="0" step="any" data-mxv="${a.s}" value="${a.xv}"></label></div>` : ''}${a.t == 'crit' ? `<div class="me-sub1"><button class="btn alt" data-mcrit="${a.s}">Nomear critérios${a.cn ? ' ✔' : ''}</button></div>` : ''}`;
+ const linha = a => `<div class="me-item ${a.oc ? 'oculta' : ''}">${linhaBase(a)}</div>`;
  const porNome = (x, y) => x.n.localeCompare(y.n, 'pt-BR', {sensitivity: 'base'}) * (ordEd == 'za' ? -1 : 1);
  const grupos = ordEd == 'tipo'
   ? tipos.filter(t => fltEd == 'todas' || t == fltEd).map(t => {
@@ -1210,7 +1218,7 @@ Views.modedit = () => {
  <div class="row nv-topo"><button class="btn" data-novamod>+ Nova modalidade</button></div>
  <section class="panel"><h2>Modalidades cadastradas (${ACTS.length})</h2>
   <div class="filters">${ordemEdHTML()}${['todas', ...tipos].map(k => `<button class="chipbtn" data-fltedit="${k}" aria-pressed="${fltEd == k}">${k == 'todas' ? 'Todas' : TN[k]}</button>`).join('')}</div>
-  <p class="muted">📄 abre o regulamento (destacado quando já existe). Mudar o nome mantém os resultados. Mudar o tipo ou excluir apaga os resultados dessa modalidade nas três categorias.</p>
+  <p class="muted">📄 abre o regulamento (destacado quando já existe). Mudar o nome mantém os resultados. Mudar o tipo ou excluir apaga os resultados dessa modalidade em todas as categorias.</p>
   ${grupos || '<p class="muted">Nenhuma modalidade cadastrada.</p>'}
  </section>`;
 };
@@ -2825,6 +2833,7 @@ function abrirNovaMod() {
     <label>Modo<select id="nvmodo"><option value="0">Normal</option><option value="1">Invertido</option></select></label>
    </div>
    <label class="nv-extra" hidden>Pontos padrão por lançamento<input id="nvxv" type="number" min="0" step="any" value="100"></label>
+   <div class="nv-crit" hidden><span class="nv-tit">Nomes dos critérios (opcional, valem para todas as categorias)</span><div class="crit-grid">${Array.from({length: NCRIT}, (_, k) => `<input data-nvcrit="${k}" placeholder="Critério ${k+1}" maxlength="40" aria-label="Critério ${k+1}">`).join('')}</div></div>
    <div class="nv-cats"><span class="nv-tit">Categorias</span><div class="nv-chips">${CATS.map(c => `<label class="nv-chip"><input type="checkbox" data-nvcat="${c.id}" checked><span>${esc(c.n)}</span></label>`).join('')}</div></div>
    <div class="ag-grid">
     <label>Local<select id="nvloc">${op('locais', '—')}</select></label>
@@ -2844,6 +2853,7 @@ function nvTipo() {
  const t = $('nvtipo').value;
  $('novadlg').querySelector('.nv-marca').hidden = t != 'marca';
  $('novadlg').querySelector('.nv-extra').hidden = t != 'extra';
+ $('novadlg').querySelector('.nv-crit').hidden = t != 'crit';
  $('novadlg').querySelector('.nv-cats').hidden = t == 'extra';
 }
 async function criarMod(btn) {
@@ -2862,6 +2872,7 @@ async function criarMod(btn) {
   const x = {id, n: nome, t};
   if (t == 'marca') { if ($('nvmedida').value == 'dist') x.u = 'dist'; if ($('nvmodo').value == '1') x.inv = 1; }
   if (t == 'extra') x.xv = Math.max(0, +$('nvxv').value || 0);
+  if (t == 'crit') { const nomes = [...$('novadlg').querySelectorAll('[data-nvcrit]')].map(i => i.value.trim()); if (nomes.some(Boolean)) x.cn = {todos: nomes}; }
   if (t != 'extra' && cats.length < CATS.length) x.cats = cats;
   [['loc', 'nvloc'], ['arb', 'nvarb'], ['dt', 'nvdt'], ['hr', 'nvhr']].forEach(([f, el]) => { const v = $(el).value; if (v) x[f] = v; });
   if (!$('nvvis').checked) x.oc = 1;
