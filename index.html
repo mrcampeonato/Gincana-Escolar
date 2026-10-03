@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Olimpíadas IN-NOVA 2026</title>
+<title>Olimpíadas Escolares - Mr Léo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -338,11 +338,47 @@ select[data-csel]{position:absolute!important;width:1px!important;height:1px!imp
 .ord-ico.ativo .csel{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 .ord-ico .csel-txt,.ord-ico .csel-arr{display:none}
 .ord-ico .csel::before{content:"";width:18px;height:18px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m21%2016-4%204-4-4%22/%3E%3Cpath%20d%3D%22M17%2020V4%22/%3E%3Cpath%20d%3D%22m3%208%204-4%204%204%22/%3E%3Cpath%20d%3D%22M7%204v16%22/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m21%2016-4%204-4-4%22/%3E%3Cpath%20d%3D%22M17%2020V4%22/%3E%3Cpath%20d%3D%22m3%208%204-4%204%204%22/%3E%3Cpath%20d%3D%22M7%204v16%22/%3E%3C/svg%3E") center/contain no-repeat}
+
+/* Inscrições */
+.insc-topo{display:flex;align-items:center;gap:12px}
+.insc-topo .mem-info{flex:1}
+.insc-mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px}
+.insc-mod{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-size:14px;font-weight:600}
+.insc-mod input,.insc-row input{width:22px;height:22px;flex:none;accent-color:#1f9d55}
+.insc-mod:has(input:checked){border-color:#1f9d55;background:rgba(31,157,85,.08)}
+.insc-resumo{text-align:center;margin:0 0 4px}
+.insc-row{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.insc-row .mem-foto{width:40px;height:40px;font-size:15px}
+.insc-row:has(input:checked) .mem-nome{color:#1f9d55}
+.insc-cand{grid-template-columns:1fr}
+
+/* Inscritos na partida */
+.insc-tog{display:flex;align-items:center;gap:6px;margin:10px auto 0;background:none;border:0;color:var(--mute);font:600 13px Figtree,sans-serif;cursor:pointer;padding:4px 10px;border-radius:999px;min-height:32px}
+.insc-tog:hover{color:var(--ink)}
+.insc-tog .seta{display:inline-block;font-size:16px;line-height:1;transition:transform .15s}
+.insc-tog[aria-expanded=true] .seta{transform:rotate(90deg)}
+.insc-part{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:6px;padding-top:8px;border-top:1px dashed var(--line);text-align:left}
+.insc-col h4{display:flex;justify-content:flex-start;align-items:baseline;gap:6px;margin:0 0 4px;font:600 12px Figtree,sans-serif;color:var(--mute)}
+.insc-col h4 span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.insc-col h4 span:last-child{flex:none;color:var(--ink);font-weight:600}
+.insc-lin{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:13px;cursor:pointer;min-width:0}
+.insc-lin input{width:18px;height:18px;min-height:0;flex:none;accent-color:#1f9d55}
+.insc-lin span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.insc-lin input:checked + span{color:#1f9d55;font-weight:600}
+.insc-vazio{margin:4px 0;font-size:12px;color:var(--mute)}
+.insc-del{width:30px;height:30px;min-height:30px;margin-left:auto;flex:none}
+@media (prefers-reduced-motion:reduce){.insc-tog .seta{transition:none}}
+
+.sorteio-feito{margin:0 0 12px}
+
+.insc-geral{margin-top:6px;text-align:center}
+.insc-part.insc-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:620px){.insc-part.insc-4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 <body>
 <div class="wrap">
-<header><h1><a href="#/">Olimpíadas IN-NOVA 2026</a></h1><p id="sub"></p></header>
+<header><h1><a href="#/" id="nomejogos">Olimpíadas IN-NOVA 2026</a></h1><p id="sub"></p></header>
 <nav id="tabs" aria-label="Seções"></nav>
 <main id="main"></main>
 </div>
@@ -411,6 +447,7 @@ const ROUTES = {
  ...Object.fromEntries(TABS.map(([k,,h]) => [h, k])),
  '#/configuracoes/modalidades': 'modedit',  // página vinculada às Configurações
  '#/configuracoes/integrantes': 'membros',   // gerenciar integrantes (Configurações)
+ '#/configuracoes/inscricoes': 'insc',       // inscrições nas modalidades (pela página de integrantes)
  '#/instagram': 'insta',                     // modalidade extra (acesso por Modalidades)
  '#/torcida': 'torc'                         // modalidade extra (acesso por Modalidades)
 };
@@ -424,6 +461,7 @@ const COLS = {
  torc:    'teams,fan,fans,colors,mods',
  membros: 'teams,colors,cats',
  memver:  'teams,colors,cats',
+ insc:    'teams,colors,cats,mods',
  cfg:     'teams,pts,fan,ig,mods,colors,cats',
  modedit: 'mods,cats,ig,fan'
 };
@@ -467,7 +505,8 @@ function removeRes(id) { const k = parseId(id); if (k) delete S.res[k]; }
 
 function applyCfg(d) {
  if (!d) return;
- ['teams', 'pts', 'fan', 'ig', 'insta', 'fans', 'mods', 'colors', 'cats'].forEach(k => { if (d[k] != null) S[k] = d[k]; });
+ ['teams', 'pts', 'fan', 'ig', 'insta', 'fans', 'mods', 'colors', 'cats', 'nome'].forEach(k => { if (d[k] != null) S[k] = d[k]; });
+ if (d.nome != null) aplicarNome();
  if (d.cats != null) { buildCats(); syncCat(); }
  if (d.colors != null) aplicarCores();
  if (d.mods != null) { buildActs(); syncCur(); }
@@ -477,7 +516,7 @@ const DB = {
  /* Lê somente as colunas de cfg que a página atual usa */
  async fetchCfg(cols) {
   if (!db) return;
-  const { data, error } = await db.from('cfg').select(cols || '*').eq('id', 'geral');
+  const { data, error } = await db.from('cfg').select(cols && cols !== '*' ? cols + ',nome' : '*').eq('id', 'geral');   // o nome dos jogos aparece em todas as páginas
   if (!error && data && data.length) applyCfg(data[0]);
  },
 
@@ -710,7 +749,7 @@ function mfim(x, m, label) {
  return `<div class="match fim"><h3>${label}</h3>
  <div class="fim-placar">${lado(m.a, ga)}<div class="fim-nums"><span class="${ga?'win':''}">${num(m.sa)}</span><span class="fim-x">×</span><span class="${gb?'win':''}">${num(m.sb)}</span></div>${lado(m.b, gb)}</div>
  ${tie ? `<div class="fim-desemp"><span>Desempate</span><div class="fim-desemp-nums"><span class="${ga?'win':''}">${num(m.da)}</span><span class="fim-x">×</span><span class="${gb?'win':''}">${num(m.db)}</span></div></div>` : ''}
- <div class="row" style="margin-top:10px"><button class="btn alt" data-edit="${x}">Editar</button></div></div>`;
+ <div class="row" style="margin-top:10px"><button class="btn alt" data-edit="${x}">Editar</button></div>${inscPartidaHTML(x, m)}</div>`;
 }
 
 /* Placar editável vertical: + em cima, número, − embaixo */
@@ -723,14 +762,15 @@ function mrow(x, m, sel, label, d) {
  const lock = !!m.ok, has = m.a!=='' && m.a!=null && m.b!=='' && m.b!=null;
  const tie = num(m.sa)!=null && num(m.sa)===num(m.sb), dis = lock || !has;
  const slots = ['s1','s2'].flatMap(s => ['a','b'].map(z => [s+z, d.m?.[s]?.[z]]));
- const pick = z => SEL(`m.${x}.${z}`, m[z], TO(), lock, slots.filter(s => s[0]!=x+z).map(s => s[1]).filter(v => v!==''&&v!=null).map(String));
+ const fixo = !!(d.sorteio && (x == 's1' || x == 's2'));
+ const pick = z => SEL(`m.${x}.${z}`, m[z], TO(), lock || fixo, slots.filter(s => s[0]!=x+z).map(s => s[1]).filter(v => v!==''&&v!=null).map(String));
  const vazio = z => m[z]==='' || m[z]==null;
- const lado = z => `<div class="fim-lado">${sel ? corSel(pick(z), m[z]) : (vazio(z) ? '<span class="fim-vazio">A definir</span>' : TM(m[z]))}</div>`;
+ const lado = z => `<div class="fim-lado">${sel && !(fixo && !vazio(z)) ? corSel(pick(z), m[z]) : (vazio(z) ? '<span class="fim-vazio">A definir</span>' : TM(m[z]))}</div>`;
  const desemp = has && tie ? `<div class="desemp-edit"><span class="desemp-tit">Empate! Informe o desempate</span><div class="desemp-nums">${ST(`m.${x}.da`, m.da, dis)}<span class="fim-x">×</span>${ST(`m.${x}.db`, m.db, dis)}</div></div>` : '';
  return`<div class="match"><h3>${label}</h3>
  <div class="fim-placar">${lado('a')}<div class="fim-nums">${VST(`m.${x}.sa`, m.sa, dis)}<span class="fim-x">×</span>${VST(`m.${x}.sb`, m.sb, dis)}</div>${lado('b')}</div>
  ${desemp}
- <div class="row" style="margin-top:12px">${lock?`<span class="ok">✔ Resultado confirmado</span><button class="btn alt" data-edit="${x}">Editar</button>`:`<button class="btn" data-conf="${x}" ${win({...m, ok:true})?'':'disabled'}>Salvar resultado</button>`}</div></div>`;
+ <div class="row" style="margin-top:12px">${lock?`<span class="ok">✔ Resultado confirmado</span><button class="btn alt" data-edit="${x}">Editar</button>`:`<button class="btn" data-conf="${x}" ${win({...m, ok:true})?'':'disabled'}>Salvar resultado</button>`}</div>${inscPartidaHTML(x, m)}</div>`;
 }
 
 function secHTML(ci) {
@@ -757,11 +797,13 @@ function secHTML(ci) {
 
  if (a.t == 'chav') {
   const isLocked = !!(d.m?.s1?.ok || d.m?.s2?.ok);
-  const btnSortear = `<div class="row" style="margin-bottom:12px"><button class="btn alt" data-sortear="${ci}" ${isLocked?'disabled':''}>🎲 Sortear Semifinais</button></div>`;
+  const btnSortear = d.sorteio
+   ? `<p class="muted sorteio-feito">Semifinais sorteadas${quandoSorteio(d.sorteio) ? ' em ' + quandoSorteio(d.sorteio) : ''}</p>`
+   : `<div class="row" style="margin-bottom:12px"><button class="btn alt" data-sortear="${ci}" ${isLocked?'disabled':''}>Sortear semifinais</button></div>`;
   return btnSortear + mrow('s1', chavM(d).s1, true, 'Semifinal 1', d) + mrow('s2', chavM(d).s2, true, 'Semifinal 2', d) + mrow('t3', chavM(d).t3, false, 'Disputa de 3º lugar', d) + mrow('f', chavM(d).f, false, 'Final', d) + pvHTML(a.t, d, true);
  }
  const foot = lock ? `<div class="row" style="margin-top:10px"><span class="ok">✔ Resultado confirmado</span><button class="btn alt" data-edit="">Editar</button></div>` : `<div class="row" style="margin-top:10px"><button class="btn" data-conf="" ${ready(a.t, d)?'':'disabled'}>Confirmar resultado final</button></div>`;
- return (lock ? `<div class="fim-campos">${h}</div>` : h) + pvHTML(a.t, d, lock) + foot;
+ return (lock ? `<div class="fim-campos">${h}</div>` : h) + pvHTML(a.t, d, lock) + foot + `<div class="insc-geral">${inscBlocoHTML('g', T)}</div>`;
 }
 
 /* Marca ou pontuação final de cada equipe, para mostrar na classificação */
@@ -794,7 +836,7 @@ function pvHTML(t, d, final) {
 function sec(ci) { const el = $('sec'+ci); if (el) el.innerHTML = secHTML(ci); }
 
 function renderNav() {
- const ativa = pg == 'modedit' || pg == 'membros' ? 'cfg' : pg == 'insta' || pg == 'torc' ? 'mod' : pg;
+ const ativa = pg == 'modedit' || pg == 'membros' || pg == 'insc' ? 'cfg' : pg == 'insta' || pg == 'torc' ? 'mod' : pg;
  $('tabs').innerHTML = TABS.map(([k, n, h]) => `<a href="${h}" ${ativa==k?'aria-current="page"':''} ${k=='cfg'?'aria-label="Configurações" title="Configurações"':''}>${k=='cfg' ? icone('eng') : n}</a>`).join('');
 }
 
@@ -806,14 +848,14 @@ function page() {
   sec(EXTRA_CI); return;
  }
  const links = CATS.map(c => `<a href="#/m/${cur.s}/${c.id}" ${c.id===curC?'aria-current="page"':''}>${esc(c.n)}</a>`).join('');
- const btnReg = cur.r ? `<div class="row" style="margin-top:8px"><button class="btn alt" data-verreg>📄 Ver regulamento</button></div>` : '';
+ const btnReg = `<div class="row" style="margin-top:8px"><button class="btn alt" data-inscver>Inscritos</button>${cur.r ? '<button class="btn alt" data-verreg>📄 Ver regulamento</button>' : ''}</div>`;
  $('main').innerHTML = `<div class="page-head"><a class="back" href="#/modalidades">← Voltar às modalidades</a><h2 class="ptitle">${esc(cur.n)}</h2><p class="muted">${descTipo(cur)}</p>${btnReg}</div><nav class="catnav" aria-label="Categorias">${links}</nav><section class="panel"><h2>${esc(catNome(curC))}</h2><div id="sec${curC}"></div></section>`;
  sec(curC);
 }
 
 /* Título da aba fixo em todas as páginas: usa o que estiver na tag <title> */
 const TITULO_PADRAO = document.title;
-function setTitle() { document.title = TITULO_PADRAO; }
+function setTitle() { document.title = TITULO_PADRAO; }   // fixo: "Olimpíadas Escolares - Mr Léo"
 
 function render() {
  pendente = false;
@@ -854,7 +896,7 @@ async function route() {
  pendente = false;
 
  /* Páginas com edição só abrem depois de buscar a versão mais recente do servidor */
- const editavel = !!cur || pg == 'insta' || pg == 'torc' || pg == 'cfg' || pg == 'modedit' || pg == 'membros';
+ const editavel = !!cur || pg == 'insta' || pg == 'torc' || pg == 'cfg' || pg == 'modedit' || pg == 'membros' || pg == 'insc';
  carregando = editavel && !!db;
  if (carregando) loadingView(); else render();
  scrollTo(0, 0);
@@ -865,6 +907,7 @@ async function route() {
   if (cur) await DB.fetchSingleRes(cur, curC);
   else if (pg == 'placar' || pg == 'mod') await DB.fetchAllRes();
   else if (pg == 'membros' || pg == 'memver') await MEM.listar();
+  else if (pg == 'insc') { await MEM.listar(); if (inscSel) await carregarInsc(); }
   save();
  } catch (e) { console.error(e); }
 
@@ -887,6 +930,8 @@ function confirmAct(ci, x) {
  const key = rk(cur, ci); ensureD(key); const d = D[key];
  if (cur.t == 'chav') {
   d.m = d.m || {}; const v = chavM(d); const m = {...(x=='s1'||x=='s2' ? d.m[x] : v[x]), ok:true}; if (!win(m)) return;
+  const sorteada = S.res[key] && S.res[key].sorteio && S.res[key].m && S.res[key].m[x];
+  if (sorteada && (x == 's1' || x == 's2')) { m.a = sorteada.a; m.b = sorteada.b; d.sorteio = S.res[key].sorteio; }
   d.m[x] = m; const sm = (S.res[key] = S.res[key] || {}).m = S.res[key].m || {}; sm[x] = clone(m);
   if (x=='s1'||x=='s2') { delete sm.t3; delete sm.f; delete d.m.t3; delete d.m.f; }
  } else {
@@ -935,16 +980,7 @@ document.addEventListener('click', async e => {
  else if (g('edit')!==undefined) reopen(ci, g('edit'));
  else if (g('adde')!==undefined) { const key = rk(cur, ci); ensureD(key); D[key].e = (D[key].e && D[key].e.length ? D[key].e : [{}]).concat([{}]); sec(ci); }
  else if (g('rme')!==undefined) { const key = rk(cur, ci); ensureD(key); (D[key].e = D[key].e || [{}]).splice(+g('rme'), 1); sec(ci); }
- else if (g('sortear')!==undefined) {
-  const key = rk(cur, ci); ensureD(key);
-  const shuffled = [0,1,2,3].sort(() => Math.random() - 0.5);
-  D[key].m = D[key].m || {};
-  D[key].m.s1 = {...(D[key].m.s1||{}), a: shuffled[0], b: shuffled[1]};
-  D[key].m.s2 = {...(D[key].m.s2||{}), a: shuffled[2], b: shuffled[3]};
-  delete D[key].m.s1.sa; delete D[key].m.s1.sb; delete D[key].m.s1.da; delete D[key].m.s1.db;
-  delete D[key].m.s2.sa; delete D[key].m.s2.sb; delete D[key].m.s2.da; delete D[key].m.s2.db;
-  sec(ci);
- }
+ else if (g('sortear')!==undefined) sortearSemis(ci);
  else if (g('addfan')!==undefined) {
   const n = $('fn').value.trim(), team = +$('ft').value; if (!n) return;
   t.disabled = true;
@@ -1112,7 +1148,7 @@ $('regdlg').addEventListener('click', e => { if (e.target === $('regdlg') && !$(
 
 /* Atalho para o editor dentro da página de Configurações */
 const cfgOriginal = Views.cfg;
-Views.cfg = () => `<section class="panel"><h2>Modalidades</h2><p class="muted">${ACTS.length} modalidades cadastradas. Inclua, renomeie, exclua, mude o tipo ou cadastre o regulamento de cada uma.</p><div class="row"><a class="btn" href="#/configuracoes/modalidades" style="text-decoration:none;display:inline-flex;align-items:center">Editar modalidades</a></div></section>` + cfgOriginal();
+Views.cfg = () => `<section class="panel"><h2>Modalidades</h2><p class="muted">${ACTS.length} modalidades cadastradas. Edite as modalidades e o regulamento de cada uma.</p><div class="row"><a class="btn" href="#/configuracoes/modalidades" style="text-decoration:none;display:inline-flex;align-items:center">Editar modalidades</a></div></section>` + cfgOriginal();
 
 Views.modedit = () => {
  const tipos = Object.keys(TN);
@@ -1178,6 +1214,7 @@ document.addEventListener('click', async e => {
   DB.patchCfg(['mods'], () => { S.mods = listaMods().filter(x => x.id !== id); buildActs(); })
    .then(() => apagarResultados(id))
    .then(() => REG.set(id, ''))
+   .then(() => INSC.apagarMod(id))
    .then(render);
  }
 });
@@ -1501,6 +1538,13 @@ document.addEventListener('click', async e => {
    pop.appendChild(op);
   });
   (sel.closest('dialog') || document.body).appendChild(pop);
+  posicionar(btn, pop);
+  btn.setAttribute('aria-expanded', 'true');
+  aberto = {sel, btn, pop};
+  (pop.querySelector('[aria-selected=true]') || pop.querySelector('.csel-op')).focus({preventScroll: true});
+ }
+ /* Posiciona a lista junto do campo (abaixo, ou acima se não couber) */
+ function posicionar(btn, pop) {
   const r = btn.getBoundingClientRect();
   pop.style.minWidth = Math.max(r.width, 160) + 'px';
   const h = pop.offsetHeight, w = pop.offsetWidth;
@@ -1508,9 +1552,6 @@ document.addEventListener('click', async e => {
   if (top + h > innerHeight - 8 && r.top - h - 4 > 8) top = r.top - h - 4;
   pop.style.top = top + 'px';
   pop.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + 'px';
-  btn.setAttribute('aria-expanded', 'true');
-  aberto = {sel, btn, pop};
-  (pop.querySelector('[aria-selected=true]') || pop.querySelector('.csel-op')).focus({preventScroll: true});
  }
  function escolher(i) {
   const {sel} = aberto; fechar(true);
@@ -1539,8 +1580,10 @@ document.addEventListener('click', async e => {
   const b = e.target.closest && e.target.closest('.csel');
   if (b && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) { e.preventDefault(); abrir(b); }
  }, true);
- addEventListener('scroll', e => { if (aberto && !aberto.pop.contains(e.target)) fechar(); }, true);
- addEventListener('resize', () => fechar());
+ /* Rolagem ou teclado do celular fechando: a lista acompanha o campo em vez de fechar sozinha */
+ const acompanhar = e => { if (aberto && !(e && e.target && e.target.nodeType === 1 && aberto.pop.contains(e.target))) posicionar(aberto.btn, aberto.pop); };
+ addEventListener('scroll', acompanhar, true);
+ addEventListener('resize', acompanhar);
 
  const varrer = () => document.querySelectorAll('select:not([data-csel])').forEach(melhorar);
  new MutationObserver(() => { varrer(); if (aberto && !document.contains(aberto.btn)) fechar(); })
@@ -1593,7 +1636,7 @@ const MEM = {
  },
  async apagar(id) {
   if (db) { const { error } = await db.from('membros').delete().eq('id', id); if (error) { fail(error); return false; } }
-  S.membros = membros().filter(m => m.id !== id); save(); return true;
+  S.membros = membros().filter(m => m.id !== id); S.insc = (S.insc || []).filter(x => x.membro !== id); save(); return true;
  },
  async enviarFoto(id, blob) {
   if (!db) return await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.onerror = () => r(null); fr.readAsDataURL(blob); });
@@ -1641,7 +1684,7 @@ Views.membros = () => `<div class="page-head"><a class="back" href="#/configurac
   <select id="memfteam" aria-label="Filtrar por equipe"><option value="">Todas as equipes</option>${T.map(i => `<option value="${i}" ${memF.team === String(i) ? 'selected' : ''}>${tn(i)}</option>`).join('')}</select>
   <select id="memfcat" aria-label="Filtrar por categoria"><option value="">Todas as categorias</option>${CATS.map(c => `<option value="${c.id}" ${memF.cat === String(c.id) ? 'selected' : ''}>${esc(c.n)}</option>`).join('')}</select>
  </div>
- <div class="row"><button class="btn" data-memnovo>+ Novo integrante</button><button class="btn alt" data-memmassa>⇪ Inserir em massa</button></div>
+ <div class="row"><button class="btn" data-memnovo>+ Novo integrante</button><button class="btn alt" data-memmassa>⇪ Inserir em massa</button><a class="btn alt" href="#/configuracoes/inscricoes" style="text-decoration:none;display:inline-flex;align-items:center">📋 Inscrições nas modalidades</a></div>
  <div id="memlista">${memListaHTML()}</div></section>`;
 
 /* ---------- Janela de cadastro / edição ---------- */
@@ -1669,7 +1712,7 @@ function abrirMem(m) {
     <label>Equipe<select id="memteam"><option value="">— escolha —</option>${T.map(i => `<option value="${i}" ${m.team === i ? 'selected' : ''}>${tn(i)}</option>`).join('')}</select></label>
     <label>Categoria<select id="memcat"><option value="">— escolha —</option>${CATS.map(c => `<option value="${c.id}" ${m.cat === c.id ? 'selected' : ''}>${esc(c.n)}</option>`).join('')}</select></label>
     <label>Turma<input id="memturma" value="${esc(m.turma)}" placeholder="Ex.: 8º B" autocomplete="off"></label>
-    ${novo ? '' : '<p class="muted" style="margin:0">Para transferir, basta mudar a equipe e salvar.</p>'}
+    ${novo ? '' : '<p class="muted" style="margin:0">Para transferir, basta mudar a equipe e salvar.</p><button class="btn alt" data-meminsc>📋 Modalidades em que está inscrito</button>'}
    </div>
   </div>
   <div class="reg-foot mem-foot">${novo ? '' : '<button class="btn warn" data-memexcl>Excluir</button><button class="btn alt" data-mempermuta>⇄ Permutar</button>'}<span class="mem-esp"></span><button class="btn alt" data-memfechar>Cancelar</button><button class="btn" data-memsalvar>Salvar</button></div>
@@ -1688,6 +1731,7 @@ async function salvarMem(btn) {
  let foto = memEd.prev ? memEd.fotoAtual : '';
  if (memEd.blob) { const url = await MEM.enviarFoto(memEd.id, memEd.blob); if (url == null) return volta(); foto = url; }
  if (!await MEM.salvar([{id: memEd.id, nome, team: +team, cat: +cat, turma, foto}])) return volta();
+ if (!memEd.novo && memEd.orig.cat !== +cat) INSC.mudarCat(memEd.id, +cat);
  if (memEd.fotoAtual && memEd.fotoAtual !== foto) MEM.apagarFoto(memEd.fotoAtual);
  $('memdlg').close();
  atualizaListaMem();
@@ -1825,7 +1869,7 @@ document.addEventListener('change', async e => {
 
 /* Acesso à página de integrantes pelas Configurações */
 const cfgAntesMembros = Views.cfg;
-Views.cfg = () => cardsCfg(`<section class="panel"><h2>Integrantes</h2><p class="muted">Cadastro dos integrantes de cada equipe, com foto, categoria e turma. Transferências e permutas entre equipes também são feitas lá.</p><div class="row"><a class="btn" href="#/configuracoes/integrantes" style="text-decoration:none;display:inline-flex;align-items:center">Gerenciar integrantes</a></div></section>`, cfgAntesMembros());
+Views.cfg = () => cardsCfg(`<section class="panel"><h2>Integrantes</h2><p class="muted">Cadastro, edição e transferências dos integrantes de cada equipe.</p><div class="row"><a class="btn" href="#/configuracoes/integrantes" style="text-decoration:none;display:inline-flex;align-items:center">Gerenciar integrantes</a></div></section>`, cfgAntesMembros());
 /* Integrantes e Modalidades lado a lado, como dois cartões na mesma linha */
 function cardsCfg(painelInt, resto) {
  const k = resto.indexOf('</section>') + 10;
@@ -2152,6 +2196,352 @@ document.addEventListener('change', e => {
  try { localStorage.setItem('olimp-ordem-mod', ordMod); } catch (er) {}
  render();
 });
+
+/* ==========================================================================
+   20. INSCRIÇÕES DOS INTEGRANTES NAS MODALIDADES
+   Tabela "inscricoes": uma linha por integrante + modalidade (com a categoria
+   do integrante e a presença). Cada tela busca só o que precisa:
+   - página de inscrições: as inscrições de UM integrante;
+   - página da modalidade: os inscritos daquela modalidade e categoria, só ao abrir.
+   ========================================================================== */
+const inscId = (mid, mod) => `${mid}__${mod}`;
+const INSC = {
+ async doMembro(mid) {
+  if (!db) return (S.insc || []).filter(x => x.membro === mid);
+  const { data, error } = await db.from('inscricoes').select('*').eq('membro', mid);
+  if (error) { fail(error); return null; } return data || [];
+ },
+ async daModalidade(mod, cat) {
+  if (!db) return (S.insc || []).filter(x => x.mod === mod && +x.cat === +cat);
+  const { data, error } = await db.from('inscricoes').select('*').eq('mod', mod).eq('cat', cat);
+  if (error) { fail(error); return null; } return data || [];
+ },
+ async inscrever(lista) {
+  const agora = new Date().toISOString();
+  const rows = lista.map(x => ({id: inscId(x.membro, x.mod), membro: x.membro, mod: x.mod, cat: x.cat, presente: !!x.presente, partidas: x.partidas || [], updated_at: agora}));
+  if (db) { const { error } = await db.from('inscricoes').upsert(rows); if (error) { fail(error); return false; } }
+  else { const ids = new Set(rows.map(r => r.id)); S.insc = (S.insc || []).filter(x => !ids.has(x.id)).concat(rows); save(); }
+  return true;
+ },
+ async remover(id) {
+  if (db) { const { error } = await db.from('inscricoes').delete().eq('id', id); if (error) { fail(error); return false; } }
+  else { S.insc = (S.insc || []).filter(x => x.id !== id); save(); }
+  return true;
+ },
+ async presenca(id, v) {
+  if (db) { const { error } = await db.from('inscricoes').update({presente: v, updated_at: new Date().toISOString()}).eq('id', id); if (error) { fail(error); return false; } }
+  else { const x = (S.insc || []).find(y => y.id === id); if (x) x.presente = v; save(); }
+  return true;
+ },
+ async apagarMod(mod) {
+  if (db) { const { error } = await db.from('inscricoes').delete().eq('mod', mod); if (error) fail(error); }
+  else { S.insc = (S.insc || []).filter(x => x.mod !== mod); save(); }
+ },
+ async mudarCat(mid, cat) {
+  if (db) { const { error } = await db.from('inscricoes').update({cat}).eq('membro', mid); if (error) fail(error); }
+  else { (S.insc || []).forEach(x => { if (x.membro === mid) x.cat = cat; }); save(); }
+ }
+};
+MEM.porIds = async ids => {
+ if (!ids.length) return [];
+ if (!db) return membros().filter(m => ids.includes(m.id));
+ const { data, error } = await db.from('membros').select('*').in('id', ids);
+ if (error) { fail(error); return []; } return (data || []).map(normMem);
+};
+MEM.daCategoria = async cat => {
+ if (!db) return membros().filter(m => +m.cat === +cat);
+ const { data, error } = await db.from('membros').select('*').eq('cat', cat);
+ if (error) { fail(error); return []; } return (data || []).map(normMem);
+};
+const modsInscreviveis = () => ACTS.filter(a => a.t != 'extra');
+const porNome = (a, b) => a.nome.localeCompare(b.nome, 'pt-BR');
+
+/* ---------- Página de inscrições (#/configuracoes/inscricoes) ---------- */
+let inscSel = null, inscSet = null, inscF = {q: '', team: '', cat: ''};
+
+async function carregarInsc() {
+ const id = inscSel; inscSet = null;
+ const l = await INSC.doMembro(id);
+ if (inscSel !== id) return;
+ inscSet = new Set((l || []).map(x => x.mod));
+ const box = $('inscmods'); if (box) { box.innerHTML = inscModsHTML(); $('insccont').textContent = inscContTxt(); }
+}
+const inscContTxt = () => inscSet ? `${inscSet.size} ${inscSet.size == 1 ? 'modalidade marcada' : 'modalidades marcadas'}` : '';
+
+function inscListaHTML() {
+ const q = slug(inscF.q);
+ const l = membros().filter(m => (inscF.team === '' || String(m.team) === inscF.team) && (inscF.cat === '' || String(m.cat) === inscF.cat) && (!q || slug(m.nome + ' ' + m.turma).includes(q))).sort(porNome);
+ if (!membros().length) return '<p class="muted">Nenhum integrante cadastrado ainda.</p>';
+ if (!l.length) return '<p class="muted">Nenhum integrante encontrado com esses filtros.</p>';
+ return l.map(m => `<button class="mem-card" data-inscsel="${esc(m.id)}">${fotoHTML(m)}<span class="mem-info"><span class="mem-nome">${esc(m.nome)}</span><span class="mem-sub">${esc(teamNome(m.team))} · ${esc(memSub(m))}</span></span></button>`).join('');
+}
+
+function inscModsHTML() {
+ if (!inscSet) return '<p class="muted">Carregando inscrições…</p>';
+ const l = modsInscreviveis();
+ if (!l.length) return '<p class="muted">Nenhuma modalidade cadastrada.</p>';
+ return Object.keys(TN).filter(t => t != 'extra').map(t => {
+  const g = l.filter(a => a.t == t).sort((x, y) => x.n.localeCompare(y.n, 'pt-BR'));
+  if (!g.length) return '';
+  return `<h3 class="me-grupo">${TN[t]}</h3><div class="insc-mods">${g.map(a => `<label class="insc-mod"><input type="checkbox" data-inscmod="${a.s}" ${inscSet.has(a.s) ? 'checked' : ''}><span>${esc(a.n)}</span></label>`).join('')}</div>`;
+ }).join('');
+}
+
+Views.insc = () => {
+ const head = `<div class="page-head"><a class="back" href="#/configuracoes/integrantes">← Voltar aos integrantes</a></div>`;
+ const m = inscSel && membros().find(x => x.id === inscSel);
+ if (!m) return head + `<section class="panel"><h2>Inscrições nas modalidades</h2>
+  <p class="muted">Escolha o integrante para marcar as modalidades em que ele vai participar.</p>
+  <div class="mem-tools">
+   <input class="busca" id="inscbusca" type="search" placeholder="Buscar por nome ou turma" value="${esc(inscF.q)}" autocomplete="off">
+   <select id="inscfteam" aria-label="Filtrar por equipe"><option value="">Todas as equipes</option>${T.map(i => `<option value="${i}" ${inscF.team === String(i) ? 'selected' : ''}>${tn(i)}</option>`).join('')}</select>
+   <select id="inscfcat" aria-label="Filtrar por categoria"><option value="">Todas as categorias</option>${CATS.map(c => `<option value="${c.id}" ${inscF.cat === String(c.id) ? 'selected' : ''}>${esc(c.n)}</option>`).join('')}</select>
+  </div>
+  <div id="insclista" class="mem-grid">${inscListaHTML()}</div></section>`;
+ return head + `<section class="panel">
+  <div class="insc-topo">${fotoHTML(m)}<span class="mem-info"><span class="mem-nome">${esc(m.nome)}</span><span class="mem-sub">${esc(teamNome(m.team))} · ${esc(memSub(m))}</span></span><button class="btn alt" data-inscoutro>Trocar</button></div>
+  <p class="muted" id="insccont" style="margin:10px 0 0">${inscContTxt()}</p>
+  <div id="inscmods">${inscModsHTML()}</div></section>`;
+};
+
+/* ---------- Inscritos na página da modalidade ---------- */
+document.body.insertAdjacentHTML('beforeend', '<dialog id="inscdlg" class="reg-dlg" aria-label="Inscritos"></dialog>');
+let inscD = null;
+
+async function abrirInscritos() {
+ inscD = {a: cur, cat: curC, lista: null, cand: null, modo: 'lista', q: ''};
+ const dlg = $('inscdlg');
+ dlg.innerHTML = `<div class="reg-box">
+  <div class="reg-head"><h2>Inscritos · ${esc(cur.n)} · ${esc(catNome(curC))}</h2><button class="btn alt" data-inscfechar aria-label="Fechar">✕</button></div>
+  <div class="reg-body" style="white-space:normal" id="inscbody"><p class="muted">Carregando…</p></div>
+  <div class="reg-foot mem-foot" id="inscfoot"></div></div>`;
+ if (!dlg.open) dlg.showModal();
+ await carregarInscritos();
+}
+async function carregarInscritos() {
+ const D0 = inscD; if (!D0) return;
+ const rows = await INSC.daModalidade(D0.a.s, D0.cat) || [];
+ const ms = await MEM.porIds(rows.map(r => r.membro));
+ if (inscD !== D0) return;
+ const by = Object.fromEntries(ms.map(m => [m.id, m]));
+ D0.lista = rows.filter(r => by[r.membro]).map(r => ({ins: r, m: by[r.membro]}));
+ D0.modo = 'lista';
+ desenharInscritos();
+}
+function desenharInscritos() {
+ const l = inscD.lista, pres = 0, porPartida = true;
+ const grupos = [...T.map(String), ''].map(t => [t, l.filter(x => String(x.m.team) === t).sort((a, b) => porNome(a.m, b.m))]).filter(([, g]) => g.length);
+ $('inscbody').innerHTML = !l.length ? '<p class="muted">Ninguém inscrito nesta modalidade e categoria ainda.</p>' :
+  (porPartida ? `<p class="insc-resumo">${l.length} ${l.length == 1 ? 'inscrito' : 'inscritos'} · a presença é conferida ${inscD.a.t == 'chav' ? 'em cada partida' : 'em “Integrantes”, na página da modalidade'}</p>` : `<p class="insc-resumo"><strong>${pres}</strong> de ${l.length} presentes</p>`) +
+  grupos.map(([t, g]) => `<div class="mem-grupo"><h3>${esc(teamNome(t))}</h3><span>${porPartida ? g.length : g.filter(x => x.ins.presente).length + '/' + g.length}</span></div>` +
+   g.map(x => `<label class="insc-row">${porPartida ? '' : `<input type="checkbox" data-pres="${esc(x.ins.id)}" ${x.ins.presente ? 'checked' : ''} aria-label="Presença de ${esc(x.m.nome)}">`}${fotoHTML(x.m)}<span class="mem-info"><span class="mem-nome">${esc(x.m.nome)}</span><span class="mem-sub">${esc(x.m.turma || '—')}</span></span><button class="btn warn btn-del insc-del" data-inscdel="${esc(x.ins.id)}" aria-label="Remover inscrição de ${esc(x.m.nome)}" title="Remover inscrição">×</button></label>`).join('')).join('');
+ $('inscfoot').innerHTML = '<button class="btn alt" data-inscadd>+ Inscrever na hora</button><span class="mem-esp"></span><button class="btn" data-inscfechar>Fechar</button>';
+}
+async function mostrarCandidatos() {
+ inscD.modo = 'add';
+ $('inscbody').innerHTML = '<p class="muted">Carregando integrantes da categoria…</p>';
+ $('inscfoot').innerHTML = '<button class="btn alt" data-inscvoltar>← Voltar</button>';
+ const D0 = inscD, todos = await MEM.daCategoria(D0.cat);
+ if (inscD !== D0) return;
+ const ja = new Set(D0.lista.map(x => x.m.id));
+ D0.cand = todos.filter(m => !ja.has(m.id));
+ $('inscbody').innerHTML = `<p class="muted" style="margin-top:0;text-align:left">Integrantes de <strong>${esc(catNome(D0.cat))}</strong> que ainda não estão inscritos. Toque para inscrever (já entra como presente).</p>
+  <input id="inscqbusca" type="search" placeholder="Buscar integrante" autocomplete="off" style="margin-bottom:8px">
+  <div id="insccand" class="mem-grid insc-cand">${candHTML('')}</div>`;
+}
+function candHTML(q) {
+ q = slug(q || '');
+ const l = inscD.cand.filter(m => !q || slug(m.nome + ' ' + m.turma).includes(q)).sort(porNome);
+ if (!inscD.cand.length) return '<p class="muted">Todos os integrantes desta categoria já estão inscritos.</p>';
+ if (!l.length) return '<p class="muted">Ninguém encontrado.</p>';
+ return l.map(m => `<button class="mem-card" data-inscnovo="${esc(m.id)}">${fotoHTML(m)}<span class="mem-info"><span class="mem-nome">${esc(m.nome)}</span><span class="mem-sub">${esc(teamNome(m.team))} · ${esc(m.turma || '—')}</span></span></button>`).join('');
+}
+
+/* ---------- Eventos ---------- */
+document.addEventListener('click', async e => {
+ const t = e.target.closest('button'); if (!t) return;
+ const d = t.dataset;
+ if (d.inscsel) { inscSel = d.inscsel; inscSet = null; render(); scrollTo(0, 0); carregarInsc(); }
+ else if (d.inscoutro !== undefined) { inscSel = null; inscSet = null; render(); }
+ else if (d.meminsc !== undefined) { inscSel = memEd.id; inscSet = null; $('memdlg').close(); location.hash = '#/configuracoes/inscricoes'; }
+ else if (d.inscver !== undefined && cur) abrirInscritos();
+ else if (d.inscfechar !== undefined) { $('inscdlg').close(); inscD = null; inscPag = null; if (inscAbertos.size && cur) sec(curC); }
+ else if (d.inscadd !== undefined && inscD) mostrarCandidatos();
+ else if (d.inscvoltar !== undefined && inscD) desenharInscritos();
+ else if (d.inscnovo && inscD) {
+  const m = inscD.cand.find(x => x.id === d.inscnovo); if (!m) return;
+  t.disabled = true;
+  if (!await INSC.inscrever([{membro: m.id, mod: inscD.a.s, cat: inscD.cat, presente: true}])) { t.disabled = false; return; }
+  await carregarInscritos();
+ }
+});
+
+document.addEventListener('change', async e => {
+ const el = e.target;
+ if (el.dataset && el.dataset.inscmod && inscSel && inscSet) {
+  const m = membros().find(x => x.id === inscSel), mod = el.dataset.inscmod, on = el.checked;
+  if (!m) return;
+  el.disabled = true;
+  const ok = on ? await INSC.inscrever([{membro: m.id, mod, cat: m.cat, presente: false}]) : await INSC.remover(inscId(m.id, mod));
+  el.disabled = false;
+  if (!ok) { el.checked = !on; return; }
+  if (on) inscSet.add(mod); else inscSet.delete(mod);
+  const c = $('insccont'); if (c) c.textContent = inscContTxt();
+ }
+ else if (el.dataset && el.dataset.pres && inscD) {
+  const id = el.dataset.pres, v = el.checked;
+  el.disabled = true;
+  const ok = await INSC.presenca(id, v);
+  el.disabled = false;
+  if (!ok) { el.checked = !v; return; }
+  const x = inscD.lista.find(y => y.ins.id === id); if (x) x.ins.presente = v;
+  desenharInscritos();
+ }
+ else if (el.id === 'inscfteam' || el.id === 'inscfcat') {
+  inscF[el.id === 'inscfteam' ? 'team' : 'cat'] = el.value;
+  const l = $('insclista'); if (l) l.innerHTML = inscListaHTML();
+ }
+});
+
+document.addEventListener('input', e => {
+ if (e.target.id === 'inscbusca') { inscF.q = e.target.value; const l = $('insclista'); if (l) l.innerHTML = inscListaHTML(); }
+ else if (e.target.id === 'inscqbusca' && inscD) { $('insccand').innerHTML = candHTML(e.target.value); }
+});
+
+/* ==========================================================================
+   21. INSCRITOS DENTRO DE CADA PARTIDA (chaveamento)
+   Recolhido por padrão; ao abrir, mostra só os inscritos das duas equipes da
+   partida, com a presença. Busca os inscritos uma vez por página (só ao abrir).
+   ========================================================================== */
+let inscPag = null, inscAbertos = new Set(), inscBuscando = '';
+
+async function garantirInscPag() {
+ if (!cur) return;
+ const mod = cur.s, cat = curC, chave = mod + '|' + cat;
+ if ((inscPag && inscPag.chave === chave) || inscBuscando === chave) return;
+ inscBuscando = chave;
+ const rows = await INSC.daModalidade(mod, cat) || [];
+ const ms = await MEM.porIds(rows.map(r => r.membro));
+ inscBuscando = '';
+ if (!cur || cur.s !== mod || curC !== cat) return;
+ const by = Object.fromEntries(ms.map(m => [m.id, m]));
+ inscPag = {chave, lista: rows.filter(r => by[r.membro]).map(r => ({ins: r, m: by[r.membro]}))};
+ sec(curC);
+}
+
+/* Bloco recolhível "Integrantes" com presença: x = chave da partida (s1, s2, t3, f) ou 'g' (modalidade sem partidas) */
+function inscBlocoHTML(x, times) {
+ const aberto = inscAbertos.has(x), ok = !!inscPag && inscPag.chave === cur.s + '|' + curC;
+ const tog = `<button class="insc-tog" data-insctog="${x}" aria-expanded="${aberto}">Integrantes<span class="seta" aria-hidden="true">›</span></button>`;
+ if (!aberto) return tog;
+ if (!ok) { garantirInscPag(); return tog + '<p class="muted" style="margin:6px 0 0">Carregando…</p>'; }
+ const pres = l => l.filter(y => presNa(y.ins, x)).length;
+ const col = t => {
+  const l = inscPag.lista.filter(y => y.m.team === +t).sort((p, q) => porNome(p.m, q.m));
+  return `<div class="insc-col"><h4><span>${tn(+t)}</span><span>${pres(l)}/${l.length}</span></h4>${l.length
+   ? l.map(y => `<label class="insc-lin"><input type="checkbox" data-ipres="${esc(y.ins.id)}" data-ipart="${x}" ${presNa(y.ins, x) ? 'checked' : ''} aria-label="Presença de ${esc(y.m.nome)}"><span>${esc(y.m.nome)}</span></label>`).join('')
+   : '<p class="insc-vazio">Ninguém inscrito</p>'}</div>`;
+ };
+ return tog + `<div class="insc-part ${times.length > 2 ? 'insc-4' : ''}">${times.map(col).join('')}</div>`;
+}
+function inscPartidaHTML(x, m) {
+ if (m.a === '' || m.a == null || m.b === '' || m.b == null) return '';
+ return inscBlocoHTML(x, [m.a, m.b]);
+}
+
+document.addEventListener('click', e => {
+ const t = e.target.closest('[data-insctog]'); if (!t || !cur) return;
+ const x = t.dataset.insctog;
+ if (inscAbertos.has(x)) inscAbertos.delete(x); else inscAbertos.add(x);
+ sec(curC);
+});
+
+document.addEventListener('change', async e => {
+ const el = e.target; if (!el.dataset || !el.dataset.ipres || !inscPag) return;
+ const id = el.dataset.ipres, x = el.dataset.ipart, v = el.checked;
+ const y = inscPag.lista.find(z => z.ins.id === id); if (!y) return;
+ el.disabled = true;
+ const nova = await INSC.presencaPartida(y.ins, x, v);
+ if (!nova) { el.checked = !v; el.disabled = false; return; }
+ y.ins.partidas = nova;
+ sec(curC);
+});
+
+/* Excluir uma inscrição pela janela de inscritos */
+document.addEventListener('click', async e => {
+ const t = e.target.closest('[data-inscdel]'); if (!t || !inscD) return;
+ e.preventDefault();
+ const x = inscD.lista.find(y => y.ins.id === t.dataset.inscdel); if (!x) return;
+ if (!await confirmar(`Remover ${x.m.nome} dos inscritos de ${inscD.a.n} (${catNome(inscD.cat)})?`)) return;
+ if (!await INSC.remover(x.ins.id)) return;
+ inscPag = null;
+ await carregarInscritos();
+});
+
+/* ==========================================================================
+   22. SORTEIO ÚNICO DAS SEMIFINAIS + PRESENÇA POR PARTIDA
+   ========================================================================== */
+/* Embaralhamento com o gerador aleatório criptográfico do navegador */
+function embaralhar(l) {
+ const a = l.slice();
+ for (let i = a.length - 1; i > 0; i--) {
+  const r = new Uint32Array(1); (window.crypto || {getRandomValues: x => { x[0] = Math.random() * 4294967296; return x; }}).getRandomValues(r);
+  const j = r[0] % (i + 1); [a[i], a[j]] = [a[j], a[i]];
+ }
+ return a;
+}
+
+/* Sorteia uma única vez: grava na hora no servidor e trava as equipes das semifinais */
+async function sortearSemis(ci) {
+ const key = rk(cur, ci);
+ if (!await confirmar('Sortear as semifinais?\nO sorteio só pode ser feito uma vez. Depois dele, as equipes das semifinais ficam fixas.')) return;
+ await DB.fetchSingleRes(cur, ci);   // confere se outro aparelho já sorteou
+ if ((S.res[key] || {}).sorteio) { delete D[key]; sec(ci); avisar('As semifinais desta categoria já foram sorteadas.'); return; }
+ const e = embaralhar(T);
+ const d = clone(S.res[key] || {});
+ d.m = {s1: {a: e[0], b: e[1]}, s2: {a: e[2], b: e[3]}};
+ d.sorteio = {em: new Date().toISOString()};
+ S.res[key] = d; delete D[key];
+ await DB.persistRes(cur, ci);
+ sec(ci);
+}
+const quandoSorteio = s => { try { return new Date(s.em).toLocaleString('pt-BR', {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'}); } catch (e) { return ''; } };
+
+/* Presença por partida: a inscrição guarda a lista de partidas em que o integrante esteve presente */
+const presNa = (ins, x) => Array.isArray(ins.partidas) && ins.partidas.includes(x);
+INSC.presencaPartida = async (ins, x, v) => {
+ let atual = Array.isArray(ins.partidas) ? ins.partidas.slice() : [];
+ if (db) {
+  const { data, error } = await db.from('inscricoes').select('partidas').eq('id', ins.id);
+  if (error) { fail(error); return null; }
+  if (data && data.length && Array.isArray(data[0].partidas)) atual = data[0].partidas;
+ }
+ const nova = v ? [...new Set([...atual, x])] : atual.filter(p => p !== x);
+ if (db) {
+  const { error } = await db.from('inscricoes').update({partidas: nova, updated_at: new Date().toISOString()}).eq('id', ins.id);
+  if (error) { fail(error); return null; }
+ } else { const y = (S.insc || []).find(z => z.id === ins.id); if (y) y.partidas = nova; save(); }
+ return nova;
+};
+
+/* ==========================================================================
+   23. NOME DOS JOGOS (topo de todas as páginas, editável nas Configurações)
+   ========================================================================== */
+const NOME_PADRAO = 'Olimpíadas IN-NOVA 2026';
+const nomeJogos = () => String(S.nome || '').trim() || NOME_PADRAO;
+function aplicarNome() { const a = $('nomejogos'); if (a) a.textContent = nomeJogos(); }
+
+const cfgAntesNome = Views.cfg;
+Views.cfg = () => `<section class="panel"><h2>Nome dos jogos</h2><p class="muted">Aparece no topo de todas as páginas.</p><div class="row"><input id="cfgnome" value="${esc(nomeJogos())}" placeholder="${esc(NOME_PADRAO)}" maxlength="80" autocomplete="off" aria-label="Nome dos jogos"></div></section>` + cfgAntesNome();
+
+document.addEventListener('input', e => { if (e.target.id === 'cfgnome') { const n = e.target.value.trim() || NOME_PADRAO, a = $('nomejogos'); if (a) a.textContent = n; } });
+document.addEventListener('change', async e => {
+ if (e.target.id !== 'cfgnome') return;
+ const v = e.target.value.trim().replace(/\s+/g, ' ').slice(0, 80);
+ await DB.patchCfg(['nome'], () => { S.nome = v || NOME_PADRAO; });
+ aplicarNome(); softRender();
+});
+aplicarNome();
 
 /* Inicialização */
 route();
