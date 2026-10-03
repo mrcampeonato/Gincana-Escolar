@@ -69,7 +69,7 @@ input[type=checkbox]{width:20px;height:20px;min-height:0}
 
 .marca-header{
  display:grid;
- grid-template-columns:minmax(0, 1.2fr) minmax(0, 1fr) 76px 30px;
+ grid-template-columns:minmax(0, 1fr) minmax(0, 1.3fr) 76px 30px;
  gap:6px;
  font-weight:600;
  font-size:13px;
@@ -81,7 +81,7 @@ input[type=checkbox]{width:20px;height:20px;min-height:0}
 .marca-header span{text-align:center;width:100%;display:block}
 .marca-row{
  display:grid;
- grid-template-columns:minmax(0, 1.2fr) minmax(0, 1fr) 76px 30px;
+ grid-template-columns:minmax(0, 1fr) minmax(0, 1.3fr) 76px 30px;
  gap:6px;
  align-items:center;
  margin-bottom:8px;
@@ -150,7 +150,7 @@ button:disabled,input:disabled,select:disabled,.csel:disabled{opacity:.45;cursor
  table{min-width:100%}
  th,td{padding:6px 4px;font-size:13px}
  .marca-header, .marca-row {
-  grid-template-columns:minmax(0, 1.1fr) minmax(0, 1fr) 68px 28px;
+  grid-template-columns:minmax(0, 1fr) minmax(0, 1.2fr) 68px 28px;
   gap:4px;
  }
  .marca-header {font-size:11px}
@@ -663,6 +663,7 @@ function place(t, d, a) {
  if (t == 'pontos') return crank(T.map(i => num(d.v?.[i])), false);
  if (t == 'crit' && d.modo === 'class') { const r = T.map(i => num(d.p?.[i]) || null); return r.some(x => x) ? r : null }
  if (t == 'crit') return crank(T.map(i => { const c = d.c?.[i]; return c && c.some(x => x !== '' && x != null) ? c.reduce((a, b) => a + (+b || 0), 0) : null }), false);
+ if (t == 'marca' && d.modo === 'class') { const r = T.map(i => num(d.p?.[i]) || null); return r.some(x => x) ? r : null }
  if (t == 'marca') {
   /* tempo: menor vence (invertido: maior) · distância: maior vence (invertido: menor) */
   const cfg = a || cur || {}, dist = cfg.u === 'dist', menorVence = dist ? !!cfg.inv : !cfg.inv;
@@ -671,7 +672,7 @@ function place(t, d, a) {
   return crank(b, menorVence);
  }
 }
-const ready = (t, d) => { const p = place(t, {...d, ok: true}); return t == 'marca' ? !!p : !!p && p.every(Boolean) };
+const ready = (t, d) => { const p = place(t, {...d, ok: true}); return t == 'marca' && d.modo !== 'class' ? !!p : !!p && p.every(Boolean) };
 function totals() {
  const cat = {}; let done = 0; CATS.forEach(c => cat[c.id] = [0,0,0,0]);
  ACTS.forEach(a => CATS.forEach(c => { const p = place(a.t, S.res[rk(a, c.id)], a); if (p) { done++; p.forEach((x, i) => { if (x) cat[c.id][i] += S.pts[x-1] || 0 }) } }));
@@ -780,20 +781,8 @@ function secHTML(ci) {
  if (a.t == 'pontos') h = pontosHTML(d, lock);
  if (a.t == 'crit') h = critHTML(a, ci, d, lock);
 
- if (a.t == 'marca') {
-  const e = d.e && d.e.length ? d.e : [{}];
-  const dist = a.u === 'dist';
-  h = `<p class="muted">Digite o nome do atleta, selecione a equipe e digite ${dist ? 'a distância (só números: 1234 vira 12m34cm)' : 'o tempo correspondente'}. <strong>${dist ? (a.inv ? 'Menor' : 'Maior') + ' distância vence.' : (a.inv ? 'Maior' : 'Menor') + ' tempo vence.'}</strong></p>
-  <div class="marca-header"><span>Atleta</span><span>Equipe</span><span>${dist ? 'Distância' : 'Tempo'}</span><span></span></div>`+
-  e.map((x, k) => `
-  <div class="marca-row">
-   ${I(`e.${k}.n`, x.n, `placeholder="Nome do atleta" ${lock?'disabled':''}`)}
-   ${SEL(`e.${k}.team`, x.team, TO(), lock)}
-   ${I(`e.${k}.t`, x.t, dist ? `placeholder="0m00cm" class="input-dist" inputmode="numeric" ${lock?'disabled':''}` : `placeholder="00'00'00" class="input-tempo" inputmode="numeric" ${lock?'disabled':''}`)}
-   <button class="btn warn btn-del" data-rme="${k}" ${lock?'disabled':''} aria-label="Remover">×</button>
-  </div>`).join('')+
-  `<div class="row" style="margin-top:10px"><button class="btn alt" data-adde ${lock?'disabled':''}>+ Atleta</button></div>`;
- }
+ if (a.t == 'marca') h = marcaHTML(a, d, lock);
+
 
  if (a.t == 'chav') {
   const isLocked = !!(d.m?.s1?.ok || d.m?.s2?.ok);
@@ -813,6 +802,7 @@ function valorFinal(t, d, a) {
  if (t == 'pontos') return T.map(i => { const v = num(d.v?.[i]); return v == null ? '' : fmt(v); });
  if (t == 'crit' && d.modo === 'class') return null;
  if (t == 'crit') return T.map(i => { const c = d.c?.[i]; return c && c.some(x => x !== '' && x != null) ? fmt(c.reduce((s, b) => s + (+b || 0), 0)) : ''; });
+ if (t == 'marca' && d.modo === 'class') return null;
  if (t == 'marca') {
   const cfg = a || cur || {}, dist = cfg.u === 'dist', menorVence = dist ? !!cfg.inv : !cfg.inv, ler = dist ? pdist : ptime;
   const b = [null, null, null, null], txt = ['', '', '', ''];
@@ -2542,6 +2532,62 @@ document.addEventListener('change', async e => {
  aplicarNome(); softRender();
 });
 aplicarNome();
+
+/* ==========================================================================
+   24. MARCA: "SÓ CLASSIFICAÇÃO FINAL" E ATLETA ESCOLHIDO ENTRE OS INSCRITOS
+   ========================================================================== */
+function marcaHTML(a, d, lock) {
+ const cls = d.modo === 'class', dist = a.u === 'dist';
+ const tog = `<div class="filters" role="group" aria-label="Forma de lançamento">
+  <button class="chipbtn" data-cmodo="notas" aria-pressed="${!cls}" ${lock?'disabled':''}>${dist ? 'Distâncias' : 'Tempos'}</button>
+  <button class="chipbtn" data-cmodo="class" aria-pressed="${cls}" ${lock?'disabled':''}>Só classificação final</button></div>`;
+ if (cls) return tog + `<p class="muted">Informe apenas a colocação final de cada equipe.</p>` + rankHTML(d, lock);
+
+ const ok = !!inscPag && inscPag.chave === cur.s + '|' + curC;
+ if (!ok) garantirInscPag();
+ const e = d.e && d.e.length ? d.e : [{}];
+ const atletas = (x, k) => {
+  const semTime = x.team === '' || x.team == null;
+  let opts;
+  if (semTime) opts = [['', 'Escolha a equipe']];
+  else if (!ok) opts = [['', 'Carregando…']];
+  else {
+   const l = inscPag.lista.filter(y => y.m.team === +x.team).sort((p, q) => porNome(p.m, q.m));
+   opts = [['', l.length ? (x.n && !x.mid ? x.n : '— atleta —') : (x.n && !x.mid ? x.n : 'Nenhum inscrito')], ...l.map(y => [y.m.id, y.m.nome])];
+   if (x.mid && !l.some(y => y.m.id === x.mid)) opts.push([x.mid, x.n || 'Atleta']);
+  }
+  return SEL(`e.${k}.mid`, x.mid, opts, lock || semTime || !ok);
+ };
+ return tog + `<p class="muted">Escolha a equipe, depois o atleta (só aparecem os inscritos dessa equipe nesta modalidade e categoria) e digite ${dist ? 'a distância (só números: 1234 vira 12m34cm)' : 'o tempo correspondente'}. <strong>${dist ? (a.inv ? 'Menor' : 'Maior') + ' distância vence.' : (a.inv ? 'Maior' : 'Menor') + ' tempo vence.'}</strong></p>
+ <div class="marca-header"><span>Equipe</span><span>Atleta</span><span>${dist ? 'Distância' : 'Tempo'}</span><span></span></div>` +
+ e.map((x, k) => `
+ <div class="marca-row">
+  ${SEL(`e.${k}.team`, x.team, TO(), lock)}
+  ${atletas(x, k)}
+  ${I(`e.${k}.t`, x.t, dist ? `placeholder="0m00cm" class="input-dist" inputmode="numeric" ${lock?'disabled':''}` : `placeholder="00'00'00" class="input-tempo" inputmode="numeric" ${lock?'disabled':''}`)}
+  <button class="btn warn btn-del" data-rme="${k}" ${lock?'disabled':''} aria-label="Remover">×</button>
+ </div>`).join('') +
+ `<div class="row" style="margin-top:10px"><button class="btn alt" data-adde ${lock?'disabled':''}>+ Atleta</button></div>
+ <p class="muted" style="font-size:12px">Atleta fora da lista? Inscreva pelo botão “Inscritos”, no topo da página.</p>`;
+}
+
+/* Ao escolher o atleta, guarda também o nome; ao trocar a equipe, limpa o atleta */
+document.addEventListener('change', e => {
+ const el = e.target, k = el.dataset && el.dataset.k;
+ if (!k || !cur || cur.t != 'marca') return;
+ const mA = k.match(/^e\.(\d+)\.mid$/), mT = k.match(/^e\.(\d+)\.team$/);
+ if (!mA && !mT) return;
+ const key = rk(cur, curC); if (!D[key] || !D[key].e) return;
+ const x = D[key].e[+(mA || mT)[1]]; if (!x) return;
+ if (mA) {
+  const y = inscPag && inscPag.lista.find(z => z.m.id === x.mid);
+  x.n = y ? y.m.nome : (x.mid ? x.n : '');
+ } else {
+  const y = inscPag && inscPag.lista.find(z => z.m.id === x.mid);
+  if (!y || y.m.team !== +x.team) { delete x.mid; delete x.n; }
+ }
+ sec(curC);
+});
 
 /* Inicialização */
 route();
