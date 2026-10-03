@@ -258,6 +258,30 @@ select[data-csel]{position:absolute!important;width:1px!important;height:1px!imp
  .vst input{width:clamp(36px,11vw,46px);min-height:40px;font-size:clamp(18px,5.5vw,24px)}
  .match{padding:12px 8px}
 }
+
+/* Integrantes */
+.mem-tools{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;margin:6px 0 10px}
+.mem-tools .busca{grid-column:1/-1}
+.mem-grupo{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:18px 0 8px}
+.mem-grupo h3{font-size:16px}
+.mem-grupo span{font-size:13px;color:var(--mute)}
+.mem-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.mem-card{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);cursor:pointer;text-align:left;width:100%;font:inherit;min-height:0}
+.mem-card:hover{border-color:var(--ink)}
+.mem-foto{width:52px;height:52px;border-radius:50%;object-fit:cover;flex:none;background:var(--soft);display:inline-flex;align-items:center;justify-content:center;font:800 18px 'Bricolage Grotesque',sans-serif;color:var(--mute);overflow:hidden}
+.mem-info{min-width:0;display:flex;flex-direction:column}
+.mem-nome{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mem-sub{font-size:13px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mem-form{display:grid;gap:12px}
+.mem-form label{display:grid;gap:4px;font-size:13px;font-weight:600;color:var(--mute)}
+.mem-foto-ed{display:flex;flex-direction:column;align-items:center;gap:10px}
+.mem-foto-ed .mem-foto{width:112px;height:112px;font-size:38px}
+.mem-foto-bts{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.mem-foot{flex-wrap:wrap}
+.mem-esp{flex:1}
+#permlista{grid-template-columns:1fr}
+.cam-video{width:100%;max-height:60vh;aspect-ratio:1;object-fit:cover;border-radius:10px;background:#000}
+.cam-video.espelho{transform:scaleX(-1)}
 </style>
 </head>
 <body>
@@ -324,6 +348,7 @@ const catNome = id => (CATS.find(c => c.id === +id) || {}).n || '';
 const TABS = [
  ['placar','Placar geral','#/'],
  ['mod','Modalidades','#/modalidades'],
+ ['membros','Integrantes','#/integrantes'],
  ['insta','Instagram','#/instagram'],
  ['torc','Torcida famosa','#/torcida'],
  ['cfg','Configurações','#/configuracoes']
@@ -340,6 +365,7 @@ const COLS = {
  m:       'teams,pts,mods,colors,cats',
  insta:   'teams,ig,insta,colors',
  torc:    'teams,fan,fans,colors',
+ membros: 'teams,colors,cats',
  cfg:     'teams,pts,fan,ig,mods,colors,cats',
  modedit: 'mods,cats'
 };
@@ -470,6 +496,8 @@ const DB = {
    ch.on('postgres_changes', { event: '*', schema: 'public', table: 'res', filter: `id=eq.${cur.s}_${curC}` }, onRes);
   } else if (pg === 'placar' || pg === 'mod') {
    ch.on('postgres_changes', { event: '*', schema: 'public', table: 'res' }, onRes);
+  } else if (pg === 'membros') {
+   ch.on('postgres_changes', { event: '*', schema: 'public', table: 'membros' }, onMem);
   }
   ch.subscribe();
  }
@@ -761,7 +789,7 @@ async function route() {
  pendente = false;
 
  /* Páginas com edição só abrem depois de buscar a versão mais recente do servidor */
- const editavel = !!cur || pg == 'insta' || pg == 'torc' || pg == 'cfg' || pg == 'modedit';
+ const editavel = !!cur || pg == 'insta' || pg == 'torc' || pg == 'cfg' || pg == 'modedit' || pg == 'membros';
  carregando = editavel && !!db;
  if (carregando) loadingView(); else render();
  scrollTo(0, 0);
@@ -771,6 +799,7 @@ async function route() {
   await DB.fetchCfg(COLS[cur ? 'm' : pg]);
   if (cur) await DB.fetchSingleRes(cur, curC);
   else if (pg == 'placar' || pg == 'mod') await DB.fetchAllRes();
+  else if (pg == 'membros') await MEM.listar();
   save();
  } catch (e) { console.error(e); }
 
@@ -1460,6 +1489,271 @@ function pontosHTML(d, lock) {
  if (cls) return tog + `<p class="muted">Informe apenas a colocação final de cada equipe.</p>` + rankHTML(d, lock);
  return tog + `<p class="muted">Pontuação da arbitragem. Maior pontuação vence.</p>`+T.map(t => `<div class="row" style="justify-content:space-between">${who(t)}<div style="flex:1;max-width:140px">${I('v.'+t, d.v?.[t], `type="number" min="0" step="any" ${lock?'disabled':''}`)}</div></div>`).join('');
 }
+
+/* ==========================================================================
+   14. INTEGRANTES DAS EQUIPES (página própria: #/integrantes)
+   Cada integrante é uma linha na tabela "membros"; fotos ficam no Storage "fotos".
+   ========================================================================== */
+let memF = {q: '', team: '', cat: ''}, memEd = null, camStream = null, camFrente = true;
+const membros = () => S.membros || [];
+const normMem = r => ({id: r.id, nome: r.nome || '', team: r.team == null || r.team === '' ? '' : +r.team, cat: r.cat == null || r.cat === '' ? '' : +r.cat, turma: r.turma || '', foto: r.foto || ''});
+const iniciais = n => String(n || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase() || '?';
+const fotoHTML = m => m.foto ? `<img class="mem-foto" src="${esc(m.foto)}" alt="" loading="lazy">` : `<span class="mem-foto" aria-hidden="true">${esc(iniciais(m.nome))}</span>`;
+const teamNome = t => t === '' || t == null || S.teams[+t] == null ? 'Sem equipe' : S.teams[+t];
+const memSub = m => [catNome(m.cat), m.turma].filter(Boolean).join(' · ') || '—';
+
+function aplicaMemLocal(lista) {
+ const l = membros().slice();
+ lista.forEach(m => { const i = l.findIndex(x => x.id === m.id); if (i > -1) l[i] = normMem(m); else l.push(normMem(m)); });
+ S.membros = l; save();
+}
+
+const MEM = {
+ async listar() {
+  if (!db) return;
+  const { data, error } = await db.from('membros').select('*');
+  if (error) { console.error(error); return; }
+  S.membros = (data || []).map(normMem);
+ },
+ async salvar(lista) {
+  if (db) {
+   const agora = new Date().toISOString();
+   const { error } = await db.from('membros').upsert(lista.map(m => ({id: m.id, nome: m.nome, team: m.team, cat: m.cat, turma: m.turma || null, foto: m.foto || null, updated_at: agora})));
+   if (error) { fail(error); return false; }
+  }
+  aplicaMemLocal(lista); return true;
+ },
+ async apagar(id) {
+  if (db) { const { error } = await db.from('membros').delete().eq('id', id); if (error) { fail(error); return false; } }
+  S.membros = membros().filter(m => m.id !== id); save(); return true;
+ },
+ async enviarFoto(id, blob) {
+  if (!db) return await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.onerror = () => r(null); fr.readAsDataURL(blob); });
+  const nome = `${id}-${Date.now()}.jpg`;
+  const { error } = await db.storage.from('fotos').upload(nome, blob, {contentType: 'image/jpeg', cacheControl: '31536000'});
+  if (error) { fail(error); return null; }
+  return db.storage.from('fotos').getPublicUrl(nome).data.publicUrl;
+ },
+ async apagarFoto(url) {
+  if (!db || !url || url.indexOf('/fotos/') < 0) return;
+  try { await db.storage.from('fotos').remove([url.split('/fotos/').pop().split('?')[0]]); } catch (e) { console.error(e); }
+ }
+};
+
+/* Tempo real: atualiza só a lista, sem atrapalhar quem está buscando ou editando */
+function onMem(p) {
+ if (p.eventType === 'DELETE') { const id = p.old && p.old.id; S.membros = membros().filter(m => m.id !== id); save(); }
+ else if (p.new) aplicaMemLocal([p.new]);
+ atualizaListaMem();
+}
+function atualizaListaMem() {
+ if (cur || pg !== 'membros') return;
+ const l = $('memlista'), c = $('memcont');
+ if (l) l.innerHTML = memListaHTML(); else softRender();
+ if (c) c.innerHTML = memContHTML();
+}
+
+const memContHTML = () => T.map(i => `<span>${tn(i)}: <strong>${membros().filter(m => m.team === i).length}</strong></span>`).join('');
+
+function memListaHTML() {
+ if (!membros().length) return '<p class="muted">Nenhum integrante cadastrado ainda. Toque em “+ Novo integrante” para começar.</p>';
+ const q = slug(memF.q);
+ const l = membros().filter(m => (memF.team === '' || String(m.team) === memF.team) && (memF.cat === '' || String(m.cat) === memF.cat) && (!q || slug(m.nome + ' ' + m.turma).includes(q)))
+  .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+ if (!l.length) return '<p class="muted">Nenhum integrante encontrado com esses filtros.</p>';
+ const grupos = [...T.map(String), ''].map(t => [t, l.filter(m => String(m.team) === t)]).filter(([, g]) => g.length);
+ return grupos.map(([t, g]) => `<div class="mem-grupo"><h3>${esc(teamNome(t))}</h3><span>${g.length} ${g.length == 1 ? 'integrante' : 'integrantes'}</span></div>
+ <div class="mem-grid">${g.map(m => `<button class="mem-card" data-memed="${esc(m.id)}">${fotoHTML(m)}<span class="mem-info"><span class="mem-nome">${esc(m.nome)}</span><span class="mem-sub">${esc(memSub(m))}</span></span></button>`).join('')}</div>`).join('');
+}
+
+Views.membros = () => `<section class="panel"><h2>Integrantes das equipes</h2>
+ <div class="row" id="memcont" style="font-size:13px;gap:10px">${memContHTML()}</div>
+ <div class="mem-tools">
+  <input class="busca" id="membusca" type="search" placeholder="Buscar por nome ou turma" value="${esc(memF.q)}" autocomplete="off">
+  <select id="memfteam" aria-label="Filtrar por equipe"><option value="">Todas as equipes</option>${T.map(i => `<option value="${i}" ${memF.team === String(i) ? 'selected' : ''}>${tn(i)}</option>`).join('')}</select>
+  <select id="memfcat" aria-label="Filtrar por categoria"><option value="">Todas as categorias</option>${CATS.map(c => `<option value="${c.id}" ${memF.cat === String(c.id) ? 'selected' : ''}>${esc(c.n)}</option>`).join('')}</select>
+ </div>
+ <div class="row"><button class="btn" data-memnovo>+ Novo integrante</button></div>
+ <div id="memlista">${memListaHTML()}</div></section>`;
+
+/* ---------- Janela de cadastro / edição ---------- */
+document.body.insertAdjacentHTML('beforeend', '<dialog id="memdlg" class="reg-dlg" aria-label="Integrante"></dialog><dialog id="camdlg" class="reg-dlg" aria-label="Câmera"></dialog>');
+
+function memFotoAreaHTML() {
+ const nome = $('memnome') ? $('memnome').value : (memEd.orig.nome || '');
+ return `${fotoHTML({nome, foto: memEd.prev})}
+  <div class="mem-foto-bts"><button class="btn alt" data-memfoto>📁 Enviar foto</button><button class="btn alt" data-memcam>📷 Câmera</button>${memEd.prev ? '<button class="btn alt" data-memsemfoto>Remover foto</button>' : ''}</div>`;
+}
+const atualizaFotoArea = () => { const a = $('memfotoarea'); if (a) a.innerHTML = memFotoAreaHTML(); };
+
+function abrirMem(m) {
+ const novo = !m;
+ m = m || {id: uid(), nome: '', team: memF.team === '' ? '' : +memF.team, cat: memF.cat === '' ? '' : +memF.cat, turma: '', foto: ''};
+ memEd = {id: m.id, novo, fotoAtual: m.foto, blob: null, prev: m.foto, orig: m};
+ const dlg = $('memdlg');
+ dlg.innerHTML = `<div class="reg-box">
+  <div class="reg-head"><h2>${novo ? 'Novo integrante' : 'Editar integrante'}</h2><button class="btn alt" data-memfechar aria-label="Fechar">✕</button></div>
+  <div class="reg-body" style="white-space:normal" id="membody">
+   <div class="mem-form">
+    <div class="mem-foto-ed" id="memfotoarea">${memFotoAreaHTML()}</div>
+    <input type="file" id="memfile" accept="image/*" hidden><input type="file" id="memcap" accept="image/*" capture="user" hidden>
+    <label>Nome<input id="memnome" value="${esc(m.nome)}" placeholder="Nome do integrante" autocomplete="off"></label>
+    <label>Equipe<select id="memteam"><option value="">— escolha —</option>${T.map(i => `<option value="${i}" ${m.team === i ? 'selected' : ''}>${tn(i)}</option>`).join('')}</select></label>
+    <label>Categoria<select id="memcat"><option value="">— escolha —</option>${CATS.map(c => `<option value="${c.id}" ${m.cat === c.id ? 'selected' : ''}>${esc(c.n)}</option>`).join('')}</select></label>
+    <label>Turma<input id="memturma" value="${esc(m.turma)}" placeholder="Ex.: 8º B" autocomplete="off"></label>
+    ${novo ? '' : '<p class="muted" style="margin:0">Para transferir, basta mudar a equipe e salvar.</p>'}
+   </div>
+  </div>
+  <div class="reg-foot mem-foot">${novo ? '' : '<button class="btn warn" data-memexcl>Excluir</button><button class="btn alt" data-mempermuta>⇄ Permutar</button>'}<span class="mem-esp"></span><button class="btn alt" data-memfechar>Cancelar</button><button class="btn" data-memsalvar>Salvar</button></div>
+ </div>`;
+ if (!dlg.open) dlg.showModal();
+ if (novo) $('memnome').focus();
+}
+
+async function salvarMem(btn) {
+ const nome = $('memnome').value.trim(), team = $('memteam').value, cat = $('memcat').value, turma = $('memturma').value.trim();
+ if (!nome) { avisar('Informe o nome do integrante.'); return; }
+ if (team === '') { avisar('Escolha a equipe do integrante.'); return; }
+ if (cat === '') { avisar('Escolha a categoria do integrante.'); return; }
+ btn.disabled = true; btn.textContent = 'Salvando…';
+ const volta = () => { btn.disabled = false; btn.textContent = 'Salvar'; };
+ let foto = memEd.prev ? memEd.fotoAtual : '';
+ if (memEd.blob) { const url = await MEM.enviarFoto(memEd.id, memEd.blob); if (url == null) return volta(); foto = url; }
+ if (!await MEM.salvar([{id: memEd.id, nome, team: +team, cat: +cat, turma, foto}])) return volta();
+ if (memEd.fotoAtual && memEd.fotoAtual !== foto) MEM.apagarFoto(memEd.fotoAtual);
+ $('memdlg').close();
+ atualizaListaMem();
+}
+
+/* ---------- Permuta entre equipes ---------- */
+function permListaHTML(a, q) {
+ q = slug(q || '');
+ const l = membros().filter(m => m.team !== a.team && (!q || slug(m.nome + ' ' + m.turma).includes(q))).sort((x, y) => x.nome.localeCompare(y.nome, 'pt-BR'));
+ if (!l.length) return '<p class="muted">Nenhum integrante de outra equipe encontrado.</p>';
+ return l.map(m => `<button class="mem-card" data-memtroca="${esc(m.id)}">${fotoHTML(m)}<span class="mem-info"><span class="mem-nome">${esc(m.nome)}</span><span class="mem-sub">${esc(teamNome(m.team))} · ${esc(memSub(m))}</span></span></button>`).join('');
+}
+function mostrarPermuta() {
+ const a = membros().find(x => x.id === memEd.id); if (!a) return;
+ $('membody').innerHTML = `<p class="muted" style="margin-top:0;text-align:left">Escolha com quem <strong>${esc(a.nome)}</strong> (${esc(teamNome(a.team))}) vai trocar de equipe.</p>
+  <input id="permbusca" type="search" placeholder="Buscar integrante" autocomplete="off" style="margin-bottom:8px">
+  <div id="permlista" class="mem-grid">${permListaHTML(a, '')}</div>`;
+ $('memdlg').querySelector('.mem-foot').innerHTML = '<span class="mem-esp"></span><button class="btn alt" data-memvoltar>Voltar</button>';
+}
+async function permutar(idB) {
+ const a = membros().find(x => x.id === memEd.id), b = membros().find(x => x.id === idB);
+ if (!a || !b) return;
+ if (!await confirmar(`Confirmar a permuta?\n${a.nome}: ${teamNome(a.team)} → ${teamNome(b.team)}\n${b.nome}: ${teamNome(b.team)} → ${teamNome(a.team)}`)) return;
+ if (!await MEM.salvar([{...a, team: b.team}, {...b, team: a.team}])) return;
+ $('memdlg').close();
+ atualizaListaMem();
+}
+
+/* ---------- Foto: arquivo ou câmera, recortada em quadrado e reduzida ---------- */
+async function reduzir(src) {
+ try {
+  let img = src, w, h;
+  if (src instanceof HTMLVideoElement) { w = src.videoWidth; h = src.videoHeight; }
+  else {
+   img = await (window.createImageBitmap ? createImageBitmap(src).catch(() => null) : null);
+   if (!img) img = await new Promise((ok, erro) => { const i = new Image(); i.onload = () => ok(i); i.onerror = erro; i.src = URL.createObjectURL(src); });
+   w = img.width; h = img.height;
+  }
+  if (!w || !h) return null;
+  const lado = Math.min(w, h), TAM = 400, c = document.createElement('canvas');
+  c.width = c.height = TAM;
+  c.getContext('2d').drawImage(img, (w - lado) / 2, (h - lado) / 2, lado, lado, 0, 0, TAM, TAM);
+  return await new Promise(r => c.toBlob(r, 'image/jpeg', .82));
+ } catch (e) { console.error(e); return null; }
+}
+function definirFoto(blob) {
+ memEd.blob = blob;
+ memEd.prev = URL.createObjectURL(blob);
+ atualizaFotoArea();
+}
+
+function pararCam() { if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; } }
+function fecharCam() { pararCam(); if ($('camdlg').open) $('camdlg').close(); }
+async function iniciarCam() {
+ pararCam();
+ try {
+  camStream = await navigator.mediaDevices.getUserMedia({video: {facingMode: camFrente ? 'user' : 'environment', width: {ideal: 1280}, height: {ideal: 1280}}, audio: false});
+ } catch (e) { console.error(e); return false; }
+ const v = $('camvideo'); if (!v) { pararCam(); return false; }
+ v.srcObject = camStream; v.classList.toggle('espelho', camFrente);
+ $('camaviso').textContent = 'Centralize o rosto e toque em Capturar.';
+ $('camdlg').querySelector('[data-camcap]').disabled = false;
+ return true;
+}
+async function abrirCamera() {
+ if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { $('memcap').click(); return; }
+ const dlg = $('camdlg');
+ dlg.innerHTML = `<div class="reg-box">
+  <div class="reg-head"><h2>Câmera</h2><button class="btn alt" data-camfechar aria-label="Fechar">✕</button></div>
+  <div class="reg-body" style="white-space:normal;text-align:center"><video id="camvideo" class="cam-video" autoplay playsinline muted></video><p class="muted" id="camaviso">Abrindo a câmera…</p></div>
+  <div class="reg-foot mem-foot"><button class="btn alt" data-camtroca>🔄 Trocar câmera</button><span class="mem-esp"></span><button class="btn alt" data-camfechar>Cancelar</button><button class="btn" data-camcap disabled>📸 Capturar</button></div>
+ </div>`;
+ dlg.showModal();
+ if (!await iniciarCam()) {
+  $('camaviso').innerHTML = 'Não foi possível abrir a câmera aqui. Toque abaixo para usar a câmera do aparelho.';
+  dlg.querySelector('.reg-foot').innerHTML = '<span class="mem-esp"></span><button class="btn alt" data-camfechar>Cancelar</button><button class="btn" data-camnativa>📷 Usar câmera do aparelho</button>';
+ }
+}
+$('camdlg').addEventListener('close', pararCam);
+
+/* ---------- Eventos ---------- */
+document.addEventListener('click', async e => {
+ const t = e.target.closest('button'); if (!t) return;
+ const d = t.dataset;
+ if (d.memnovo !== undefined) abrirMem(null);
+ else if (d.memed) { const m = membros().find(x => x.id === d.memed); if (m) abrirMem(m); }
+ else if (d.memfechar !== undefined) $('memdlg').close();
+ else if (d.memsalvar !== undefined) salvarMem(t);
+ else if (d.memfoto !== undefined) $('memfile').click();
+ else if (d.memcam !== undefined) abrirCamera();
+ else if (d.memsemfoto !== undefined) { memEd.blob = null; memEd.prev = ''; atualizaFotoArea(); }
+ else if (d.memexcl !== undefined) {
+  const m = membros().find(x => x.id === memEd.id); if (!m) return;
+  if (!await confirmar(`Excluir ${m.nome}?\nEssa ação não pode ser desfeita.`)) return;
+  t.disabled = true;
+  if (!await MEM.apagar(m.id)) { t.disabled = false; return; }
+  MEM.apagarFoto(m.foto);
+  $('memdlg').close(); atualizaListaMem();
+ }
+ else if (d.mempermuta !== undefined) mostrarPermuta();
+ else if (d.memvoltar !== undefined) { const m = membros().find(x => x.id === memEd.id); if (m) abrirMem(m); }
+ else if (d.memtroca) permutar(d.memtroca);
+ else if (d.camfechar !== undefined) fecharCam();
+ else if (d.camtroca !== undefined) { camFrente = !camFrente; t.disabled = true; await iniciarCam(); t.disabled = false; }
+ else if (d.camnativa !== undefined) { fecharCam(); $('memcap').click(); }
+ else if (d.camcap !== undefined) {
+  const v = $('camvideo'); if (!v || !v.videoWidth) return;
+  t.disabled = true;
+  const blob = await reduzir(v);
+  fecharCam();
+  if (blob) definirFoto(blob); else avisar('Não foi possível capturar a foto.');
+ }
+});
+
+document.addEventListener('input', e => {
+ const el = e.target;
+ if (el.id === 'membusca') { memF.q = el.value; const l = $('memlista'); if (l) l.innerHTML = memListaHTML(); }
+ else if (el.id === 'permbusca') { const a = membros().find(x => x.id === memEd.id); if (a) $('permlista').innerHTML = permListaHTML(a, el.value); }
+ else if (el.id === 'memnome' && !memEd.prev) { const f = $('memfotoarea').querySelector('.mem-foto'); if (f) f.textContent = iniciais(el.value); }
+});
+
+document.addEventListener('change', async e => {
+ const el = e.target;
+ if (el.id === 'memfteam' || el.id === 'memfcat') {
+  memF[el.id === 'memfteam' ? 'team' : 'cat'] = el.value;
+  const l = $('memlista'); if (l) l.innerHTML = memListaHTML();
+ }
+ else if (el.id === 'memfile' || el.id === 'memcap') {
+  const f = el.files && el.files[0]; el.value = '';
+  if (!f) return;
+  const blob = await reduzir(f);
+  if (blob) definirFoto(blob); else avisar('Não foi possível ler essa imagem. Tente outra foto.');
+ }
+});
 
 /* Inicialização */
 route();
