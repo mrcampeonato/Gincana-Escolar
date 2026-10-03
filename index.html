@@ -159,7 +159,7 @@ button:disabled,input:disabled,select:disabled,.csel:disabled{opacity:.45;cursor
 }
 @media (max-width:380px){.st{gap:2px}.sb{width:34px;height:34px}.st input{width:38px}}
 /* Editor de modalidades */
-.me-row{display:grid;grid-template-columns:minmax(0,1fr) 150px auto auto auto auto;gap:6px;align-items:center;margin-bottom:8px}
+.me-row{display:grid;grid-template-columns:minmax(0,1fr) 150px auto auto auto auto auto;gap:6px;align-items:center;margin-bottom:8px}
 .me-row.novo{grid-template-columns:minmax(0,1fr) 150px auto}
 .me-row input,.me-row select,.me-row .csel{min-width:0}
 .me-grupo{font-size:15px;margin:18px 0 8px}
@@ -180,7 +180,7 @@ button:disabled,input:disabled,select:disabled,.csel:disabled{opacity:.45;cursor
 .crit-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 @media (max-width:620px){.crit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .me-reg.on{border-color:var(--ink);background:var(--soft)}
-@media (max-width:620px){.me-row{grid-template-columns:minmax(0,1fr) auto auto auto auto}.me-row:not(.novo)>input{grid-column:1/-1}.me-row.novo{grid-template-columns:minmax(0,1fr) 110px auto}}
+@media (max-width:620px){.me-row{grid-template-columns:minmax(0,1fr) auto auto auto auto auto}.me-row:not(.novo)>input{grid-column:1/-1}.me-row.novo{grid-template-columns:minmax(0,1fr) 110px auto}}
 
 /* Partidas (em edição e finalizadas) no mesmo padrão de placar */
 .match.fim{border-color:#1f9d55;background:rgba(31,157,85,.07)}
@@ -374,6 +374,35 @@ select[data-csel]{position:absolute!important;width:1px!important;height:1px!imp
 .insc-geral{margin-top:6px;text-align:center}
 .insc-part.insc-4{grid-template-columns:repeat(4,minmax(0,1fr))}
 @media (max-width:620px){.insc-part.insc-4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Agenda das modalidades */
+.ag{display:flex;flex-wrap:wrap;gap:2px 10px;margin-top:3px;font-size:12px;color:var(--mute)}
+.ag span{display:inline-flex;align-items:center;gap:4px;min-width:0}
+.ag .ico{width:13px;height:13px}
+.act .ag{justify-content:flex-start}
+.ag-pag{margin:2px 0 0}
+.ag-pag .ag{justify-content:center;font-size:13px}
+.me-ag.on{border-color:var(--ink);background:var(--soft)}
+.ag-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:620px){.act>div:first-child .ag{justify-content:center}}
+
+/* Locais, árbitros e agenda por categoria */
+.cad-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.cad-cards .panel{margin:0}
+@media (max-width:620px){.cad-cards{grid-template-columns:1fr}}
+.cad-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center;margin-bottom:8px}
+.cad-row.novo{margin:0 0 12px;padding-bottom:12px;border-bottom:1px dashed var(--line)}
+.ag-sec{font-size:15px;margin:4px 0 8px;text-align:left}
+.ag-sec span{display:block;font:400 12px Figtree,sans-serif;color:var(--mute);margin-top:2px}
+.ag-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.ag-grid label{display:grid;gap:4px;font-size:12px;font-weight:600;color:var(--mute);text-align:left}
+.ag-dica{font-style:normal;font-weight:400}
+.ag-cat{border-top:1px solid var(--line);padding-top:10px;text-align:left}
+.ag-cat strong{display:block;margin-bottom:6px;font-size:14px}
+
+.ag-por{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin:4px 0 12px;cursor:pointer;text-align:left}
+.ag-por input{width:20px;height:20px;min-height:0;flex:none}
+.ag-cats[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -422,7 +451,7 @@ S = Object.assign(fresh(), S || {});
 /* Monta ACTS e BY a partir da lista de modalidades salva */
 function buildActs() {
  const lista = Array.isArray(S.mods) ? S.mods : MODS_PADRAO;
- ACTS = lista.filter(m => m && m.id && m.n && TN[m.t]).map(m => ({n: m.n, t: m.t, s: m.id, r: !!m.r, oc: !!m.oc, u: m.u === 'dist' ? 'dist' : 'tempo', inv: !!m.inv, cn: m.cn || null, xv: m.xv == null ? 100 : +m.xv}));
+ ACTS = lista.filter(m => m && m.id && m.n && TN[m.t]).map(m => ({n: m.n, t: m.t, s: m.id, r: !!m.r, oc: !!m.oc, u: m.u === 'dist' ? 'dist' : 'tempo', inv: !!m.inv, cn: m.cn || null, xv: m.xv == null ? 100 : +m.xv, loc: m.loc || '', dt: m.dt || '', hr: m.hr || '', arb: m.arb || '', agc: m.agc || {}}));
  BY = Object.fromEntries(ACTS.map(a => [a.s, a]));
 }
 buildActs();
@@ -455,15 +484,15 @@ const ROUTES = {
 /* Colunas da tabela cfg que cada página precisa ler (requisição focada) */
 const COLS = {
  placar:  'teams,pts,fan,ig,insta,fans,mods,colors,cats',
- mod:     'teams,pts,mods,colors,cats,ig,insta,fan,fans',
- m:       'teams,pts,mods,colors,cats',
+ mod:     'teams,pts,mods,colors,cats,ig,insta,fan,fans,locais',
+ m:       'teams,pts,mods,colors,cats,locais,arbitros',
  insta:   'teams,ig,insta,colors,mods',
  torc:    'teams,fan,fans,colors,mods',
  membros: 'teams,colors,cats',
  memver:  'teams,colors,cats',
  insc:    'teams,colors,cats,mods',
- cfg:     'teams,pts,fan,ig,mods,colors,cats',
- modedit: 'mods,cats,ig,fan'
+ cfg:     'teams,pts,fan,ig,mods,colors,cats,locais,arbitros',
+ modedit: 'mods,cats,ig,fan,locais,arbitros'
 };
 
 let cur = null, curC = 0, pg = 'placar', flt = 'todas', first = true;
@@ -505,7 +534,7 @@ function removeRes(id) { const k = parseId(id); if (k) delete S.res[k]; }
 
 function applyCfg(d) {
  if (!d) return;
- ['teams', 'pts', 'fan', 'ig', 'insta', 'fans', 'mods', 'colors', 'cats', 'nome'].forEach(k => { if (d[k] != null) S[k] = d[k]; });
+ ['teams', 'pts', 'fan', 'ig', 'insta', 'fans', 'mods', 'colors', 'cats', 'nome', 'locais', 'arbitros'].forEach(k => { if (d[k] != null) S[k] = d[k]; });
  if (d.nome != null) aplicarNome();
  if (d.cats != null) { buildCats(); syncCat(); }
  if (d.colors != null) aplicarCores();
@@ -698,7 +727,7 @@ const Views = {
 
  mod() {
   const fl = ['todas', ...Object.keys(TN)].map(k => `<button class="chipbtn" data-flt="${k}" aria-pressed="${flt==k}">${k=='todas'?'Todas':TN[k]}</button>`).join('');
-  const itens = ACTS.filter(a => a.t != 'extra' && !a.oc && (flt=='todas'||a.t==flt)).map(a => ({n: a.n, t: a.t, prog: CATS.filter(c => place(a.t, S.res[rk(a, c.id)], a)).length / CATS.length, h: `<div class="act" style="--n:${CATS.length}"><div><a href="#/m/${a.s}/${CATS[0].id}"><strong>${esc(a.n)}</strong></a><small>${descTipo(a)}</small></div>${CATS.map(c => { const p = place(a.t, S.res[rk(a, c.id)], a); return`<a class="cell ${p?'done':''}" href="#/m/${a.s}/${c.id}"><span class="l">${esc(c.n)}</span>${chips(p)}</a>` }).join('')}</div>`}));
+  const itens = ACTS.filter(a => a.t != 'extra' && !a.oc && (flt=='todas'||a.t==flt)).map(a => ({n: a.n, t: a.t, prog: CATS.filter(c => place(a.t, S.res[rk(a, c.id)], a)).length / CATS.length, h: `<div class="act" style="--n:${CATS.length}"><div><a href="#/m/${a.s}/${CATS[0].id}"><strong>${esc(a.n)}</strong></a><small>${descTipo(a)}</small>${agHTML(a)}</div>${CATS.map(c => { const p = place(a.t, S.res[rk(a, c.id)], a); return`<a class="cell ${p?'done':''}" href="#/m/${a.s}/${c.id}"><span class="l">${esc(c.n)}</span>${chips(p)}</a>` }).join('')}</div>`}));
   const rows = ordenarMods(itens.concat(extrasItens())).map(x => x.h).join('');
   return`<section class="panel"><h2>Modalidades e atividades</h2><p class="muted">Cada modalidade e cada categoria têm a sua própria página. Toque numa categoria para lançar o resultado.</p><div class="filters">${ordemHTML()}${fl}</div><div class="acts">${rows}</div></section>`;
  },
@@ -834,12 +863,12 @@ function renderNav() {
 function page() {
  $('tabs').innerHTML = '';
  if (cur.t == 'extra') {
-  $('main').innerHTML = `<div class="page-head"><a class="back" href="#/modalidades">← Voltar às modalidades</a><h2 class="ptitle">${esc(cur.n)}</h2><p class="muted">Extra</p>${cur.r ? `<div class="row" style="margin-top:8px"><button class="btn alt" data-verreg>📄 Ver regulamento</button></div>` : ''}</div><section class="panel"><div id="sec${EXTRA_CI}"></div></section>`;
+  $('main').innerHTML = `<div class="page-head"><a class="back" href="#/modalidades">← Voltar às modalidades</a><h2 class="ptitle">${esc(cur.n)}</h2><p class="muted">Extra</p>${agHTML(cur) ? `<p class="ag-pag">${agHTML(cur)}</p>` : ''}${cur.r ? `<div class="row" style="margin-top:8px"><button class="btn alt" data-verreg>📄 Ver regulamento</button></div>` : ''}</div><section class="panel"><div id="sec${EXTRA_CI}"></div></section>`;
   sec(EXTRA_CI); return;
  }
  const links = CATS.map(c => `<a href="#/m/${cur.s}/${c.id}" ${c.id===curC?'aria-current="page"':''}>${esc(c.n)}</a>`).join('');
  const btnReg = `<div class="row" style="margin-top:8px"><button class="btn alt" data-inscver>Inscritos</button>${cur.r ? '<button class="btn alt" data-verreg>📄 Ver regulamento</button>' : ''}</div>`;
- $('main').innerHTML = `<div class="page-head"><a class="back" href="#/modalidades">← Voltar às modalidades</a><h2 class="ptitle">${esc(cur.n)}</h2><p class="muted">${descTipo(cur)}</p>${btnReg}</div><nav class="catnav" aria-label="Categorias">${links}</nav><section class="panel"><h2>${esc(catNome(curC))}</h2><div id="sec${curC}"></div></section>`;
+ $('main').innerHTML = `<div class="page-head"><a class="back" href="#/modalidades">← Voltar às modalidades</a><h2 class="ptitle">${esc(cur.n)}</h2><p class="muted">${descTipo(cur)}</p>${agHTML(cur, curC) ? `<p class="ag-pag">${agHTML(cur, curC)}</p>` : ''}${btnReg}</div><nav class="catnav" aria-label="Categorias">${links}</nav><section class="panel"><h2>${esc(catNome(curC))}</h2><div id="sec${curC}"></div></section>`;
  sec(curC);
 }
 
@@ -1143,27 +1172,33 @@ Views.cfg = () => `<section class="panel"><h2>Modalidades</h2><p class="muted">$
 Views.modedit = () => {
  const tipos = Object.keys(TN);
  const opts = v => tipos.map(t => `<option value="${t}" ${t==v?'selected':''}>${TN[t]}</option>`).join('');
- const grupos = tipos.map(t => {
-  const itens = ACTS.filter(a => a.t == t);
-  if (!itens.length) return '';
-  return `<h3 class="me-grupo">${TN[t]} <span>(${itens.length})</span></h3>` + itens.map(a => `
+ const linha = a => `
   <div class="me-row ${a.oc ? 'oculta' : ''}">
    <input data-mn="${a.s}" value="${esc(a.n)}" aria-label="Nome da modalidade">
    <select data-mt="${a.s}" aria-label="Tipo de ${esc(a.n)}">${opts(a.t)}</select>
    ${btnVis(a.s, a.n, a.oc)}
    <button class="btn alt btn-del me-reg ${a.r?'on':''}" data-mreg="${a.s}" title="${a.r?'Editar regulamento':'Cadastrar regulamento'}" aria-label="Regulamento de ${esc(a.n)}">📄</button>
+   ${btnAgenda(a)}
    ${btnLimpar(a.s, a.n)}
    <button class="btn warn btn-del" data-mdel="${a.s}" aria-label="Excluir ${esc(a.n)}">×</button>
   </div>${a.t == 'marca' ? `<div class="me-sub">
    <select data-mu="${a.s}" aria-label="Medida de ${esc(a.n)}"><option value="tempo" ${a.u=='tempo'?'selected':''}>Medida: Tempo</option><option value="dist" ${a.u=='dist'?'selected':''}>Medida: Distância</option></select>
    <select data-mi="${a.s}" aria-label="Modo de ${esc(a.n)}"><option value="0" ${!a.inv?'selected':''}>Normal (${a.u=='dist'?'maior distância':'menor tempo'} vence)</option><option value="1" ${a.inv?'selected':''}>Invertido (${a.u=='dist'?'menor distância':'maior tempo'} vence)</option></select>
-  </div>` : ''}${a.t == 'extra' ? `<div class="me-sub1"><label class="ex-cfg">Pontos padrão por lançamento<input type="number" min="0" step="any" data-mxv="${a.s}" value="${a.xv}"></label></div>` : ''}${a.t == 'crit' ? `<div class="me-sub1"><button class="btn alt" data-mcrit="${a.s}">✎ Nomear critérios por categoria${a.cn ? ' ✔' : ''}</button></div>` : ''}`).join('');
- }).join('');
+  </div>` : ''}${a.t == 'extra' ? `<div class="me-sub1"><label class="ex-cfg">Pontos padrão por lançamento<input type="number" min="0" step="any" data-mxv="${a.s}" value="${a.xv}"></label></div>` : ''}${a.t == 'crit' ? `<div class="me-sub1"><button class="btn alt" data-mcrit="${a.s}">Nomear critérios${a.cn ? ' ✔' : ''}</button></div>` : ''}`;
+ const porNome = (x, y) => x.n.localeCompare(y.n, 'pt-BR', {sensitivity: 'base'}) * (ordEd == 'za' ? -1 : 1);
+ const grupos = ordEd == 'tipo'
+  ? tipos.filter(t => fltEd == 'todas' || t == fltEd).map(t => {
+   const itens = ACTS.filter(a => a.t == t).sort(porNome);
+   if (!itens.length) return '';
+   return `<h3 class="me-grupo">${TN[t]} <span>(${itens.length})</span></h3>` + itens.map(linha).join('');
+  }).join('')
+  : ACTS.filter(a => fltEd == 'todas' || a.t == fltEd).sort(porNome).map(linha).join('');
  return `<div class="page-head"><a class="back" href="#/configuracoes">← Voltar às configurações</a></div>
  <section class="panel"><h2>Nova modalidade</h2>
   <div class="me-row novo"><input id="mnovo" placeholder="Nome da modalidade"><select id="mtnovo" aria-label="Tipo">${opts('chav')}</select><button class="btn" data-madd>Adicionar</button></div>
  </section>
  <section class="panel"><h2>Modalidades cadastradas (${ACTS.length})</h2>
+  <div class="filters">${ordemEdHTML()}${['todas', ...tipos].map(k => `<button class="chipbtn" data-fltedit="${k}" aria-pressed="${fltEd == k}">${k == 'todas' ? 'Todas' : TN[k]}</button>`).join('')}</div>
   <p class="muted">📄 abre o regulamento (destacado quando já existe). Mudar o nome mantém os resultados. Mudar o tipo ou excluir apaga os resultados dessa modalidade nas três categorias.</p>
   ${grupos || '<p class="muted">Nenhuma modalidade cadastrada.</p>'}
  </section>`;
@@ -1401,7 +1436,8 @@ document.addEventListener('change', async e => {
    ========================================================================== */
 const NCRIT = 6;
 function critNomes(a, ci) {
- const l = (a && a.cn && a.cn[ci]) || [];
+ const cn = (a && a.cn) || {};
+ const l = cn.todos || cn[ci] || Object.values(cn).find(Array.isArray) || [];   // mesmos nomes para todas as categorias
  return Array.from({length: NCRIT}, (_, k) => String(l[k] || '').trim() || `Critério ${k+1}`);
 }
 
@@ -1444,8 +1480,8 @@ function abrirCrit(a) {
  dlg.innerHTML = `<div class="reg-box">
   <div class="reg-head"><h2>Critérios · ${esc(a.n)}</h2><button class="btn alt" data-critfechar aria-label="Fechar">✕</button></div>
   <div class="reg-body" style="white-space:normal">
-   <p class="muted" style="margin-top:0">Dê nome aos ${NCRIT} critérios de cada categoria. Campos vazios aparecem como "Critério 1", "Critério 2"…</p>
-   ${CATS.map(c => `<h3 class="crit-cat">${esc(c.n)}</h3><div class="crit-grid">${critNomes(a, c.id).map((n, k) => `<input data-critn="${c.id},${k}" value="${a.cn && a.cn[c.id] && a.cn[c.id][k] ? esc(a.cn[c.id][k]) : ''}" placeholder="Critério ${k+1}" aria-label="${esc(c.n)} – critério ${k+1}">`).join('')}</div>`).join('')}
+   <p class="muted" style="margin-top:0">Dê nome aos ${NCRIT} critérios. Eles valem para todas as categorias. Campos vazios aparecem como "Critério 1", "Critério 2"…</p>
+   <div class="crit-grid">${critNomes(a, null).map((n, k) => `<input data-critn="${k}" value="${/^Critério \d+$/.test(n) ? '' : esc(n)}" placeholder="Critério ${k+1}" aria-label="Critério ${k+1}">`).join('')}</div>
   </div>
   <div class="reg-foot"><button class="btn alt" data-critfechar>Cancelar</button><button class="btn" data-critsalvar="${a.s}">Salvar critérios</button></div>
  </div>`;
@@ -1457,12 +1493,9 @@ document.addEventListener('click', async e => {
  if (t.dataset.mcrit && !cur && pg === 'modedit') { const a = BY[t.dataset.mcrit]; if (a) abrirCrit(a); }
  else if (t.dataset.critfechar !== undefined) $('critdlg').close();
  else if (t.dataset.critsalvar) {
-  const id = t.dataset.critsalvar, cn = {};
-  $('critdlg').querySelectorAll('[data-critn]').forEach(inp => {
-   const [c, k] = inp.dataset.critn.split(',').map(Number);
-   (cn[c] = cn[c] || Array(NCRIT).fill(''))[k] = inp.value.trim();
-  });
-  Object.keys(cn).forEach(c => { if (!cn[c].some(Boolean)) delete cn[c]; });
+  const id = t.dataset.critsalvar, nomes = Array(NCRIT).fill('');
+  $('critdlg').querySelectorAll('[data-critn]').forEach(inp => { nomes[+inp.dataset.critn] = inp.value.trim(); });
+  const cn = nomes.some(Boolean) ? {todos: nomes} : {};
   t.disabled = true; t.textContent = 'Salvando…';
   await DB.patchCfg(['mods'], () => {
    S.mods = listaMods();
@@ -1967,7 +2000,7 @@ const extraLanc = a => ((S.res[rk(a, EXTRA_CI)] || {}).e || []);
 const extraSoma = a => T.map(i => extraLanc(a).filter(x => +x.team === i).reduce((s, x) => s + (+x.pts || 0), 0));
 
 /* Linha de uma modalidade extra na lista de Modalidades (um quadro só, sem categorias) */
-const extraLinha = (n, href, resumo) => `<div class="act" style="--n:${CATS.length}"><div><a href="${href}"><strong>${esc(n)}</strong></a><small>Extra</small></div><a class="cell done ex-cell" href="${href}"><span class="l">Lançar pontos</span><span class="chips">${esc(resumo)}</span></a></div>`;
+const extraLinha = (n, href, resumo, ag = '') => `<div class="act" style="--n:${CATS.length}"><div><a href="${href}"><strong>${esc(n)}</strong></a><small>Extra</small>${ag}</div><a class="cell done ex-cell" href="${href}"><span class="l">Lançar pontos</span><span class="chips">${esc(resumo)}</span></a></div>`;
 function extrasLista() {
  if (flt != 'todas' && flt != 'extra') return '';
  return EXTRAS_FIXOS.filter(x => !fixoCfg(x.id).oc).map(x => extraLinha(x.n, x.href, x.resumo())).join('') +
@@ -2078,6 +2111,7 @@ ${btnVis(f.id, f.n, c.oc)}
    ${btnLimpar(f.id, f.n)}
   </div>`; }).join('')}
  </section>`;
+ if (fltEd != 'todas' && fltEd != 'extra') return h;
  return i < 0 ? h + painel : h.slice(0, i) + painel + h.slice(i);
 };
 
@@ -2110,6 +2144,10 @@ function icone(n) {
   olho: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
   olhoX: '<path d="M9.9 9.9a3 3 0 1 0 4.2 4.2"/><path d="M10.7 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a13 13 0 0 1-1.7 2.7"/><path d="M6.6 6.6A13.5 13.5 0 0 0 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M2 2l20 20"/>',
   limpar: '<path d="M7 21l-4.3-4.3a2.4 2.4 0 0 1 0-3.4l9.6-9.6a2.4 2.4 0 0 1 3.4 0l5.6 5.6a2.4 2.4 0 0 1 0 3.4L13 21"/><path d="M22 21H7"/><path d="M5 11l9 9"/>',
+  pin: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/>',
+  cal: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  rel: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  pessoa: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>',
   eng: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'
  }[n] || '';
  return `<svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
@@ -2160,7 +2198,7 @@ function extrasItens() {
   })
   .concat(ACTS.filter(a => a.t == 'extra' && !a.oc).map(a => {
    const n = extraLanc(a).length;
-   return {n: a.n, t: 'extra', prog: n ? 1 : 0, h: extraLinha(a.n, `#/m/${a.s}`, `${n} ${n == 1 ? 'lançamento' : 'lançamentos'}`)};
+   return {n: a.n, t: 'extra', prog: n ? 1 : 0, h: extraLinha(a.n, `#/m/${a.s}`, `${n} ${n == 1 ? 'lançamento' : 'lançamentos'}`, agHTML(a))};
   }));
 }
 
@@ -2587,6 +2625,170 @@ document.addEventListener('change', e => {
   if (!y || y.m.team !== +x.team) { delete x.mid; delete x.n; }
  }
  sec(curC);
+});
+
+/* ==========================================================================
+   25. AGENDA DAS MODALIDADES (geral + por categoria), LOCAIS E ÁRBITROS,
+       FILTRO E ORDEM NO EDITOR
+   ========================================================================== */
+let fltEd = 'todas';
+const ORDENS_ED = [['az', 'Ordem alfabética (A–Z)'], ['za', 'Ordem alfabética (Z–A)'], ['tipo', 'Por tipo de modalidade']];
+let ordEd = 'az';
+try { const o = localStorage.getItem('olimp-ordem-ed'); if (ORDENS_ED.some(x => x[0] === o)) ordEd = o; } catch (e) {}
+const ordemEdHTML = () => `<span class="ord-ico ${ordEd != 'az' ? 'ativo' : ''}" title="Ordenar"><select id="edord" aria-label="Ordenar modalidades">${ORDENS_ED.map(([k, n]) => `<option value="${k}" ${ordEd == k ? 'selected' : ''}>${n}</option>`).join('')}</select></span>`;
+
+/* ---------- Cadastros de locais e árbitros (Configurações) ---------- */
+const CAD = {locais: {titulo: 'Locais das partidas', ph: 'Ex.: Quadra coberta', pre: 'loc_', um: 'local'}, arbitros: {titulo: 'Árbitros', ph: 'Ex.: Prof. Carlos', pre: 'arb_', um: 'árbitro'}};
+const cadLista = k => (Array.isArray(S[k]) ? S[k] : []).slice().sort((a, b) => a.n.localeCompare(b.n, 'pt-BR'));
+/* Local: id cadastrado → nome; texto antigo digitado → o próprio texto; id excluído → vazio */
+const nomeLocal = v => { if (!v) return ''; const x = cadLista('locais').find(y => y.id === v); return x ? x.n : (String(v).startsWith('loc_') ? '' : v); };
+const nomeArb = v => { if (!v) return ''; const x = cadLista('arbitros').find(y => y.id === v); return x ? x.n : ''; };
+
+function cadastroHTML(k) {
+ const c = CAD[k], l = cadLista(k);
+ return `<section class="panel"><h2>${c.titulo}</h2>
+  <div class="cad-row novo"><input id="cadnovo-${k}" placeholder="${c.ph}" maxlength="60" autocomplete="off"><button class="btn" data-cadadd="${k}">Adicionar</button></div>
+  ${l.length ? l.map(x => `<div class="cad-row"><input data-cadn="${k},${x.id}" value="${esc(x.n)}" aria-label="Nome do ${c.um}" maxlength="60"><button class="btn warn btn-del" data-caddel="${k},${x.id}" aria-label="Excluir ${esc(x.n)}">×</button></div>`).join('') : `<p class="muted">Nenhum ${c.um} cadastrado.</p>`}
+ </section>`;
+}
+const cfgAntesCad = Views.cfg;
+Views.cfg = () => {
+ const h = cfgAntesCad(), i = h.indexOf('<div class="cfg-cards">'), j = i < 0 ? -1 : h.indexOf('</section></div>', i);
+ const bloco = `<div class="cad-cards">${cadastroHTML('locais')}${cadastroHTML('arbitros')}</div>`;
+ return j < 0 ? h + bloco : h.slice(0, j + 16) + bloco + h.slice(j + 16);
+};
+
+document.addEventListener('click', async e => {
+ const t = e.target.closest('button'); if (!t || cur || pg !== 'cfg') return;
+ if (t.dataset.cadadd) {
+  const k = t.dataset.cadadd, inp = $('cadnovo-' + k), nome = inp.value.trim().replace(/\s+/g, ' ');
+  if (!nome) { inp.focus(); return; }
+  let rep = false;
+  t.disabled = true;
+  await DB.patchCfg([k], () => {
+   const l = Array.isArray(S[k]) ? S[k].slice() : [];
+   if (l.some(x => slug(x.n) === slug(nome))) { rep = true; return; }
+   l.push({id: CAD[k].pre + uid(), n: nome}); S[k] = l;
+  });
+  if (rep) avisar(`"${nome}" já está cadastrado.`);
+  render();
+ }
+ else if (t.dataset.caddel) {
+  const [k, id] = t.dataset.caddel.split(','), x = (S[k] || []).find(y => y.id === id); if (!x) return;
+  if (!await confirmar(`Excluir "${x.n}"?\nAs modalidades que usam este ${CAD[k].um} ficarão sem ${CAD[k].um}.`)) return;
+  await DB.patchCfg([k], () => { S[k] = (Array.isArray(S[k]) ? S[k] : []).filter(y => y.id !== id); });
+  render();
+ }
+});
+document.addEventListener('change', async e => {
+ const el = e.target; if (!el.dataset || !el.dataset.cadn || cur || pg !== 'cfg') return;
+ const [k, id] = el.dataset.cadn.split(','), nome = el.value.trim().replace(/\s+/g, ' ');
+ const x = (S[k] || []).find(y => y.id === id); if (!x) return;
+ if (!nome) { el.value = x.n; return; }
+ if ((S[k] || []).some(y => y.id !== id && slug(y.n) === slug(nome))) { avisar(`"${nome}" já está cadastrado.`); el.value = x.n; return; }
+ await DB.patchCfg([k], () => { const l = (S[k] || []).map(y => ({...y})); const z = l.find(y => y.id === id); if (z) z.n = nome; S[k] = l; });
+ softRender();
+});
+document.addEventListener('keydown', e => {
+ if (e.key === 'Enter' && e.target.id && e.target.id.startsWith('cadnovo-')) { e.preventDefault(); const b = document.querySelector(`[data-cadadd="${e.target.id.slice(8)}"]`); if (b) b.click(); }
+});
+
+/* ---------- Agenda: geral da modalidade + ajustes por categoria ---------- */
+function agDe(a, ci) {
+ const o = (ci != null && a.agc && a.agc[ci]) || {};
+ return {loc: o.loc || a.loc || '', dt: o.dt || a.dt || '', hr: o.hr || a.hr || '', arb: o.arb || a.arb || ''};
+}
+const temAgenda = a => !!(a.loc || a.dt || a.hr || a.arb || Object.values(a.agc || {}).some(o => o && (o.loc || o.dt || o.hr || o.arb)));
+const btnAgenda = a => `<button class="btn alt btn-del me-ico me-ag ${temAgenda(a) ? 'on' : ''}" data-mag="${a.s}" title="Local, data, horário e árbitro" aria-label="Local, data, horário e árbitro de ${esc(a.n)}">${icone('cal')}</button>`;
+
+/* Linha limpa (só o que foi preenchido). Sem categoria: dados gerais; com categoria: dados daquela categoria + árbitro */
+function agHTML(a, ci) {
+ if (!a) return '';
+ const g = agDe(a, ci), p = [];
+ const loc = nomeLocal(g.loc); if (loc) p.push(`<span>${icone('pin')}${esc(loc)}</span>`);
+ if (g.dt) {
+  const d = new Date(g.dt + 'T12:00:00');
+  const dia = isNaN(d) ? g.dt : d.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'}) + ' (' + d.toLocaleDateString('pt-BR', {weekday: 'short'}).replace('.', '') + ')';
+  p.push(`<span>${icone('cal')}${esc(dia)}</span>`);
+ }
+ let hr = g.hr;
+ if (ci == null && !hr && Object.values(a.agc || {}).some(o => o && o.hr)) hr = 'horário por categoria';
+ if (hr) p.push(`<span>${icone('rel')}${esc(hr)}</span>`);
+ if (ci != null) { const arb = nomeArb(g.arb); if (arb) p.push(`<span>${icone('pessoa')}${esc(arb)}</span>`); }
+ return p.length ? `<span class="ag">${p.join('')}</span>` : '';
+}
+
+document.body.insertAdjacentHTML('beforeend', '<dialog id="agdlg" class="reg-dlg" aria-label="Local, data, horário e árbitro"></dialog>');
+function agCampos(pre, v, a) {
+ const opcoes = (k, atual, vazio) => {
+  const l = cadLista(k), o = [['', vazio], ...l.map(x => [x.id, x.n])];
+  if (atual && !l.some(x => x.id === atual) && k == 'locais' && nomeLocal(atual)) o.push([atual, nomeLocal(atual)]);
+  return o.map(([val, n]) => `<option value="${esc(val)}" ${val === atual ? 'selected' : ''}>${esc(n)}</option>`).join('');
+ };
+ const vz = pre == 'g' ? '—' : 'Usar o geral';
+ return `<div class="ag-grid">
+  <label>Local<select data-agf="${pre},loc">${opcoes('locais', v.loc, vz)}</select></label>
+  <label>Árbitro<select data-agf="${pre},arb">${opcoes('arbitros', v.arb, vz)}</select></label>
+  <label>Data<input type="date" data-agf="${pre},dt" value="${esc(v.dt || '')}"></label>
+  <label>Horário<input type="time" data-agf="${pre},hr" value="${esc(v.hr || '')}"></label>
+ </div>`;
+}
+function abrirAgenda(a) {
+ const dlg = $('agdlg');
+ dlg.innerHTML = `<div class="reg-box">
+  <div class="reg-head"><h2>${esc(a.n)}</h2><button class="btn alt" data-agfechar aria-label="Fechar">✕</button></div>
+  <div class="reg-body" style="white-space:normal">
+   <h3 class="ag-sec">Geral</h3>
+   ${agCampos('g', {loc: a.loc, arb: a.arb, dt: a.dt, hr: a.hr}, a)}
+   ${a.t == 'extra' ? '' : (() => { const on = Object.values(a.agc || {}).some(o => o && (o.loc || o.dt || o.hr || o.arb)); return `
+   <label class="ag-por"><input type="checkbox" id="agporcat" ${on ? 'checked' : ''}> Horário, local ou árbitro diferente por categoria</label>
+   <div id="agcats" class="ag-cats" ${on ? '' : 'hidden'}>
+    <p class="muted" style="margin:0 0 8px;text-align:left;font-size:12px">O que ficar vazio usa o geral.</p>
+    ${CATS.map(c => `<div class="ag-cat"><strong>${esc(c.n)}</strong>${agCampos(String(c.id), (a.agc || {})[c.id] || {}, a)}</div>`).join('')}
+   </div>`; })()}
+  </div>
+  <div class="reg-foot mem-foot">${temAgenda(a) ? '<button class="btn warn" data-aglimpar>Limpar tudo</button>' : ''}<span class="mem-esp"></span><button class="btn alt" data-agfechar>Cancelar</button><button class="btn" data-agsalvar="${a.s}">Salvar</button></div>
+ </div>`;
+ if (!dlg.open) dlg.showModal();
+}
+async function salvarAgenda(id, limpar) {
+ const g = {}, agc = {};
+ if (!limpar) $('agdlg').querySelectorAll('[data-agf]').forEach(el => {
+  const [pre, f] = el.dataset.agf.split(','), v = el.value;
+  if (!v) return;
+  if (pre == 'g') g[f] = v; else if ($('agporcat') && $('agporcat').checked) (agc[pre] = agc[pre] || {})[f] = v;
+ });
+ await DB.patchCfg(['mods'], () => {
+  S.mods = listaMods();
+  const x = S.mods.find(y => y.id === id);
+  if (x) {
+   ['loc', 'arb', 'dt', 'hr'].forEach(f => { if (g[f]) x[f] = g[f]; else delete x[f]; });
+   if (Object.keys(agc).length) x.agc = agc; else delete x.agc;
+  }
+  buildActs();
+ });
+ $('agdlg').close();
+ render();
+}
+
+document.addEventListener('click', async e => {
+ const t = e.target.closest('button'); if (!t) return;
+ const d = t.dataset;
+ if (d.fltedit && pg === 'modedit' && !cur) { fltEd = d.fltedit; render(); }
+ else if (d.mag && pg === 'modedit' && !cur) { const a = BY[d.mag]; if (a) abrirAgenda(a); }
+ else if (d.agfechar !== undefined) $('agdlg').close();
+ else if (d.agsalvar) { t.disabled = true; await salvarAgenda(d.agsalvar, false); }
+ else if (d.aglimpar !== undefined) {
+  if (!await confirmar('Limpar local, data, horário e árbitro desta modalidade, inclusive os ajustes por categoria?')) return;
+  await salvarAgenda($('agdlg').querySelector('[data-agsalvar]').dataset.agsalvar, true);
+ }
+});
+document.addEventListener('change', e => { if (e.target.id === 'agporcat') $('agcats').hidden = !e.target.checked; });
+document.addEventListener('change', e => {
+ if (e.target.id !== 'edord') return;
+ ordEd = e.target.value;
+ try { localStorage.setItem('olimp-ordem-ed', ordEd); } catch (er) {}
+ render();
 });
 
 /* Inicialização */
