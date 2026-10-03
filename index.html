@@ -288,6 +288,23 @@ select[data-csel]{position:absolute!important;width:1px!important;height:1px!imp
 .cfg-cards .panel{margin:0;display:flex;flex-direction:column}
 .cfg-cards .panel .row{margin-top:auto;margin-bottom:0}
 @media (max-width:620px){.cfg-cards{gap:8px}.cfg-cards .panel{padding:12px 10px}.cfg-cards .panel h2{font-size:17px}.cfg-cards .muted{font-size:12px}.cfg-cards .btn{white-space:normal;justify-content:center;text-align:center}}
+
+/* Inserção em massa */
+.massa-txt{width:100%;min-height:180px;font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;resize:vertical;line-height:1.5}
+.massa-resumo{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:10px}
+.massa-resumo div{background:var(--soft);border-radius:8px;padding:8px;text-align:center;min-width:0}
+.massa-resumo span{display:block;font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.04em}
+.massa-resumo strong{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.massa-total{margin:4px 0 8px;text-align:center}
+.massa-check{display:flex;gap:8px;align-items:flex-start;font-size:13px;margin-bottom:8px;text-align:left}
+.massa-check input{flex:none;margin-top:2px}
+.massa-lista{border:1px solid var(--line);border-radius:10px;max-height:40vh;overflow:auto}
+.massa-item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--line);font-size:14px}
+.massa-item:last-child{border-bottom:0}
+.massa-item span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.massa-tag{flex:none;font-size:11px;color:#1f9d55;font-weight:600}
+.massa-item.fora span:first-child{color:var(--mute);text-decoration:line-through;font-weight:400}
+.massa-item.fora .massa-tag{color:var(--mute)}
 </style>
 </head>
 <body>
@@ -1448,7 +1465,7 @@ document.addEventListener('click', async e => {
   pop.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + 'px';
   btn.setAttribute('aria-expanded', 'true');
   aberto = {sel, btn, pop};
-  (pop.querySelector('[aria-selected=true]') || pop.querySelector('.csel-op')).focus();
+  (pop.querySelector('[aria-selected=true]') || pop.querySelector('.csel-op')).focus({preventScroll: true});
  }
  function escolher(i) {
   const {sel} = aberto; fechar(true);
@@ -1579,7 +1596,7 @@ Views.membros = () => `<div class="page-head"><a class="back" href="#/configurac
   <select id="memfteam" aria-label="Filtrar por equipe"><option value="">Todas as equipes</option>${T.map(i => `<option value="${i}" ${memF.team === String(i) ? 'selected' : ''}>${tn(i)}</option>`).join('')}</select>
   <select id="memfcat" aria-label="Filtrar por categoria"><option value="">Todas as categorias</option>${CATS.map(c => `<option value="${c.id}" ${memF.cat === String(c.id) ? 'selected' : ''}>${esc(c.n)}</option>`).join('')}</select>
  </div>
- <div class="row"><button class="btn" data-memnovo>+ Novo integrante</button></div>
+ <div class="row"><button class="btn" data-memnovo>+ Novo integrante</button><button class="btn alt" data-memmassa>⇪ Inserir em massa</button></div>
  <div id="memlista">${memListaHTML()}</div></section>`;
 
 /* ---------- Janela de cadastro / edição ---------- */
@@ -1769,6 +1786,93 @@ function cardsCfg(painelInt, resto) {
  const k = resto.indexOf('</section>') + 10;
  return `<div class="cfg-cards">${painelInt}${resto.slice(0, k)}</div>` + resto.slice(k);
 }
+
+/* ==========================================================================
+   15. INTEGRANTES: INSERÇÃO EM MASSA (um nome por linha)
+   ========================================================================== */
+let massa = null;
+
+/* Reconhece os nomes: um por linha, sem marcadores de lista nem espaços sobrando */
+function lerNomes(txt) {
+ const vistos = new Set(), existentes = new Set(membros().map(m => slug(m.nome)));
+ return String(txt || '').split(/\r?\n/)
+  .map(l => l.replace(/^\s*(?:[-*•–—]+|\d+\s*[.)\-–:]|\d+\s+)\s*/, '').replace(/\s+/g, ' ').trim())
+  .filter(Boolean)
+  .map(nome => {
+   const k = slug(nome); let st = 'novo';
+   if (vistos.has(k)) st = 'repetido'; else if (existentes.has(k)) st = 'existe';
+   vistos.add(k); return {nome, st};
+  });
+}
+const massaContagem = () => { const n = lerNomes(massa.txt).length; return n ? `${n} ${n == 1 ? 'nome reconhecido' : 'nomes reconhecidos'}` : 'Cole ou digite os nomes, um em cada linha.'; };
+
+function telaMassa() {
+ const dlg = $('memdlg');
+ dlg.innerHTML = `<div class="reg-box">
+  <div class="reg-head"><h2>Inserir em massa</h2><button class="btn alt" data-memfechar aria-label="Fechar">✕</button></div>
+  <div class="reg-body" style="white-space:normal"><div class="mem-form">
+   <label>Nomes (um por linha)<textarea id="massatxt" class="massa-txt" placeholder="Ana Souza&#10;Bruno Lima&#10;Carla Dias" autocomplete="off">${esc(massa.txt)}</textarea></label>
+   <p class="muted" id="massacont" style="margin:-6px 0 0;text-align:left">${massaContagem()}</p>
+   <label>Equipe de todos<select id="massateam"><option value="">— escolha —</option>${T.map(i => `<option value="${i}" ${massa.team === String(i) ? 'selected' : ''}>${tn(i)}</option>`).join('')}</select></label>
+   <label>Categoria de todos<select id="massacat"><option value="">— escolha —</option>${CATS.map(c => `<option value="${c.id}" ${massa.cat === String(c.id) ? 'selected' : ''}>${esc(c.n)}</option>`).join('')}</select></label>
+   <label>Turma de todos (opcional)<input id="massaturma" value="${esc(massa.turma)}" placeholder="Ex.: 8º B" autocomplete="off"></label>
+  </div></div>
+  <div class="reg-foot mem-foot"><span class="mem-esp"></span><button class="btn alt" data-memfechar>Cancelar</button><button class="btn" data-massarev>Revisar</button></div>
+ </div>`;
+ if (!dlg.open) dlg.showModal();
+}
+
+function telaRevisao() {
+ const itens = lerNomes(massa.txt), novos = itens.filter(x => x.st == 'novo'), exist = itens.filter(x => x.st == 'existe');
+ const incluir = massa.incluirExist && exist.length;
+ const total = novos.length + (incluir ? exist.length : 0);
+ const tag = st => st == 'novo' ? 'novo' : st == 'existe' ? (massa.incluirExist ? 'mesmo nome já cadastrado' : 'já cadastrado · ignorado') : 'repetido na lista · ignorado';
+ $('memdlg').innerHTML = `<div class="reg-box">
+  <div class="reg-head"><h2>Confirme antes de salvar</h2><button class="btn alt" data-memfechar aria-label="Fechar">✕</button></div>
+  <div class="reg-body" style="white-space:normal">
+   <div class="massa-resumo">
+    <div><span>Equipe</span><strong>${esc(teamNome(massa.team))}</strong></div>
+    <div><span>Categoria</span><strong>${esc(catNome(massa.cat))}</strong></div>
+    <div><span>Turma</span><strong>${esc(massa.turma || '—')}</strong></div>
+   </div>
+   <p class="massa-total"><strong>${total}</strong> ${total == 1 ? 'integrante será adicionado' : 'integrantes serão adicionados'}${itens.length - total ? ` · ${itens.length - total} ignorado${itens.length - total == 1 ? '' : 's'}` : ''}</p>
+   ${exist.length ? `<label class="massa-check"><input type="checkbox" id="massaexist" ${massa.incluirExist ? 'checked' : ''}> Adicionar também quem tem o mesmo nome de alguém já cadastrado (${exist.length})</label>` : ''}
+   <div class="massa-lista">${itens.map(x => `<div class="massa-item ${x.st == 'novo' || (x.st == 'existe' && massa.incluirExist) ? '' : 'fora'}"><span>${esc(x.nome)}</span><span class="massa-tag">${tag(x.st)}</span></div>`).join('')}</div>
+  </div>
+  <div class="reg-foot mem-foot"><button class="btn alt" data-massavoltar>← Voltar</button><span class="mem-esp"></span><button class="btn" data-massasalvar ${total ? '' : 'disabled'}>Confirmar e salvar</button></div>
+ </div>`;
+}
+
+document.addEventListener('click', async e => {
+ const t = e.target.closest('button'); if (!t) return;
+ const d = t.dataset;
+ if (d.memmassa !== undefined) { massa = {txt: '', team: memF.team, cat: memF.cat, turma: '', incluirExist: false}; telaMassa(); $('massatxt').focus(); }
+ else if (d.massarev !== undefined) {
+  massa.txt = $('massatxt').value; massa.team = $('massateam').value; massa.cat = $('massacat').value; massa.turma = $('massaturma').value.trim();
+  if (!lerNomes(massa.txt).length) { avisar('Digite pelo menos um nome, um em cada linha.'); return; }
+  if (massa.team === '') { avisar('Escolha a equipe dos integrantes.'); return; }
+  if (massa.cat === '') { avisar('Escolha a categoria dos integrantes.'); return; }
+  telaRevisao();
+ }
+ else if (d.massavoltar !== undefined) { telaMassa(); }
+ else if (d.massasalvar !== undefined) {
+  const lista = lerNomes(massa.txt).filter(x => x.st == 'novo' || (x.st == 'existe' && massa.incluirExist))
+   .map(x => ({id: uid(), nome: x.nome, team: +massa.team, cat: +massa.cat, turma: massa.turma, foto: ''}));
+  if (!lista.length) return;
+  t.disabled = true; t.textContent = 'Salvando…';
+  if (!await MEM.salvar(lista)) { t.disabled = false; t.textContent = 'Confirmar e salvar'; return; }
+  $('memdlg').close();
+  atualizaListaMem();
+  avisar(`${lista.length} ${lista.length == 1 ? 'integrante adicionado' : 'integrantes adicionados'} em ${teamNome(+massa.team)} · ${catNome(+massa.cat)}. Toque em qualquer um para editar.`);
+ }
+});
+
+document.addEventListener('input', e => {
+ if (e.target.id === 'massatxt' && massa) { massa.txt = e.target.value; const c = $('massacont'); if (c) c.textContent = massaContagem(); }
+});
+document.addEventListener('change', e => {
+ if (e.target.id === 'massaexist' && massa) { massa.incluirExist = e.target.checked; telaRevisao(); }
+});
 
 /* Inicialização */
 route();
