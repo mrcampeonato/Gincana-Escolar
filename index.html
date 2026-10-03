@@ -403,6 +403,18 @@ select[data-csel]{position:absolute!important;width:1px!important;height:1px!imp
 .ag-por{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin:4px 0 12px;cursor:pointer;text-align:left}
 .ag-por input{width:20px;height:20px;min-height:0;flex:none}
 .ag-cats[hidden]{display:none}
+
+/* Nova modalidade e categorias da modalidade */
+.nv-topo{margin:4px 0 16px}
+.nv-tit{display:block;font-size:13px;font-weight:600;color:var(--mute);margin-bottom:6px;text-align:left}
+.nv-chips{display:flex;flex-wrap:wrap;gap:6px}
+.nv-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--line);border-radius:999px;font-size:13px;font-weight:600;cursor:pointer}
+.nv-chip input{width:18px;height:18px;min-height:0;accent-color:#1f9d55}
+.nv-chip:has(input:checked){border-color:#1f9d55;background:rgba(31,157,85,.08)}
+.cell.off{opacity:.3;border-style:dotted;pointer-events:none}
+[hidden]{display:none!important}
+.mem-form .nv-chip{display:inline-flex;color:var(--ink)}
+.mem-form .ag-por{display:flex;color:var(--ink)}
 </style>
 </head>
 <body>
@@ -451,7 +463,7 @@ S = Object.assign(fresh(), S || {});
 /* Monta ACTS e BY a partir da lista de modalidades salva */
 function buildActs() {
  const lista = Array.isArray(S.mods) ? S.mods : MODS_PADRAO;
- ACTS = lista.filter(m => m && m.id && m.n && TN[m.t]).map(m => ({n: m.n, t: m.t, s: m.id, r: !!m.r, oc: !!m.oc, u: m.u === 'dist' ? 'dist' : 'tempo', inv: !!m.inv, cn: m.cn || null, xv: m.xv == null ? 100 : +m.xv, loc: m.loc || '', dt: m.dt || '', hr: m.hr || '', arb: m.arb || '', agc: m.agc || {}}));
+ ACTS = lista.filter(m => m && m.id && m.n && TN[m.t]).map(m => ({n: m.n, t: m.t, s: m.id, r: !!m.r, oc: !!m.oc, u: m.u === 'dist' ? 'dist' : 'tempo', inv: !!m.inv, cn: m.cn || null, xv: m.xv == null ? 100 : +m.xv, loc: m.loc || '', dt: m.dt || '', hr: m.hr || '', arb: m.arb || '', agc: m.agc || {}, cats: Array.isArray(m.cats) ? m.cats.map(Number) : null}));
  BY = Object.fromEntries(ACTS.map(a => [a.s, a]));
 }
 buildActs();
@@ -704,7 +716,7 @@ function place(t, d, a) {
 const ready = (t, d) => { const p = place(t, {...d, ok: true}); return t == 'marca' && d.modo !== 'class' ? !!p : !!p && p.every(Boolean) };
 function totals() {
  const cat = {}; let done = 0; CATS.forEach(c => cat[c.id] = [0,0,0,0]);
- ACTS.forEach(a => CATS.forEach(c => { const p = place(a.t, S.res[rk(a, c.id)], a); if (p) { done++; p.forEach((x, i) => { if (x) cat[c.id][i] += S.pts[x-1] || 0 }) } }));
+ ACTS.forEach(a => CATS.filter(c => temCat(a, c.id)).forEach(c => { const p = place(a.t, S.res[rk(a, c.id)], a); if (p) { done++; p.forEach((x, i) => { if (x) cat[c.id][i] += S.pts[x-1] || 0 }) } }));
  const ig = T.map(i => (S.insta[i] || []).filter(Boolean).length * S.ig), fn = T.map(i => (S.fans || []).filter(f => +f.team === i).length * S.fan);
  const ex = ACTS.filter(a => a.t == 'extra').map(a => ({n: a.n, v: extraSoma(a)}));
  return {cat, ig, fn, ex, done, tot: T.map(i => CATS.reduce((a, c) => a + cat[c.id][i], 0) + ig[i] + fn[i] + ex.reduce((s, x) => s + x.v[i], 0))};
@@ -727,7 +739,7 @@ const Views = {
 
  mod() {
   const fl = ['todas', ...Object.keys(TN)].map(k => `<button class="chipbtn" data-flt="${k}" aria-pressed="${flt==k}">${k=='todas'?'Todas':TN[k]}</button>`).join('');
-  const itens = ACTS.filter(a => a.t != 'extra' && !a.oc && (flt=='todas'||a.t==flt)).map(a => ({n: a.n, t: a.t, prog: CATS.filter(c => place(a.t, S.res[rk(a, c.id)], a)).length / CATS.length, h: `<div class="act" style="--n:${CATS.length}"><div><a href="#/m/${a.s}/${CATS[0].id}"><strong>${esc(a.n)}</strong></a><small>${descTipo(a)}</small>${agHTML(a)}</div>${CATS.map(c => { const p = place(a.t, S.res[rk(a, c.id)], a); return`<a class="cell ${p?'done':''}" href="#/m/${a.s}/${c.id}"><span class="l">${esc(c.n)}</span>${chips(p)}</a>` }).join('')}</div>`}));
+  const itens = ACTS.filter(a => a.t != 'extra' && !a.oc && (flt=='todas'||a.t==flt)).map(a => ({n: a.n, t: a.t, prog: catsDe(a).filter(c => place(a.t, S.res[rk(a, c.id)], a)).length / catsDe(a).length, h: `<div class="act" style="--n:${CATS.length}"><div><a href="#/m/${a.s}/${catsDe(a)[0].id}"><strong>${esc(a.n)}</strong></a><small>${descTipo(a)}</small>${agHTML(a)}</div>${CATS.map(c => { if (!temCat(a, c.id)) return `<span class="cell off" aria-hidden="true"><span class="l">${esc(c.n)}</span><span class="chips"></span></span>`; const p = place(a.t, S.res[rk(a, c.id)], a); return`<a class="cell ${p?'done':''}" href="#/m/${a.s}/${c.id}"><span class="l">${esc(c.n)}</span>${chips(p)}</a>` }).join('')}</div>`}));
   const rows = ordenarMods(itens.concat(extrasItens())).map(x => x.h).join('');
   return`<section class="panel"><h2>Modalidades e atividades</h2><p class="muted">Cada modalidade e cada categoria têm a sua própria página. Toque numa categoria para lançar o resultado.</p><div class="filters">${ordemHTML()}${fl}</div><div class="acts">${rows}</div></section>`;
  },
@@ -863,11 +875,11 @@ function renderNav() {
 function page() {
  $('tabs').innerHTML = '';
  if (cur.t == 'extra') {
-  $('main').innerHTML = `<div class="page-head"><a class="back" href="#/modalidades">← Voltar às modalidades</a><h2 class="ptitle">${esc(cur.n)}</h2><p class="muted">Extra</p>${agHTML(cur) ? `<p class="ag-pag">${agHTML(cur)}</p>` : ''}${cur.r ? `<div class="row" style="margin-top:8px"><button class="btn alt" data-verreg>📄 Ver regulamento</button></div>` : ''}</div><section class="panel"><div id="sec${EXTRA_CI}"></div></section>`;
+  $('main').innerHTML = `<div class="page-head"><a class="back" href="#/modalidades">← Voltar às modalidades</a><h2 class="ptitle">${esc(cur.n)}</h2><p class="muted">Extra</p>${agHTML(cur) ? `<p class="ag-pag">${agHTML(cur)}</p>` : ''}${cur.r ? `<div class="row" style="margin-top:8px"><button class="btn alt" data-verreg>Ver regulamento</button></div>` : ''}</div><section class="panel"><div id="sec${EXTRA_CI}"></div></section>`;
   sec(EXTRA_CI); return;
  }
- const links = CATS.map(c => `<a href="#/m/${cur.s}/${c.id}" ${c.id===curC?'aria-current="page"':''}>${esc(c.n)}</a>`).join('');
- const btnReg = `<div class="row" style="margin-top:8px"><button class="btn alt" data-inscver>Inscritos</button>${cur.r ? '<button class="btn alt" data-verreg>📄 Ver regulamento</button>' : ''}</div>`;
+ const links = catsDe(cur).map(c => `<a href="#/m/${cur.s}/${c.id}" ${c.id===curC?'aria-current="page"':''}>${esc(c.n)}</a>`).join('');
+ const btnReg = `<div class="row" style="margin-top:8px"><button class="btn alt" data-inscver>Inscritos</button>${cur.r ? '<button class="btn alt" data-verreg>Ver regulamento</button>' : ''}</div>`;
  $('main').innerHTML = `<div class="page-head"><a class="back" href="#/modalidades">← Voltar às modalidades</a><h2 class="ptitle">${esc(cur.n)}</h2><p class="muted">${descTipo(cur)}</p>${agHTML(cur, curC) ? `<p class="ag-pag">${agHTML(cur, curC)}</p>` : ''}${btnReg}</div><nav class="catnav" aria-label="Categorias">${links}</nav><section class="panel"><h2>${esc(catNome(curC))}</h2><div id="sec${curC}"></div></section>`;
  sec(curC);
 }
@@ -889,7 +901,7 @@ function render() {
  $('main').innerHTML = Views[pg]();
  setTitle();
  $('sub').textContent = (pg == 'placar' || pg == 'mod')
-  ? `${totals().done} de ${ACTS.filter(a => a.t != 'extra').length*CATS.length} resultados confirmados · ${db ? 'sincronizado' : 'modo local'}`
+  ? `${totals().done} de ${ACTS.filter(a => a.t != 'extra').reduce((n, a) => n + catsDe(a).length, 0)} resultados confirmados · ${db ? 'sincronizado' : 'modo local'}`
   : sync.charAt(0).toUpperCase() + sync.slice(1);
  if (pg == 'placar') first = false;
 }
@@ -910,7 +922,8 @@ async function route() {
  }
 
  cur = m && BY[m[1]] || null;
- curC = cur && cur.t == 'extra' ? EXTRA_CI : m && m[2] != null && CATS.some(c => c.id === +m[2]) ? +m[2] : CATS[0].id;
+ curC = cur && cur.t == 'extra' ? EXTRA_CI : cur && m[2] != null && catsDe(cur).some(c => c.id === +m[2]) ? +m[2] : cur ? catsDe(cur)[0].id : CATS[0].id;
+ if (cur && cur.t != 'extra' && m[2] != null && +m[2] !== curC) history.replaceState(null, '', `#/m/${cur.s}/${curC}`);   // categoria que a modalidade não tem
  pg = cur ? 'mod' : (ROUTES[h] || 'placar');
  pendente = false;
 
@@ -1194,9 +1207,7 @@ Views.modedit = () => {
   }).join('')
   : ACTS.filter(a => fltEd == 'todas' || a.t == fltEd).sort(porNome).map(linha).join('');
  return `<div class="page-head"><a class="back" href="#/configuracoes">← Voltar às configurações</a></div>
- <section class="panel"><h2>Nova modalidade</h2>
-  <div class="me-row novo"><input id="mnovo" placeholder="Nome da modalidade"><select id="mtnovo" aria-label="Tipo">${opts('chav')}</select><button class="btn" data-madd>Adicionar</button></div>
- </section>
+ <div class="row nv-topo"><button class="btn" data-novamod>+ Nova modalidade</button></div>
  <section class="panel"><h2>Modalidades cadastradas (${ACTS.length})</h2>
   <div class="filters">${ordemEdHTML()}${['todas', ...tipos].map(k => `<button class="chipbtn" data-fltedit="${k}" aria-pressed="${fltEd == k}">${k == 'todas' ? 'Todas' : TN[k]}</button>`).join('')}</div>
   <p class="muted">📄 abre o regulamento (destacado quando já existe). Mudar o nome mantém os resultados. Mudar o tipo ou excluir apaga os resultados dessa modalidade nas três categorias.</p>
@@ -1366,7 +1377,7 @@ const listaCats = () => CATS.map(c => ({id: c.id, n: c.n}));
 
 /* Se a categoria aberta foi excluída em outro aparelho, vai para a primeira */
 function syncCat() {
- if (cur && cur.t != 'extra' && !CATS.some(c => c.id === curC)) { location.hash = `#/m/${cur.s}/${CATS[0].id}`; }
+ if (cur && cur.t != 'extra' && !catsDe(cur).some(c => c.id === curC)) { location.hash = `#/m/${cur.s}/${catsDe(cur)[0].id}`; }
 }
 
 /* Painel de categorias, logo depois do painel de Modalidades */
@@ -2063,7 +2074,7 @@ document.addEventListener('change', async e => {
 ['insta', 'torc'].forEach(k => {
  const antes = Views[k];
  const fid = k == 'insta' ? 'instagram' : 'torcida-famosa';
- Views[k] = () => `<div class="page-head"><a class="back" href="#/modalidades">← Voltar às modalidades</a>${fixoCfg(fid).r ? `<div class="row" style="margin-top:4px"><button class="btn alt" data-verfx="${fid}">📄 Ver regulamento</button></div>` : ''}</div>` + antes();
+ Views[k] = () => `<div class="page-head"><a class="back" href="#/modalidades">← Voltar às modalidades</a>${fixoCfg(fid).r ? `<div class="row" style="margin-top:4px"><button class="btn alt" data-verfx="${fid}">Ver regulamento</button></div>` : ''}</div>` + antes();
 });
 
 /* Página só de visualização dos integrantes (menu principal) */
@@ -2306,8 +2317,9 @@ function inscListaHTML() {
 
 function inscModsHTML() {
  if (!inscSet) return '<p class="muted">Carregando inscrições…</p>';
- const l = modsInscreviveis();
- if (!l.length) return '<p class="muted">Nenhuma modalidade cadastrada.</p>';
+ const mm = membros().find(x => x.id === inscSel);
+ const l = modsInscreviveis().filter(a => !mm || temCat(a, mm.cat));   // só modalidades da categoria do integrante
+ if (!l.length) return '<p class="muted">Nenhuma modalidade para a categoria deste integrante.</p>';
  return Object.keys(TN).filter(t => t != 'extra').map(t => {
   const g = l.filter(a => a.t == t).sort((x, y) => x.n.localeCompare(y.n, 'pt-BR'));
   if (!g.length) return '';
@@ -2790,6 +2802,110 @@ document.addEventListener('change', e => {
  try { localStorage.setItem('olimp-ordem-ed', ordEd); } catch (er) {}
  render();
 });
+
+/* ==========================================================================
+   26. NOVA MODALIDADE EM JANELA COMPLETA + CATEGORIAS DE CADA MODALIDADE
+   ========================================================================== */
+/* Categorias em que a modalidade acontece (sem escolha = todas) */
+const temCat = (a, id) => !a.cats || !a.cats.length || a.cats.includes(+id);
+const catsDe = a => { const l = CATS.filter(c => temCat(a, c.id)); return l.length ? l : CATS; };
+
+document.body.insertAdjacentHTML('beforeend', '<dialog id="novadlg" class="reg-dlg" aria-label="Nova modalidade"></dialog>');
+function abrirNovaMod() {
+ const tipos = Object.keys(TN);
+ const op = (k, vazio) => [['', vazio], ...cadLista(k).map(x => [x.id, x.n])].map(([v, n]) => `<option value="${esc(v)}">${esc(n)}</option>`).join('');
+ const dlg = $('novadlg');
+ dlg.innerHTML = `<div class="reg-box">
+  <div class="reg-head"><h2>Nova modalidade</h2><button class="btn alt" data-nvfechar aria-label="Fechar">✕</button></div>
+  <div class="reg-body" style="white-space:normal"><div class="mem-form">
+   <label>Nome<input id="nvnome" placeholder="Ex.: Handebol misto" maxlength="60" autocomplete="off"></label>
+   <label>Tipo<select id="nvtipo">${tipos.map(t => `<option value="${t}">${TN[t]}</option>`).join('')}</select></label>
+   <div class="ag-grid nv-marca" hidden>
+    <label>Medida<select id="nvmedida"><option value="tempo">Tempo</option><option value="dist">Distância</option></select></label>
+    <label>Modo<select id="nvmodo"><option value="0">Normal</option><option value="1">Invertido</option></select></label>
+   </div>
+   <label class="nv-extra" hidden>Pontos padrão por lançamento<input id="nvxv" type="number" min="0" step="any" value="100"></label>
+   <div class="nv-cats"><span class="nv-tit">Categorias</span><div class="nv-chips">${CATS.map(c => `<label class="nv-chip"><input type="checkbox" data-nvcat="${c.id}" checked><span>${esc(c.n)}</span></label>`).join('')}</div></div>
+   <div class="ag-grid">
+    <label>Local<select id="nvloc">${op('locais', '—')}</select></label>
+    <label>Árbitro<select id="nvarb">${op('arbitros', '—')}</select></label>
+    <label>Data<input id="nvdt" type="date"></label>
+    <label>Horário<input id="nvhr" type="time"></label>
+   </div>
+   <label>Regulamento (opcional)<textarea id="nvreg" class="massa-txt" style="min-height:120px" placeholder="Cole ou digite o regulamento"></textarea></label>
+   <label class="ag-por"><input type="checkbox" id="nvvis" checked> Visível na página Modalidades</label>
+  </div></div>
+  <div class="reg-foot mem-foot"><span class="mem-esp"></span><button class="btn alt" data-nvfechar>Cancelar</button><button class="btn" data-nvcriar>Criar modalidade</button></div>
+ </div>`;
+ if (!dlg.open) dlg.showModal();
+ $('nvnome').focus();
+}
+function nvTipo() {
+ const t = $('nvtipo').value;
+ $('novadlg').querySelector('.nv-marca').hidden = t != 'marca';
+ $('novadlg').querySelector('.nv-extra').hidden = t != 'extra';
+ $('novadlg').querySelector('.nv-cats').hidden = t == 'extra';
+}
+async function criarMod(btn) {
+ const nome = $('nvnome').value.trim().replace(/\s+/g, ' '), t = $('nvtipo').value;
+ if (!nome) { avisar('Informe o nome da modalidade.'); return; }
+ if (!TN[t]) return;
+ const cats = [...$('novadlg').querySelectorAll('[data-nvcat]')].filter(x => x.checked).map(x => +x.dataset.nvcat);
+ if (t != 'extra' && !cats.length) { avisar('Escolha pelo menos uma categoria.'); return; }
+ const reg = $('nvreg').value.trim();
+ let repetido = false, id = null;
+ btn.disabled = true; btn.textContent = 'Criando…';
+ await DB.patchCfg(['mods'], () => {
+  S.mods = listaMods();
+  if (S.mods.some(x => !x.fx && mesmoNome(x.n, nome))) { repetido = true; return; }
+  id = novoId(nome, S.mods);
+  const x = {id, n: nome, t};
+  if (t == 'marca') { if ($('nvmedida').value == 'dist') x.u = 'dist'; if ($('nvmodo').value == '1') x.inv = 1; }
+  if (t == 'extra') x.xv = Math.max(0, +$('nvxv').value || 0);
+  if (t != 'extra' && cats.length < CATS.length) x.cats = cats;
+  [['loc', 'nvloc'], ['arb', 'nvarb'], ['dt', 'nvdt'], ['hr', 'nvhr']].forEach(([f, el]) => { const v = $(el).value; if (v) x[f] = v; });
+  if (!$('nvvis').checked) x.oc = 1;
+  if (reg) x.r = 1;
+  S.mods.push(x); buildActs();
+ });
+ if (repetido) { btn.disabled = false; btn.textContent = 'Criar modalidade'; avisar(`Já existe uma modalidade chamada "${nome}".`); return; }
+ if (reg && id) await REG.set(id, reg);
+ $('novadlg').close();
+ render();
+ avisar(`Modalidade "${nome}" criada.`);
+}
+
+document.addEventListener('click', e => {
+ const t = e.target.closest('button'); if (!t) return;
+ if (t.dataset.novamod !== undefined && pg === 'modedit' && !cur) abrirNovaMod();
+ else if (t.dataset.nvfechar !== undefined) $('novadlg').close();
+ else if (t.dataset.nvcriar !== undefined) criarMod(t);
+});
+document.addEventListener('change', e => { if (e.target.id === 'nvtipo') nvTipo(); });
+
+/* Categorias também editáveis numa modalidade já criada (janela do calendário) */
+const agAntesCats = abrirAgenda;
+abrirAgenda = function (a) {
+ agAntesCats(a);
+ if (a.t == 'extra') return;
+ const corpo = $('agdlg').querySelector('.reg-body');
+ corpo.insertAdjacentHTML('afterbegin', `<div class="nv-cats" style="margin-bottom:12px"><span class="nv-tit">Categorias que terá</span><div class="nv-chips">${CATS.map(c => `<label class="nv-chip"><input type="checkbox" data-agcatsel="${c.id}" ${temCat(a, c.id) ? 'checked' : ''}><span>${esc(c.n)}</span></label>`).join('')}</div></div>`);
+ corpo.querySelectorAll('.ag-cat').forEach((el, i) => { el.dataset.catid = CATS[i] && CATS[i].id; el.hidden = !(CATS[i] && temCat(a, CATS[i].id)); });
+};
+document.addEventListener('change', e => {
+ const el = e.target; if (!el.dataset || el.dataset.agcatsel === undefined) return;
+ const box = $('agdlg').querySelector(`.ag-cat[data-catid="${el.dataset.agcatsel}"]`); if (box) box.hidden = !el.checked;
+});
+const salvarAgAntesCats = salvarAgenda;
+salvarAgenda = async function (id, limpar) {
+ const sel = [...$('agdlg').querySelectorAll('[data-agcatsel]')];
+ if (sel.length) {
+  const cats = sel.filter(x => x.checked).map(x => +x.dataset.agcatsel);
+  if (!cats.length) { avisar('Escolha pelo menos uma categoria.'); return; }
+  await DB.patchCfg(['mods'], () => { S.mods = listaMods(); const x = S.mods.find(y => y.id === id); if (x) { if (cats.length < CATS.length) x.cats = cats; else delete x.cats; } buildActs(); });
+ }
+ return salvarAgAntesCats(id, limpar);
+};
 
 /* Inicialização */
 route();
