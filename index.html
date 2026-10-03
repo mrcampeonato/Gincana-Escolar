@@ -24,7 +24,7 @@ header p{margin:6px 0 0;color:var(--mute);font-size:14px}
 #tabs:empty{margin:10px 0}
 #tabs a,.chipbtn{font:600 14px Figtree,sans-serif;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:8px 14px;cursor:pointer;min-height:40px;text-decoration:none;display:inline-flex;align-items:center}
 #tabs a[aria-current=page],.chipbtn[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid #3d9ad8;outline-offset:2px}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible,.csel:focus-visible{outline:3px solid #3d9ad8;outline-offset:2px}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px;overflow:hidden}
 .panel h2{font-size:20px;margin-bottom:12px;text-align:center}
 .panel>p{text-align:center}
@@ -51,7 +51,7 @@ tfoot td{font-weight:800;border-bottom:0}
 .sw{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0}
 .sw[aria-pressed=true]{border:3px solid var(--ink);transform:scale(1.1)}
 .acts{display:grid;gap:8px}
-.act{display:grid;grid-template-columns:minmax(0,1fr) repeat(3,124px);gap:6px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.act{display:grid;grid-template-columns:minmax(0,1fr) repeat(var(--n,3),124px);gap:6px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .act small{display:block;color:var(--mute)}
 .act>div:first-child a{color:inherit;text-decoration:none}
 .cell{border:1px dashed var(--line);background:var(--soft);color:var(--ink);border-radius:8px;padding:6px 4px;min-width:70px;text-align:center;font:600 12px Figtree,sans-serif;text-decoration:none;display:block}
@@ -62,7 +62,7 @@ tfoot td{font-weight:800;border-bottom:0}
 .cell span.l{display:block;color:var(--mute);margin-bottom:2px;font-size:10px}
 .chip{display:inline-block;min-width:22px;padding:0 4px;margin:0;line-height:20px;border-radius:4px;background:var(--c);color:#000;font-weight:800;font-size:11px}
 .filters{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:10px}
-input,select{font:inherit;font-size:14px;min-height:40px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;width:100%;max-width:100%}
+input,select,.csel{font:inherit;font-size:14px;min-height:40px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;width:100%;max-width:100%}
 input[type=number]{width:100%}
 input[type=checkbox]{width:20px;height:20px;min-height:0}
 .row{display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap;margin-bottom:8px;width:100%}
@@ -87,7 +87,7 @@ input[type=checkbox]{width:20px;height:20px;min-height:0}
  margin-bottom:8px;
  width:100%;
 }
-.marca-row input, .marca-row select{
+.marca-row input, .marca-row select, .marca-row .csel{
  font-size:13px;
  padding:6px 4px;
  min-height:38px;
@@ -95,7 +95,7 @@ input[type=checkbox]{width:20px;height:20px;min-height:0}
  min-width:0;
  box-sizing:border-box;
 }
-.marca-row input.input-tempo{text-align:center;font-weight:600;padding:6px 2px}
+.marca-row input.input-tempo,.marca-row input.input-dist{text-align:center;font-weight:600;padding:6px 2px}
 .btn-del{
  width:30px;
  height:38px;
@@ -117,20 +117,24 @@ input[type=checkbox]{width:20px;height:20px;min-height:0}
 .muted{color:var(--mute);text-align:center;font-size:13px}
 .pv{margin-top:12px;padding:10px;background:var(--soft);border-radius:10px}
 .pv div{display:flex;justify-content:space-between;padding:3px 0;font-size:14px}
+.pv .pv3{display:grid;grid-template-columns:minmax(0,1fr) auto 56px;gap:12px;align-items:center}
+.pv .pv3 strong{text-align:right}
+.pv-val{font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
 .back{display:inline-block;margin-bottom:10px;color:var(--ink);font-weight:600;font-size:14px}
 .ptitle{font-size:clamp(20px,5vw,32px);font-weight:800}
 .page-head{text-align:center}
 .st{display:inline-flex;align-items:center;gap:4px}
 .st input{width:46px;text-align:center;padding:6px 2px}
 .sb{width:38px;height:38px;border-radius:8px;border:1px solid var(--line);background:var(--soft);color:var(--ink);font:700 18px/1 Figtree,sans-serif;cursor:pointer}
-button:disabled,input:disabled,select:disabled{opacity:.45;cursor:not-allowed}
+button:disabled,input:disabled,select:disabled,.csel:disabled{opacity:.45;cursor:not-allowed}
 .ok{color:#1f9d55;font-weight:600;font-size:14px}
 .catnav{margin:10px 0 14px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap}
 .catnav a{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:8px 12px;font-weight:600;text-decoration:none;min-height:38px;display:inline-flex;align-items:center;font-size:13px}
 .catnav a[aria-current=page]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .duel{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:start;justify-items:center;text-align:center}
 .side{display:grid;gap:6px;justify-items:center;width:100%}
-.side select,.side strong{max-width:100%;width:100%;text-align:center;font-size:13px}
+.side select,.side strong,
+.side .csel{max-width:100%;width:100%;text-align:center;font-size:13px}
 .x{font-weight:800;padding-top:8px}
 
 @media (prefers-reduced-motion:reduce){.grow .bar{animation:none}}
@@ -139,7 +143,7 @@ button:disabled,input:disabled,select:disabled{opacity:.45;cursor:not-allowed}
  .panel{padding:12px;border-radius:12px}
  .rpts{font-size:18px}
  .rrow{grid-template-columns:24px 1fr auto}
- .act{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .act{grid-template-columns:repeat(var(--n,3),minmax(0,1fr))}
  .chip{min-width:18px;padding:0 2px;font-size:10px}
  .act>div:first-child{grid-column:1/-1;text-align:center}
  .cell{padding:6px 2px;min-width:0}
@@ -150,17 +154,31 @@ button:disabled,input:disabled,select:disabled{opacity:.45;cursor:not-allowed}
   gap:4px;
  }
  .marca-header {font-size:11px}
- .marca-row input, .marca-row select {font-size:12px;padding:5px 2px}
+ .marca-row input, .marca-row select , .marca-row .csel {font-size:12px;padding:5px 2px}
  .btn-del {width:28px}
 }
 @media (max-width:380px){.st{gap:2px}.sb{width:34px;height:34px}.st input{width:38px}}
 /* Editor de modalidades */
 .me-row{display:grid;grid-template-columns:minmax(0,1fr) 150px auto auto;gap:6px;align-items:center;margin-bottom:8px}
 .me-row.novo{grid-template-columns:minmax(0,1fr) 150px auto}
-.me-row input,.me-row select{min-width:0}
+.me-row input,.me-row select,.me-row .csel{min-width:0}
 .me-grupo{font-size:15px;margin:18px 0 8px}
 .me-grupo span{color:var(--mute);font-weight:400;font-size:13px}
 .me-reg{border-color:var(--line);font-size:16px}
+.cat-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center;margin-bottom:8px}
+.cat-row.novo{grid-template-columns:minmax(0,1fr) auto;margin-top:12px}
+.me-sub{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:6px;margin:-2px 0 14px}
+.me-sub select,
+.me-sub .csel{font-size:13px;min-width:0}
+.me-sub1{margin:-2px 0 14px}
+.me-sub1 .btn{width:100%;font-size:13px}
+.crit-tab th{text-align:center;font-size:12px;white-space:normal;min-width:56px;line-height:1.2}
+.crit-tab td{text-align:center}
+.crit-tab td:first-child{text-align:left}
+.crit-tab input{width:56px;text-align:center;padding:6px 2px}
+.crit-cat{font-size:15px;margin:14px 0 6px}
+.crit-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+@media (max-width:620px){.crit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .me-reg.on{border-color:var(--ink);background:var(--soft)}
 @media (max-width:620px){.me-row{grid-template-columns:minmax(0,1fr) 110px auto auto}.me-row.novo{grid-template-columns:minmax(0,1fr) 110px auto}}
 
@@ -172,7 +190,8 @@ button:disabled,input:disabled,select:disabled{opacity:.45;cursor:not-allowed}
 .fim-lado.win .tm{border-color:#000}
 .fim-lado.win{font-weight:800}
 .fim-vazio{color:var(--mute);font-size:.6em;font-weight:600}
-.fim-lado select{-webkit-appearance:none;appearance:none;width:100%;min-height:44px;padding:4px 2px;text-align:center;text-align-last:center;font:inherit;color:var(--ink);background:var(--card);border:1px dashed var(--mute);border-radius:8px;cursor:pointer}
+.fim-lado select,
+.fim-lado .csel{-webkit-appearance:none;appearance:none;width:100%;min-height:44px;padding:4px 2px;text-align:center;text-align-last:center;font:inherit;color:var(--ink);background:var(--card);border:1px dashed var(--mute);border-radius:8px;cursor:pointer}
 .fim-nums{display:flex;align-items:center;gap:8px;font:800 clamp(18px,5vw,30px) 'Bricolage Grotesque',sans-serif;font-variant-numeric:tabular-nums;color:var(--mute)}
 .fim-nums .win{color:var(--ink)}
 .fim-x{font-size:18px;color:var(--mute)}
@@ -191,7 +210,7 @@ button:disabled,input:disabled,select:disabled{opacity:.45;cursor:not-allowed}
 .desemp-nums .st input{font:800 18px 'Bricolage Grotesque',sans-serif}
 @media (max-width:380px){.vst input{width:50px}.vst .sb{width:40px}}
 .fim-campos{border-left:3px solid #1f9d55;padding-left:10px}
-.fim-campos input:disabled,.fim-campos select:disabled{opacity:1;color:var(--ink);-webkit-text-fill-color:var(--ink);background:var(--card);border-color:var(--line);cursor:default}
+.fim-campos input:disabled,.fim-campos select:disabled,.fim-campos .csel:disabled{opacity:1;color:var(--ink);-webkit-text-fill-color:var(--ink);background:var(--card);border-color:var(--line);cursor:default}
 .fim-campos button:disabled{visibility:hidden}
 
 /* Janela do regulamento */
@@ -202,7 +221,21 @@ button:disabled,input:disabled,select:disabled{opacity:.45;cursor:not-allowed}
 .reg-head h2{font-size:18px}
 .reg-body{padding:16px;overflow:auto;white-space:pre-wrap;line-height:1.6;font-size:15px}
 .reg-body textarea{width:100%;min-height:50vh;font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;resize:vertical}
+.cx-dlg{width:min(440px,calc(100vw - 24px))}
+.cx-body{font-size:15px}
 .reg-foot{display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid var(--line)}
+
+/* Listas suspensas do próprio site */
+.csel{display:flex;align-items:center;justify-content:space-between;gap:6px;text-align:left;cursor:pointer;-webkit-appearance:none;appearance:none;line-height:1.2}
+.csel-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1}
+.csel-arr{font-size:.75em;opacity:.65;flex:none}
+.fim-lado .csel,.side .csel{justify-content:center}
+.fim-lado .csel .csel-txt,.side .csel .csel-txt{flex:0 1 auto}
+select[data-csel]{position:absolute!important;width:1px!important;height:1px!important;min-height:0!important;padding:0!important;margin:0!important;border:0!important;opacity:0;pointer-events:none;overflow:hidden}
+.csel-pop{position:fixed;z-index:1000;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:4px;max-height:min(50vh,320px);overflow:auto}
+.csel-op{display:block;width:100%;text-align:left;background:none;border:0;border-radius:6px;padding:9px 10px;font:600 14px Figtree,sans-serif;color:var(--ink);cursor:pointer;min-height:40px}
+.csel-op:hover,.csel-op:focus-visible{background:var(--soft);outline:none}
+.csel-op[aria-selected=true]{background:var(--ink);color:var(--bg)}
 </style>
 </head>
 <body>
@@ -215,7 +248,9 @@ button:disabled,input:disabled,select:disabled{opacity:.45;cursor:not-allowed}
 /* ==========================================================================
    1. CONSTANTES E ESTADO GLOBAL
    ========================================================================== */
-const CATS = ['6º-7º ANO','8º ANO','9º EM'];
+/* Categorias: o "id" é fixo e compõe o código do resultado (ex.: futsal-misto_0) */
+const CATS_PADRAO = [{id:0, n:'6º-7º ANO'}, {id:1, n:'8º ANO'}, {id:2, n:'9º EM'}];
+let CATS = [];
 const L = {
  rank: ['Abertura Temática','Bandeira','Chamada','Escola Limpa','Fair Play','Grito de Paz','Mascote','Organização','Torcida','Uniforme','Torta Na Cara','The Voice'],
  chav: ['Basquetebol Misto','Kings League','FIFA','Futebol Society Masc','Futevôlei','Futmesa','Futsal Misto','Pique Bandeirinha','Queimada','Tênis Dupla Mista','Vôlei de Areia Fem','Vôlei de Areia Masc','Voleibol Quadra Fem','Voleibol Quadra Masc','Tênis de Mesa'],
@@ -223,7 +258,7 @@ const L = {
  crit: ['Free Fire','Operações Matemáticas','Prova dos Sentidos','Soletrando','Ciências','Do Lixo ao Luxo','Master Chef'],
  pontos: ['Boliche Humano','Adedonha']
 };
-const TN = {chav:'Chaveamento',rank:'Ranking',marca:'Marca (tempo)',crit:'Critérios',pontos:'Pontuação'};
+const TN = {chav:'Chaveamento',rank:'Ranking',marca:'Marca (tempo/distância)',crit:'Critérios',pontos:'Pontuação'};
 const slug = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 /* Lista padrão de modalidades (usada só enquanto nada foi salvo no servidor).
    O "id" é fixo: é ele que liga a modalidade aos resultados na tabela res. */
@@ -241,17 +276,27 @@ const PALETA = [
 const CORES_PADRAO = ['#8ecbf5','#f5a3a3','#ffe27a','#a9bdf7'];
 
 const fresh = () => ({colors:CORES_PADRAO.slice(),teams:['Argentina','Portugal','Espanha','França'],pts:[200,150,100,80],fan:200,ig:100,res:{},fans:[],insta:[0,1,2,3].map(()=>Array(20).fill(false)),
- mods: JSON.parse(JSON.stringify(S && Array.isArray(S.mods) ? S.mods : MODS_PADRAO))});
+ mods: JSON.parse(JSON.stringify(S && Array.isArray(S.mods) ? S.mods : MODS_PADRAO)),
+ cats: JSON.parse(JSON.stringify(S && Array.isArray(S.cats) && S.cats.length ? S.cats : CATS_PADRAO))});
 let S; try { S = JSON.parse(localStorage.getItem(KEY)) } catch (e) {}
 S = Object.assign(fresh(), S || {});
 
 /* Monta ACTS e BY a partir da lista de modalidades salva */
 function buildActs() {
  const lista = Array.isArray(S.mods) ? S.mods : MODS_PADRAO;
- ACTS = lista.filter(m => m && m.id && m.n && TN[m.t]).map(m => ({n: m.n, t: m.t, s: m.id, r: !!m.r}));
+ ACTS = lista.filter(m => m && m.id && m.n && TN[m.t]).map(m => ({n: m.n, t: m.t, s: m.id, r: !!m.r, u: m.u === 'dist' ? 'dist' : 'tempo', inv: !!m.inv, cn: m.cn || null}));
  BY = Object.fromEntries(ACTS.map(a => [a.s, a]));
 }
 buildActs();
+
+/* Monta CATS a partir da lista de categorias salva */
+function buildCats() {
+ const l = Array.isArray(S.cats) && S.cats.length ? S.cats : CATS_PADRAO;
+ CATS = l.filter(c => c && c.id != null && c.n).map(c => ({id: +c.id, n: String(c.n)}));
+ if (!CATS.length) CATS = CATS_PADRAO.map(c => ({...c}));
+}
+buildCats();
+const catNome = id => (CATS.find(c => c.id === +id) || {}).n || '';
 
 /* Páginas do sistema: cada uma tem a sua própria URL (hash) */
 const TABS = [
@@ -268,13 +313,13 @@ const ROUTES = {
 
 /* Colunas da tabela cfg que cada página precisa ler (requisição focada) */
 const COLS = {
- placar:  'teams,pts,fan,ig,insta,fans,mods,colors',
- mod:     'teams,pts,mods,colors',
- m:       'teams,pts,mods,colors',
+ placar:  'teams,pts,fan,ig,insta,fans,mods,colors,cats',
+ mod:     'teams,pts,mods,colors,cats',
+ m:       'teams,pts,mods,colors,cats',
  insta:   'teams,ig,insta,colors',
  torc:    'teams,fan,fans,colors',
- cfg:     'teams,pts,fan,ig,mods,colors',
- modedit: 'mods'
+ cfg:     'teams,pts,fan,ig,mods,colors,cats',
+ modedit: 'mods,cats'
 };
 
 let cur = null, curC = 0, pg = 'placar', flt = 'todas', first = true;
@@ -303,7 +348,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)) } catch (e) {} };
-const fail = e => alert('Não foi possível salvar no servidor: ' + (e && (e.message || e.code) || JSON.stringify(e)));
+const fail = e => avisar('Não foi possível salvar no servidor: ' + (e && (e.message || e.code) || JSON.stringify(e)));
 
 function parseId(id) {
  const parts = String(id || '').split('_');
@@ -316,7 +361,8 @@ function removeRes(id) { const k = parseId(id); if (k) delete S.res[k]; }
 
 function applyCfg(d) {
  if (!d) return;
- ['teams', 'pts', 'fan', 'ig', 'insta', 'fans', 'mods', 'colors'].forEach(k => { if (d[k] != null) S[k] = d[k]; });
+ ['teams', 'pts', 'fan', 'ig', 'insta', 'fans', 'mods', 'colors', 'cats'].forEach(k => { if (d[k] != null) S[k] = d[k]; });
+ if (d.cats != null) { buildCats(); syncCat(); }
  if (d.colors != null) aplicarCores();
  if (d.mods != null) { buildActs(); syncCur(); }
 }
@@ -430,6 +476,17 @@ function crank(vals, asc) {
  const ix = vals.map((v, i) => [v, i]).filter(x => x[0] != null); if (!ix.length) return null;
  const p = [null, null, null, null]; ix.forEach(([v, i]) => p[i] = 1 + ix.filter(([w]) => asc ? w < v : w > v).length); return p;
 }
+/* Distância digitada como 12m34cm (ou 12,34) → centímetros */
+function pdist(s) {
+ s = String(s || '').trim().toLowerCase(); if (!s) return null;
+ const m = s.match(/^(\d+)\s*m\s*(\d{1,2})\s*(cm)?$/);
+ if (m) return +m[1] * 100 + +m[2];
+ const n = num(s.replace(',', '.')); return n == null ? null : Math.round(n * 100);
+}
+/* Texto curto da regra da modalidade de marca */
+const regraMarca = a => a.u === 'dist' ? (a.inv ? 'Distância · menor distância vence' : 'Distância · maior distância vence') : (a.inv ? 'Tempo · maior tempo vence' : 'Tempo · menor tempo vence');
+const descTipo = a => a.t == 'marca' ? `Marca · ${regraMarca(a)}` : TN[a.t];
+
 function ptime(s) {
  s = String(s || '').trim(); if (!s) return null;
  if (!/['’:]/.test(s)) return num(s.replace(',', '.'));
@@ -446,7 +503,7 @@ function chavM(d) {
  const m = d.m || {}, w1 = win(m.s1), w2 = win(m.s2);
  return {s1: m.s1 || {}, s2: m.s2 || {}, t3: {...m.t3, a: w1 ? w1[1] : '', b: w2 ? w2[1] : ''}, f: {...m.f, a: w1 ? w1[0] : '', b: w2 ? w2[0] : ''}};
 }
-function place(t, d) {
+function place(t, d, a) {
  if (!d) return null;
  if (t == 'chav') {
   const x = chavM(d), wf = win(x.f), wt = win(x.t3), p = [null, null, null, null];
@@ -455,20 +512,24 @@ function place(t, d) {
  }
  if (!d.ok) return null;
  if (t == 'rank') { const r = T.map(i => num(d.p?.[i]) || null); return r.some(x => x) ? r : null }
+ if (t == 'pontos' && d.modo === 'class') { const r = T.map(i => num(d.p?.[i]) || null); return r.some(x => x) ? r : null }
  if (t == 'pontos') return crank(T.map(i => num(d.v?.[i])), false);
+ if (t == 'crit' && d.modo === 'class') { const r = T.map(i => num(d.p?.[i]) || null); return r.some(x => x) ? r : null }
  if (t == 'crit') return crank(T.map(i => { const c = d.c?.[i]; return c && c.some(x => x !== '' && x != null) ? c.reduce((a, b) => a + (+b || 0), 0) : null }), false);
  if (t == 'marca') {
-  const b = [null, null, null, null];
-  (d.e || []).forEach(e => { const s = ptime(e?.t); if (s != null && e.team !== '' && e.team != null) { const i = +e.team; if (b[i] == null || s < b[i]) b[i] = s } });
-  return crank(b, true);
+  /* tempo: menor vence (invertido: maior) · distância: maior vence (invertido: menor) */
+  const cfg = a || cur || {}, dist = cfg.u === 'dist', menorVence = dist ? !!cfg.inv : !cfg.inv;
+  const ler = dist ? pdist : ptime, b = [null, null, null, null];
+  (d.e || []).forEach(e => { const s = ler(e?.t); if (s != null && e.team !== '' && e.team != null) { const i = +e.team; if (b[i] == null || (menorVence ? s < b[i] : s > b[i])) b[i] = s } });
+  return crank(b, menorVence);
  }
 }
 const ready = (t, d) => { const p = place(t, {...d, ok: true}); return t == 'marca' ? !!p : !!p && p.every(Boolean) };
 function totals() {
- const cat = {}; let done = 0; CATS.forEach(c => cat[c] = [0,0,0,0]);
- ACTS.forEach(a => CATS.forEach((c, ci) => { const p = place(a.t, S.res[rk(a, ci)]); if (p) { done++; p.forEach((x, i) => { if (x) cat[c][i] += S.pts[x-1] || 0 }) } }));
+ const cat = {}; let done = 0; CATS.forEach(c => cat[c.id] = [0,0,0,0]);
+ ACTS.forEach(a => CATS.forEach(c => { const p = place(a.t, S.res[rk(a, c.id)], a); if (p) { done++; p.forEach((x, i) => { if (x) cat[c.id][i] += S.pts[x-1] || 0 }) } }));
  const ig = T.map(i => (S.insta[i] || []).filter(Boolean).length * S.ig), fn = T.map(i => (S.fans || []).filter(f => +f.team === i).length * S.fan);
- return {cat, ig, fn, done, tot: T.map(i => CATS.reduce((a, c) => a + cat[c][i], 0) + ig[i] + fn[i])};
+ return {cat, ig, fn, done, tot: T.map(i => CATS.reduce((a, c) => a + cat[c.id][i], 0) + ig[i] + fn[i])};
 }
 
 /* ==========================================================================
@@ -483,12 +544,12 @@ const Views = {
   const ln = (n, a) => `<tr><td>${n}</td>${a.map(v => `<td>${v}</td>`).join('')}</tr>`;
   return`<section class="panel ${first?'grow':''}"><h2>Classificação geral</h2><div class="race">${rows}</div></section>
   <section class="panel"><h2>Pontos por categoria</h2><div class="scroll"><table class="pts-cat"><thead><tr><th>Categoria</th>${T.map(i => `<th>${tn(i)}</th>`).join('')}</tr></thead><tbody>
-  ${CATS.map(c => ln(c, o.cat[c])).join('')}${ln('Instagram', o.ig)}${ln('Torcida famosa', o.fn)}</tbody><tfoot><tr><td>Total geral</td>${o.tot.map(v => `<td>${v}</td>`).join('')}</tr></tfoot></table></div></section>`;
+  ${CATS.map(c => ln(esc(c.n), o.cat[c.id])).join('')}${ln('Instagram', o.ig)}${ln('Torcida famosa', o.fn)}</tbody><tfoot><tr><td>Total geral</td>${o.tot.map(v => `<td>${v}</td>`).join('')}</tr></tfoot></table></div></section>`;
  },
 
  mod() {
   const fl = ['todas', ...Object.keys(TN)].map(k => `<button class="chipbtn" data-flt="${k}" aria-pressed="${flt==k}">${k=='todas'?'Todas':TN[k]}</button>`).join('');
-  const rows = ACTS.filter(a => flt=='todas'||a.t==flt).map(a => `<div class="act"><div><a href="#/m/${a.s}/0"><strong>${esc(a.n)}</strong></a><small>${TN[a.t]}</small></div>${CATS.map((c, ci) => { const p = place(a.t, S.res[rk(a, ci)]); return`<a class="cell ${p?'done':''}" href="#/m/${a.s}/${ci}"><span class="l">${c}</span>${chips(p)}</a>` }).join('')}</div>`).join('');
+  const rows = ACTS.filter(a => flt=='todas'||a.t==flt).map(a => `<div class="act" style="--n:${CATS.length}"><div><a href="#/m/${a.s}/${CATS[0].id}"><strong>${esc(a.n)}</strong></a><small>${descTipo(a)}</small></div>${CATS.map(c => { const p = place(a.t, S.res[rk(a, c.id)], a); return`<a class="cell ${p?'done':''}" href="#/m/${a.s}/${c.id}"><span class="l">${esc(c.n)}</span>${chips(p)}</a>` }).join('')}</div>`).join('');
   return`<section class="panel"><h2>Modalidades e atividades</h2><p class="muted">Cada modalidade e cada categoria têm a sua própria página. Toque numa categoria para lançar o resultado.</p><div class="filters">${fl}</div><div class="acts">${rows}</div></section>`;
  },
 
@@ -564,19 +625,20 @@ function mrow(x, m, sel, label, d) {
 
 function secHTML(ci) {
  const a = cur, d = view(rk(a, ci)), lock = !!d.ok; let h = '';
- if (a.t == 'rank') h = T.map(t => `<div class="row" style="justify-content:space-between">${who(t)}<div style="flex:1;max-width:180px">${SEL('p.'+t, d.p?.[t], [['','—'], ...[1,2,3,4].map(n => [n, n+'º lugar'])], lock, T.filter(u => u!=t).map(u => String(d.p?.[u]||'')).filter(Boolean))}</div></div>`).join('');
- if (a.t == 'pontos') h = `<p class="muted">Pontuação da arbitragem. Maior pontuação vence.</p>`+T.map(t => `<div class="row" style="justify-content:space-between">${who(t)}<div style="flex:1;max-width:140px">${I('v.'+t, d.v?.[t], `type="number" min="0" step="any" ${lock?'disabled':''}`)}</div></div>`).join('');
- if (a.t == 'crit') h = `<p class="muted">Notas por critério (até 10). A soma define a classificação.</p><div class="scroll"><table><tbody>`+T.map(t => `<tr><td>${who(t)}</td>${[0,1,2,3,4,5].map(k => `<td>${I(`c.${t}.${k}`, d.c?.[t]?.[k], `type="number" min="0" max="10" step="any" style="width:48px" ${lock?'disabled':''}`)}</td>`).join('')}</tr>`).join('')+`</tbody></table></div>`;
+ if (a.t == 'rank') h = rankHTML(d, lock);
+ if (a.t == 'pontos') h = pontosHTML(d, lock);
+ if (a.t == 'crit') h = critHTML(a, ci, d, lock);
 
  if (a.t == 'marca') {
   const e = d.e && d.e.length ? d.e : [{}];
-  h = `<p class="muted">Digite o nome do atleta, selecione a equipe e digite o tempo correspondente.</p>
-  <div class="marca-header"><span>Atleta</span><span>Equipe</span><span>Tempo</span><span></span></div>`+
+  const dist = a.u === 'dist';
+  h = `<p class="muted">Digite o nome do atleta, selecione a equipe e digite ${dist ? 'a distância (só números: 1234 vira 12m34cm)' : 'o tempo correspondente'}. <strong>${dist ? (a.inv ? 'Menor' : 'Maior') + ' distância vence.' : (a.inv ? 'Maior' : 'Menor') + ' tempo vence.'}</strong></p>
+  <div class="marca-header"><span>Atleta</span><span>Equipe</span><span>${dist ? 'Distância' : 'Tempo'}</span><span></span></div>`+
   e.map((x, k) => `
   <div class="marca-row">
    ${I(`e.${k}.n`, x.n, `placeholder="Nome do atleta" ${lock?'disabled':''}`)}
    ${SEL(`e.${k}.team`, x.team, TO(), lock)}
-   ${I(`e.${k}.t`, x.t, `placeholder="00'00'00" class="input-tempo" inputmode="numeric" ${lock?'disabled':''}`)}
+   ${I(`e.${k}.t`, x.t, dist ? `placeholder="0m00cm" class="input-dist" inputmode="numeric" ${lock?'disabled':''}` : `placeholder="00'00'00" class="input-tempo" inputmode="numeric" ${lock?'disabled':''}`)}
    <button class="btn warn btn-del" data-rme="${k}" ${lock?'disabled':''} aria-label="Remover">×</button>
   </div>`).join('')+
   `<div class="row" style="margin-top:10px"><button class="btn alt" data-adde ${lock?'disabled':''}>+ Atleta</button></div>`;
@@ -591,9 +653,28 @@ function secHTML(ci) {
  return (lock ? `<div class="fim-campos">${h}</div>` : h) + pvHTML(a.t, d, lock) + foot;
 }
 
+/* Marca ou pontuação final de cada equipe, para mostrar na classificação */
+function valorFinal(t, d, a) {
+ const fmt = v => (Math.round(v * 100) / 100).toLocaleString('pt-BR') + ' pts';
+ if (t == 'pontos' && d.modo === 'class') return null;
+ if (t == 'pontos') return T.map(i => { const v = num(d.v?.[i]); return v == null ? '' : fmt(v); });
+ if (t == 'crit' && d.modo === 'class') return null;
+ if (t == 'crit') return T.map(i => { const c = d.c?.[i]; return c && c.some(x => x !== '' && x != null) ? fmt(c.reduce((s, b) => s + (+b || 0), 0)) : ''; });
+ if (t == 'marca') {
+  const cfg = a || cur || {}, dist = cfg.u === 'dist', menorVence = dist ? !!cfg.inv : !cfg.inv, ler = dist ? pdist : ptime;
+  const b = [null, null, null, null], txt = ['', '', '', ''];
+  (d.e || []).forEach(e => { const v = ler(e?.t); if (v != null && e.team !== '' && e.team != null) { const i = +e.team; if (b[i] == null || (menorVence ? v < b[i] : v > b[i])) { b[i] = v; txt[i] = String(e.t).trim(); } } });
+  return txt;
+ }
+ return null;
+}
+
 function pvHTML(t, d, final) {
  const p = t=='chav' ? place(t, d) : place(t, {...d, ok:true});
- return`<div class="pv"><strong>Classificação${final?'':' (prévia, ainda não salva)'}</strong>`+(p ? T.filter(i => p[i]).sort((x, y) => p[x] - p[y]).map(i => `<div><span>${p[i]}º · ${tn(i)}</span><strong>+${S.pts[p[i]-1]||0}</strong></div>`).join('') : '<div class="muted">Sem resultado confirmado.</div>')+`</div>`;
+ const vf = valorFinal(t, d), linha = i => vf
+  ? `<div class="pv3"><span>${p[i]}º · ${tn(i)}</span><span class="pv-val">${esc(vf[i])}</span><strong>+${S.pts[p[i]-1]||0}</strong></div>`
+  : `<div><span>${p[i]}º · ${tn(i)}</span><strong>+${S.pts[p[i]-1]||0}</strong></div>`;
+ return`<div class="pv"><strong>Classificação${final?'':' (prévia, ainda não salva)'}</strong>`+(p ? T.filter(i => p[i]).sort((x, y) => p[x] - p[y]).map(linha).join('') : '<div class="muted">Sem resultado confirmado.</div>')+`</div>`;
 }
 
 /* ==========================================================================
@@ -609,9 +690,9 @@ function renderNav() {
 /* Página de uma modalidade: vinculada à página MODALIDADES */
 function page() {
  $('tabs').innerHTML = '';
- const links = CATS.map((c, ci) => `<a href="#/m/${cur.s}/${ci}" ${ci==curC?'aria-current="page"':''}>${c}</a>`).join('');
+ const links = CATS.map(c => `<a href="#/m/${cur.s}/${c.id}" ${c.id===curC?'aria-current="page"':''}>${esc(c.n)}</a>`).join('');
  const btnReg = cur.r ? `<div class="row" style="margin-top:8px"><button class="btn alt" data-verreg>📄 Ver regulamento</button></div>` : '';
- $('main').innerHTML = `<div class="page-head"><a class="back" href="#/modalidades">← Voltar às modalidades</a><h2 class="ptitle">${esc(cur.n)}</h2><p class="muted">${TN[cur.t]}</p>${btnReg}</div><nav class="catnav" aria-label="Categorias">${links}</nav><section class="panel"><h2>${CATS[curC]}</h2><div id="sec${curC}"></div></section>`;
+ $('main').innerHTML = `<div class="page-head"><a class="back" href="#/modalidades">← Voltar às modalidades</a><h2 class="ptitle">${esc(cur.n)}</h2><p class="muted">${descTipo(cur)}</p>${btnReg}</div><nav class="catnav" aria-label="Categorias">${links}</nav><section class="panel"><h2>${esc(catNome(curC))}</h2><div id="sec${curC}"></div></section>`;
  sec(curC);
 }
 
@@ -632,7 +713,7 @@ function render() {
  $('main').innerHTML = Views[pg]();
  setTitle(pg == 'placar' ? '' : pg == 'modedit' ? 'Editar modalidades' : TABS.find(x => x[0] == pg)[1]);
  $('sub').textContent = (pg == 'placar' || pg == 'mod')
-  ? `${totals().done} de ${ACTS.length*3} resultados confirmados · ${db ? 'sincronizado' : 'modo local'}`
+  ? `${totals().done} de ${ACTS.length*CATS.length} resultados confirmados · ${db ? 'sincronizado' : 'modo local'}`
   : sync.charAt(0).toUpperCase() + sync.slice(1);
  if (pg == 'placar') first = false;
 }
@@ -644,16 +725,16 @@ function loadingView() {
 
 async function route() {
  const tok = ++navTok, h = location.hash;
- const m = h.match(/^#\/m\/([^/]+)(?:\/(\d))?$/);
+ const m = h.match(/^#\/m\/([^/]+)(?:\/(\d+))?$/);
 
- /* Modalidade criada em outro aparelho e ainda desconhecida aqui: busca a lista antes */
- if (m && !BY[m[1]] && db) {
-  try { await DB.fetchCfg('mods'); } catch (e) { console.error(e); }
+ /* Modalidade ou categoria criada em outro aparelho e ainda desconhecida aqui: busca as listas antes */
+ if (m && (!BY[m[1]] || (m[2] != null && !CATS.some(c => c.id === +m[2]))) && db) {
+  try { await DB.fetchCfg('mods,cats'); } catch (e) { console.error(e); }
   if (tok !== navTok) return;
  }
 
  cur = m && BY[m[1]] || null;
- curC = m && m[2] && +m[2] < CATS.length ? +m[2] : 0;
+ curC = m && m[2] != null && CATS.some(c => c.id === +m[2]) ? +m[2] : CATS[0].id;
  pg = cur ? 'mod' : (ROUTES[h] || 'placar');
  pendente = false;
 
@@ -729,7 +810,7 @@ document.addEventListener('input', e => {
  }
 });
 
-document.addEventListener('click', e => {
+document.addEventListener('click', async e => {
  const t = e.target.closest('button'); if (!t) return;
  const g = n => t.dataset[n], s = t.closest('[id^=sec]'), ci = s ? +s.id.slice(3) : null;
  if (g('flt')) { flt = g('flt'); render(); }
@@ -767,7 +848,7 @@ document.addEventListener('click', e => {
  }
  else if (g('export')!==undefined) exportar();
  else if (g('reset')!==undefined) {
-  if (confirm('Apagar os resultados e configurações deste aparelho e do servidor?')) {
+  if (await confirmar('Apagar os resultados e configurações deste aparelho e do servidor?')) {
    S = fresh(); Object.keys(D).forEach(k => delete D[k]);
    (async () => {
     await DB.saveAllCfg();
@@ -782,7 +863,7 @@ document.addEventListener('change', e => {
  const el = e.target;
  if (el.dataset.k && cur) {
   const s = el.closest('[id^=sec]'); let v = el.value;
-  if (el.type == 'number' && v !== '') v = el.dataset.k.startsWith('v.') || el.dataset.k.startsWith('c.') ? Math.max(0, +v) : Math.max(0, Math.floor(+v));
+  if (el.type == 'number' && v !== '') v = el.dataset.k.startsWith('c.') ? Math.min(10, Math.max(0, +v)) : el.dataset.k.startsWith('v.') ? Math.max(0, +v) : Math.max(0, Math.floor(+v));
   edit(+s.id.slice(3), el.dataset.k, v, `[data-k="${el.dataset.k}"]`);
  }
  else if (el.dataset.ig) {
@@ -821,17 +902,17 @@ function novoId(nome, lista) {
 function syncCur() {
  if (!cur) return;
  const atual = BY[cur.s];
- if (!atual || atual.t !== cur.t) CATS.forEach((_, ci) => delete D[rk(cur, ci)]);
+ if (!atual || atual.t !== cur.t || atual.u !== cur.u) CATS.forEach(c => delete D[rk(cur, c.id)]);
  if (!atual) { cur = null; if (location.hash.startsWith('#/m/')) location.hash = '#/modalidades'; return; }
  cur = atual;
 }
 
 /* Apaga os resultados de uma modalidade nas três categorias */
 async function apagarResultados(id) {
- CATS.forEach((_, ci) => { delete S.res[id + '|' + ci]; delete D[id + '|' + ci]; });
+ CATS.forEach(c => { delete S.res[id + '|' + c.id]; delete D[id + '|' + c.id]; });
  save();
  if (!db) return;
- const { error } = await db.from('res').delete().in('id', CATS.map((_, ci) => `${id}_${ci}`));
+ const { error } = await db.from('res').delete().in('id', CATS.map(c => `${id}_${c.id}`));
  if (error) fail(error);
 }
 
@@ -888,8 +969,8 @@ function abrirReg(a, editar) {
  });
 }
 
-function fecharReg() {
- if (regSujo() && !confirm('Descartar as alterações do regulamento?')) return;
+async function fecharReg() {
+ if (regSujo() && !await confirmar('Descartar as alterações do regulamento?')) return;
  $('regdlg').close();
 }
 
@@ -909,7 +990,7 @@ async function salvarReg(id, btn) {
  render();
 }
 
-$('regdlg').addEventListener('cancel', e => { if (regSujo() && !confirm('Descartar as alterações do regulamento?')) e.preventDefault(); });
+$('regdlg').addEventListener('cancel', e => { if (regSujo()) { e.preventDefault(); fecharReg(); } });
 $('regdlg').addEventListener('click', e => { if (e.target === $('regdlg') && !$('regtxt')) $('regdlg').close(); });
 
 /* Atalho para o editor dentro da página de Configurações */
@@ -928,7 +1009,10 @@ Views.modedit = () => {
    <select data-mt="${a.s}" aria-label="Tipo de ${esc(a.n)}">${opts(a.t)}</select>
    <button class="btn alt btn-del me-reg ${a.r?'on':''}" data-mreg="${a.s}" title="${a.r?'Editar regulamento':'Cadastrar regulamento'}" aria-label="Regulamento de ${esc(a.n)}">📄</button>
    <button class="btn warn btn-del" data-mdel="${a.s}" aria-label="Excluir ${esc(a.n)}">×</button>
-  </div>`).join('');
+  </div>${a.t == 'marca' ? `<div class="me-sub">
+   <select data-mu="${a.s}" aria-label="Medida de ${esc(a.n)}"><option value="tempo" ${a.u=='tempo'?'selected':''}>Medida: Tempo</option><option value="dist" ${a.u=='dist'?'selected':''}>Medida: Distância</option></select>
+   <select data-mi="${a.s}" aria-label="Modo de ${esc(a.n)}"><option value="0" ${!a.inv?'selected':''}>Normal (${a.u=='dist'?'maior distância':'menor tempo'} vence)</option><option value="1" ${a.inv?'selected':''}>Invertido (${a.u=='dist'?'menor distância':'maior tempo'} vence)</option></select>
+  </div>` : ''}${a.t == 'crit' ? `<div class="me-sub1"><button class="btn alt" data-mcrit="${a.s}">✎ Nomear critérios por categoria${a.cn ? ' ✔' : ''}</button></div>` : ''}`).join('');
  }).join('');
  return `<div class="page-head"><a class="back" href="#/configuracoes">← Voltar às configurações</a></div>
  <section class="panel"><h2>Nova modalidade</h2>
@@ -950,7 +1034,7 @@ document.addEventListener('click', e => {
 });
 
 /* Cliques do editor de modalidades */
-document.addEventListener('click', e => {
+document.addEventListener('click', async e => {
  const t = e.target.closest('button');
  if (!t || cur || pg !== 'modedit') return;
 
@@ -965,12 +1049,12 @@ document.addEventListener('click', e => {
    if (S.mods.some(x => mesmoNome(x.n, nome))) { repetido = true; return; }
    S.mods.push({id: novoId(nome, S.mods), n: nome, t: tipo});
    buildActs();
-  }).then(() => { if (repetido) alert(`Já existe uma modalidade chamada "${nome}".`); render(); });
+  }).then(() => { if (repetido) avisar(`Já existe uma modalidade chamada "${nome}".`); render(); });
  }
 
  else if (t.dataset.mdel) {
   const id = t.dataset.mdel, a = BY[id]; if (!a) return;
-  if (!confirm(`Excluir "${a.n}"?\nOs resultados lançados dessa modalidade nas três categorias e o regulamento também serão apagados.`)) return;
+  if (!await confirmar(`Excluir "${a.n}"?\nOs resultados lançados dessa modalidade nas três categorias e o regulamento também serão apagados.`)) return;
   t.disabled = true;
   DB.patchCfg(['mods'], () => { S.mods = listaMods().filter(x => x.id !== id); buildActs(); })
    .then(() => apagarResultados(id))
@@ -979,7 +1063,7 @@ document.addEventListener('click', e => {
  }
 });
 
-document.addEventListener('change', e => {
+document.addEventListener('change', async e => {
  const el = e.target;
  if (cur || pg !== 'modedit') return;
 
@@ -987,7 +1071,7 @@ document.addEventListener('change', e => {
   const id = el.dataset.mn, nome = el.value.trim(), a = BY[id]; if (!a) return;
   if (!nome) { el.value = a.n; return; }
   if (nome === a.n) return;
-  if (ACTS.some(x => x.s !== id && mesmoNome(x.n, nome))) { alert(`Já existe uma modalidade chamada "${nome}".`); el.value = a.n; return; }
+  if (ACTS.some(x => x.s !== id && mesmoNome(x.n, nome))) { avisar(`Já existe uma modalidade chamada "${nome}".`); el.value = a.n; return; }
   DB.patchCfg(['mods'], () => {
    S.mods = listaMods();
    const x = S.mods.find(y => y.id === id); if (x) x.n = nome;
@@ -998,7 +1082,7 @@ document.addEventListener('change', e => {
  else if (el.dataset.mt) {
   const id = el.dataset.mt, tipo = el.value, a = BY[id];
   if (!a || !TN[tipo] || tipo === a.t) return;
-  if (!confirm(`Mudar "${a.n}" de ${TN[a.t]} para ${TN[tipo]}?\nOs resultados já lançados dessa modalidade nas três categorias serão apagados, porque o formato é diferente. O regulamento é mantido.`)) { el.value = a.t; return; }
+  if (!await confirmar(`Mudar "${a.n}" de ${TN[a.t]} para ${TN[tipo]}?\nOs resultados já lançados dessa modalidade nas três categorias serão apagados, porque o formato é diferente. O regulamento é mantido.`)) { el.value = a.t; return; }
   el.disabled = true;
   DB.patchCfg(['mods'], () => {
    S.mods = listaMods();
@@ -1030,6 +1114,330 @@ document.addEventListener('click', e => {
 });
 
 aplicarCores();
+
+/* ==========================================================================
+   9. MARCA: TEMPO OU DISTÂNCIA, MODO NORMAL OU INVERTIDO
+   ========================================================================== */
+/* Máscara de distância: 1234 → 12m34cm (últimos 2 dígitos são os centímetros) */
+document.addEventListener('input', e => {
+ const el = e.target;
+ if (!el.classList || !el.classList.contains('input-dist')) return;
+ const limpa = v => String(v || '').replace(/\D/g, '').replace(/^0+/, '');
+ const ant = el.dataset.v !== undefined ? el.dataset.v : limpa(el.defaultValue);
+ let d = limpa(el.value).slice(0, 6);
+ if (e.inputType && e.inputType.startsWith('delete') && d === ant) d = d.slice(0, -1);   // apagar remove o último número
+ el.dataset.v = d;
+ if (!d) { el.value = ''; return; }
+ const p = d.padStart(3, '0');
+ el.value = `${+p.slice(0, -2)}m${p.slice(-2)}cm`;
+});
+
+document.addEventListener('change', async e => {
+ const el = e.target;
+ if (cur || pg !== 'modedit') return;
+
+ if (el.dataset.mu) {
+  const id = el.dataset.mu, u = el.value === 'dist' ? 'dist' : 'tempo', a = BY[id];
+  if (!a || a.u === u) return;
+  if (!await confirmar(`Mudar a medida de "${a.n}" para ${u === 'dist' ? 'Distância' : 'Tempo'}?\nAs marcas já lançadas nas três categorias serão apagadas, porque a unidade é diferente.`)) { el.value = a.u; return; }
+  el.disabled = true;
+  DB.patchCfg(['mods'], () => {
+   S.mods = listaMods();
+   const x = S.mods.find(y => y.id === id); if (x) { if (u === 'dist') x.u = 'dist'; else delete x.u; }
+   buildActs();
+  }).then(() => apagarResultados(id)).then(render);
+ }
+
+ else if (el.dataset.mi) {
+  const id = el.dataset.mi, inv = el.value === '1', a = BY[id];
+  if (!a || a.inv === inv) return;
+  DB.patchCfg(['mods'], () => {
+   S.mods = listaMods();
+   const x = S.mods.find(y => y.id === id); if (x) { if (inv) x.inv = 1; else delete x.inv; }
+   buildActs();
+  }).then(render);
+ }
+});
+
+/* ==========================================================================
+   10. CAIXAS DE CONFIRMAÇÃO E AVISO PRÓPRIAS
+   (as caixas nativas do navegador são bloqueadas em alguns ambientes)
+   ========================================================================== */
+document.body.insertAdjacentHTML('beforeend', '<dialog id="cxdlg" class="reg-dlg cx-dlg" aria-label="Confirmação"></dialog>');
+function caixa(msg, ok, cancelar) {
+ return new Promise(res => {
+  const dlg = $('cxdlg');
+  dlg.innerHTML = `<div class="reg-box"><div class="reg-body cx-body">${esc(msg)}</div><div class="reg-foot">${cancelar ? `<button class="btn alt" data-cx="0">${cancelar}</button>` : ''}<button class="btn" data-cx="1">${ok}</button></div></div>`;
+  const fim = v => { dlg.onclick = null; dlg.oncancel = null; if (dlg.open) dlg.close(); res(v); };
+  dlg.onclick = e => { const b = e.target.closest('[data-cx]'); if (b) fim(b.dataset.cx === '1'); };
+  dlg.oncancel = e => { e.preventDefault(); fim(false); };
+  if (!dlg.open) dlg.showModal();
+  dlg.querySelector('[data-cx="1"]').focus();
+ });
+}
+const confirmar = msg => caixa(msg, 'Confirmar', 'Cancelar');
+const avisar = msg => caixa(msg, 'OK');
+
+/* ==========================================================================
+   11. CATEGORIAS (editáveis nas Configurações)
+   ========================================================================== */
+const listaCats = () => CATS.map(c => ({id: c.id, n: c.n}));
+
+/* Se a categoria aberta foi excluída em outro aparelho, vai para a primeira */
+function syncCat() {
+ if (cur && !CATS.some(c => c.id === curC)) { location.hash = `#/m/${cur.s}/${CATS[0].id}`; }
+}
+
+/* Painel de categorias, logo depois do painel de Modalidades */
+const cfgAntesCats = Views.cfg;
+Views.cfg = () => {
+ const h = cfgAntesCats(), k = h.indexOf('</section>') + 10;
+ const linhas = CATS.map((c, i) => `<div class="cat-row">
+  <input data-cn="${c.id}" value="${esc(c.n)}" aria-label="Nome da categoria">
+  <button class="btn warn btn-del" data-cdel="${c.id}" ${CATS.length<2?'disabled':''} aria-label="Excluir ${esc(c.n)}">×</button>
+ </div>`).join('');
+ const painel = `<section class="panel"><h2>Categorias</h2>
+  <p class="muted">Renomear mantém os resultados. Excluir apaga os resultados dessa categoria em todas as modalidades.</p>
+  ${linhas}
+  <div class="cat-row novo"><input id="cnova" placeholder="Nova categoria (ex.: 1º ANO EM)"><button class="btn" data-cadd>Adicionar</button></div>
+ </section>`;
+ return h.slice(0, k) + painel + h.slice(k);
+};
+
+document.addEventListener('click', async e => {
+ const t = e.target.closest('button');
+ if (!t || cur || pg !== 'cfg') return;
+
+ if (t.dataset.cadd !== undefined) {
+  const nome = $('cnova').value.trim();
+  if (!nome) { $('cnova').focus(); return; }
+  let repetido = false;
+  t.disabled = true;
+  await DB.patchCfg(['cats'], () => {
+   const l = listaCats();
+   if (l.some(c => slug(c.n) === slug(nome))) { repetido = true; return; }
+   l.push({id: Math.max(-1, ...l.map(c => c.id)) + 1, n: nome});
+   S.cats = l; buildCats();
+  });
+  if (repetido) avisar(`Já existe uma categoria chamada "${nome}".`);
+  render();
+ }
+
+ else if (t.dataset.cdel !== undefined) {
+  const id = +t.dataset.cdel, nome = catNome(id);
+  if (CATS.length < 2) return;
+  if (!await confirmar(`Excluir a categoria "${nome}"?\nOs resultados dessa categoria em todas as modalidades também serão apagados.`)) return;
+  t.disabled = true;
+  await DB.patchCfg(['cats'], () => { S.cats = listaCats().filter(c => c.id !== id); buildCats(); });
+  ACTS.forEach(a => { delete S.res[rk(a, id)]; delete D[rk(a, id)]; });
+  save();
+  if (db) { const { error } = await db.from('res').delete().in('id', ACTS.map(a => `${a.s}_${id}`)); if (error) fail(error); }
+  render();
+ }
+});
+
+document.addEventListener('change', async e => {
+ const el = e.target;
+ if (cur || pg !== 'cfg' || el.dataset.cn === undefined) return;
+ const id = +el.dataset.cn, nome = el.value.trim(), atual = catNome(id);
+ if (!nome) { el.value = atual; return; }
+ if (nome === atual) return;
+ if (CATS.some(c => c.id !== id && slug(c.n) === slug(nome))) { avisar(`Já existe uma categoria chamada "${nome}".`); el.value = atual; return; }
+ await DB.patchCfg(['cats'], () => {
+  const l = listaCats(), c = l.find(x => x.id === id); if (c) c.n = nome;
+  S.cats = l; buildCats();
+ });
+ softRender();
+});
+
+/* ==========================================================================
+   12. CRITÉRIOS: NOMES POR CATEGORIA, NOTA MÁXIMA 10 E "SÓ CLASSIFICAÇÃO FINAL"
+   ========================================================================== */
+const NCRIT = 6;
+function critNomes(a, ci) {
+ const l = (a && a.cn && a.cn[ci]) || [];
+ return Array.from({length: NCRIT}, (_, k) => String(l[k] || '').trim() || `Critério ${k+1}`);
+}
+
+/* Linhas de colocação (usadas no Ranking e no modo "só classificação final") */
+function rankHTML(d, lock) {
+ return T.map(t => `<div class="row" style="justify-content:space-between">${who(t)}<div style="flex:1;max-width:180px">${SEL('p.'+t, d.p?.[t], [['','—'], ...[1,2,3,4].map(n => [n, n+'º lugar'])], lock, T.filter(u => u!=t).map(u => String(d.p?.[u]||'')).filter(Boolean))}</div></div>`).join('');
+}
+
+function critHTML(a, ci, d, lock) {
+ const cls = d.modo === 'class';
+ const tog = `<div class="filters" role="group" aria-label="Forma de lançamento">
+  <button class="chipbtn" data-cmodo="notas" aria-pressed="${!cls}" ${lock?'disabled':''}>Notas por critério</button>
+  <button class="chipbtn" data-cmodo="class" aria-pressed="${cls}" ${lock?'disabled':''}>Só classificação final</button></div>`;
+ if (cls) return tog + `<p class="muted">Informe apenas a colocação final de cada equipe.</p>` + rankHTML(d, lock);
+ const nomes = critNomes(a, ci);
+ const soma = t => { const c = d.c?.[t]; return c && c.some(x => x !== '' && x != null) ? (Math.round(c.reduce((s, b) => s + (+b || 0), 0) * 100) / 100).toLocaleString('pt-BR') : '–'; };
+ return tog + `<p class="muted">Notas de 0 a 10 por critério. A soma define a classificação.</p>
+ <div class="scroll"><table class="crit-tab"><thead><tr><th></th>${nomes.map(n => `<th>${esc(n)}</th>`).join('')}<th>Total</th></tr></thead><tbody>` +
+ T.map(t => `<tr><td>${who(t)}</td>${nomes.map((_, k) => `<td>${I(`c.${t}.${k}`, d.c?.[t]?.[k], `type="number" min="0" max="10" step="any" inputmode="decimal" aria-label="${esc(nomes[k])} – ${tn(t)}" ${lock?'disabled':''}`)}</td>`).join('')}<td><strong>${soma(t)}</strong></td></tr>`).join('') +
+ `</tbody></table></div>`;
+}
+
+/* Não deixa digitar nota maior que 10 */
+document.addEventListener('input', e => {
+ const el = e.target;
+ if (el.dataset && el.dataset.k && el.dataset.k.startsWith('c.') && el.value !== '' && +el.value > 10) el.value = '10';
+});
+
+/* Alterna entre notas e só classificação final */
+document.addEventListener('click', e => {
+ const t = e.target.closest('[data-cmodo]'); if (!t || !cur) return;
+ const s = t.closest('[id^=sec]'); if (!s) return;
+ edit(+s.id.slice(3), 'modo', t.dataset.cmodo === 'class' ? 'class' : '');
+});
+
+/* Janela para nomear os critérios de cada categoria (editor de modalidades) */
+document.body.insertAdjacentHTML('beforeend', '<dialog id="critdlg" class="reg-dlg" aria-label="Critérios"></dialog>');
+function abrirCrit(a) {
+ const dlg = $('critdlg');
+ dlg.innerHTML = `<div class="reg-box">
+  <div class="reg-head"><h2>Critérios · ${esc(a.n)}</h2><button class="btn alt" data-critfechar aria-label="Fechar">✕</button></div>
+  <div class="reg-body" style="white-space:normal">
+   <p class="muted" style="margin-top:0">Dê nome aos ${NCRIT} critérios de cada categoria. Campos vazios aparecem como "Critério 1", "Critério 2"…</p>
+   ${CATS.map(c => `<h3 class="crit-cat">${esc(c.n)}</h3><div class="crit-grid">${critNomes(a, c.id).map((n, k) => `<input data-critn="${c.id},${k}" value="${a.cn && a.cn[c.id] && a.cn[c.id][k] ? esc(a.cn[c.id][k]) : ''}" placeholder="Critério ${k+1}" aria-label="${esc(c.n)} – critério ${k+1}">`).join('')}</div>`).join('')}
+  </div>
+  <div class="reg-foot"><button class="btn alt" data-critfechar>Cancelar</button><button class="btn" data-critsalvar="${a.s}">Salvar critérios</button></div>
+ </div>`;
+ if (!dlg.open) dlg.showModal();
+}
+
+document.addEventListener('click', async e => {
+ const t = e.target.closest('button'); if (!t) return;
+ if (t.dataset.mcrit && !cur && pg === 'modedit') { const a = BY[t.dataset.mcrit]; if (a) abrirCrit(a); }
+ else if (t.dataset.critfechar !== undefined) $('critdlg').close();
+ else if (t.dataset.critsalvar) {
+  const id = t.dataset.critsalvar, cn = {};
+  $('critdlg').querySelectorAll('[data-critn]').forEach(inp => {
+   const [c, k] = inp.dataset.critn.split(',').map(Number);
+   (cn[c] = cn[c] || Array(NCRIT).fill(''))[k] = inp.value.trim();
+  });
+  Object.keys(cn).forEach(c => { if (!cn[c].some(Boolean)) delete cn[c]; });
+  t.disabled = true; t.textContent = 'Salvando…';
+  await DB.patchCfg(['mods'], () => {
+   S.mods = listaMods();
+   const x = S.mods.find(y => y.id === id);
+   if (x) { if (Object.keys(cn).length) x.cn = cn; else delete x.cn; }
+   buildActs();
+  });
+  $('critdlg').close();
+  render();
+ }
+});
+
+/* ==========================================================================
+   13. LISTAS SUSPENSAS DO PRÓPRIO SITE
+   Cada <select> continua existindo (oculto) para a lógica do sistema, mas o que
+   aparece e abre é uma lista desenhada pelo site, igual em todos os aparelhos.
+   ========================================================================== */
+(function () {
+ const pVal = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+ const pDis = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'disabled');
+ let aberto = null;
+
+ const texto = sel => { const o = sel.options[sel.selectedIndex]; return o ? o.textContent : ''; };
+ function sync(sel) {
+  const b = sel._csel; if (!b) return;
+  b.querySelector('.csel-txt').textContent = texto(sel) || '—';
+  b.disabled = pDis.get.call(sel);
+  const st = sel.getAttribute('style'); if (st) b.setAttribute('style', st); else b.removeAttribute('style');
+ }
+ function melhorar(sel) {
+  if (sel.dataset.csel) return; sel.dataset.csel = '1';
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'csel';
+  b.setAttribute('aria-haspopup', 'listbox'); b.setAttribute('aria-expanded', 'false');
+  const lab = sel.getAttribute('aria-label'); if (lab) b.setAttribute('aria-label', lab);
+  b.innerHTML = '<span class="csel-txt"></span><span class="csel-arr" aria-hidden="true">▾</span>';
+  sel._csel = b; b._sel = sel;
+  sel.insertAdjacentElement('afterend', b);
+  sel.tabIndex = -1; sel.setAttribute('aria-hidden', 'true');
+  /* mantém o botão atualizado quando o código muda o valor ou desativa a lista */
+  Object.defineProperty(sel, 'value', {configurable: true, get() { return pVal.get.call(this); }, set(v) { pVal.set.call(this, v); sync(this); }});
+  Object.defineProperty(sel, 'disabled', {configurable: true, get() { return pDis.get.call(this); }, set(v) { pDis.set.call(this, v); sync(this); }});
+  sel.addEventListener('focus', () => b.focus());
+  sel.addEventListener('change', () => sync(sel));
+  sync(sel);
+ }
+ function fechar(foco) {
+  if (!aberto) return;
+  const {btn, pop} = aberto; aberto = null;
+  pop.remove(); btn.setAttribute('aria-expanded', 'false');
+  if (foco && document.contains(btn)) btn.focus();
+ }
+ function abrir(btn) {
+  const sel = btn._sel; if (!sel || btn.disabled) return;
+  fechar();
+  const pop = document.createElement('div');
+  pop.className = 'csel-pop'; pop.setAttribute('role', 'listbox');
+  [...sel.options].forEach((o, i) => {
+   const op = document.createElement('button');
+   op.type = 'button'; op.className = 'csel-op'; op.setAttribute('role', 'option');
+   op.dataset.cidx = i; op.setAttribute('aria-selected', i === sel.selectedIndex);
+   op.textContent = o.textContent; if (o.disabled) op.disabled = true;
+   pop.appendChild(op);
+  });
+  (sel.closest('dialog') || document.body).appendChild(pop);
+  const r = btn.getBoundingClientRect();
+  pop.style.minWidth = Math.max(r.width, 160) + 'px';
+  const h = pop.offsetHeight, w = pop.offsetWidth;
+  let top = r.bottom + 4;
+  if (top + h > innerHeight - 8 && r.top - h - 4 > 8) top = r.top - h - 4;
+  pop.style.top = top + 'px';
+  pop.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + 'px';
+  btn.setAttribute('aria-expanded', 'true');
+  aberto = {sel, btn, pop};
+  (pop.querySelector('[aria-selected=true]') || pop.querySelector('.csel-op')).focus();
+ }
+ function escolher(i) {
+  const {sel} = aberto; fechar(true);
+  if (sel.selectedIndex !== i) {
+   sel.selectedIndex = i; sync(sel);
+   sel.dispatchEvent(new Event('change', {bubbles: true}));
+  }
+ }
+
+ document.addEventListener('click', e => {
+  const op = e.target.closest('.csel-op');
+  if (op && aberto) { escolher(+op.dataset.cidx); return; }
+  const b = e.target.closest('.csel');
+  if (b) { if (aberto && aberto.btn === b) fechar(true); else abrir(b); return; }
+  if (aberto && !e.target.closest('.csel-pop')) fechar();
+ });
+ document.addEventListener('keydown', e => {
+  if (aberto) {
+   const ops = [...aberto.pop.querySelectorAll('.csel-op:not(:disabled)')], i = ops.indexOf(document.activeElement);
+   if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fechar(true); }
+   else if (e.key === 'ArrowDown') { e.preventDefault(); (ops[i + 1] || ops[0]).focus(); }
+   else if (e.key === 'ArrowUp') { e.preventDefault(); (ops[i - 1] || ops[ops.length - 1]).focus(); }
+   else if (e.key === 'Tab') fechar();
+   return;
+  }
+  const b = e.target.closest && e.target.closest('.csel');
+  if (b && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) { e.preventDefault(); abrir(b); }
+ }, true);
+ addEventListener('scroll', e => { if (aberto && !aberto.pop.contains(e.target)) fechar(); }, true);
+ addEventListener('resize', () => fechar());
+
+ const varrer = () => document.querySelectorAll('select:not([data-csel])').forEach(melhorar);
+ new MutationObserver(() => { varrer(); if (aberto && !document.contains(aberto.btn)) fechar(); })
+  .observe(document.body, {childList: true, subtree: true});
+ varrer();
+})();
+
+/* Modalidades de pontuação: alternar entre pontuação e só classificação final */
+function pontosHTML(d, lock) {
+ const cls = d.modo === 'class';
+ const tog = `<div class="filters" role="group" aria-label="Forma de lançamento">
+  <button class="chipbtn" data-cmodo="notas" aria-pressed="${!cls}" ${lock?'disabled':''}>Pontuação</button>
+  <button class="chipbtn" data-cmodo="class" aria-pressed="${cls}" ${lock?'disabled':''}>Só classificação final</button></div>`;
+ if (cls) return tog + `<p class="muted">Informe apenas a colocação final de cada equipe.</p>` + rankHTML(d, lock);
+ return tog + `<p class="muted">Pontuação da arbitragem. Maior pontuação vence.</p>`+T.map(t => `<div class="row" style="justify-content:space-between">${who(t)}<div style="flex:1;max-width:140px">${I('v.'+t, d.v?.[t], `type="number" min="0" step="any" ${lock?'disabled':''}`)}</div></div>`).join('');
+}
 
 /* Inicialização */
 route();
