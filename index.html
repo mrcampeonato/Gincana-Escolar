@@ -185,7 +185,7 @@ button:disabled,input:disabled,select:disabled,.csel:disabled{opacity:.45;cursor
 /* Partidas (em edição e finalizadas) no mesmo padrão de placar */
 .match.fim{border-color:#1f9d55;background:rgba(31,157,85,.07)}
 .fim-placar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:center;text-align:center}
-.fim-lado{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;width:100%;word-break:break-word;color:var(--ink);font:600 clamp(18px,5vw,30px)/1.1 'Bricolage Grotesque',Figtree,sans-serif}
+.fim-lado{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;width:100%;white-space:nowrap;color:var(--ink);font:600 clamp(18px,5vw,30px)/1.1 'Bricolage Grotesque',Figtree,sans-serif}
 .fim-lado .tm{font-weight:inherit;padding:4px 12px;border-radius:10px;border:2px solid transparent}
 .fim-lado.win .tm{border-color:#000}
 .fim-lado.win{font-weight:800}
@@ -236,6 +236,27 @@ select[data-csel]{position:absolute!important;width:1px!important;height:1px!imp
 .csel-op{display:block;width:100%;text-align:left;background:none;border:0;border-radius:6px;padding:9px 10px;font:600 14px Figtree,sans-serif;color:var(--ink);cursor:pointer;min-height:40px}
 .csel-op:hover,.csel-op:focus-visible{background:var(--soft);outline:none}
 .csel-op[aria-selected=true]{background:var(--ink);color:var(--bg)}
+
+/* Placar das partidas no celular: nome em cima e placar embaixo,
+   nome sempre em uma linha e nada passando da largura da tela */
+.fim-lado .tm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+@media (max-width:620px){
+ .fim-placar{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-areas:"la x lb" "sa x sb";column-gap:8px;row-gap:10px}
+ .fim-placar>.fim-lado:first-child{grid-area:la}
+ .fim-placar>.fim-lado:last-child{grid-area:lb}
+ .fim-placar>.fim-nums{display:contents;font-size:clamp(26px,8vw,34px)}
+ .fim-placar>.fim-nums>:first-child{grid-area:sa;justify-self:center}
+ .fim-placar>.fim-nums>.fim-x{grid-area:x;align-self:center}
+ .fim-placar>.fim-nums>:last-child{grid-area:sb;justify-self:center}
+ .fim-lado{font-size:clamp(15px,4.8vw,22px)}
+ .fim-lado .tm{padding:4px 8px}
+ .vst{flex-direction:row;gap:4px}
+ .vst .sb[data-d="-1"]{order:-1}
+ .vst .sb[data-d="1"]{order:1}
+ .vst .sb{width:clamp(28px,9vw,36px);height:40px}
+ .vst input{width:clamp(36px,11vw,46px);min-height:40px;font-size:clamp(18px,5.5vw,24px)}
+ .match{padding:12px 8px}
+}
 </style>
 </head>
 <body>
