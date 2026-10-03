@@ -282,6 +282,12 @@ select[data-csel]{position:absolute!important;width:1px!important;height:1px!imp
 #permlista{grid-template-columns:1fr}
 .cam-video{width:100%;max-height:60vh;aspect-ratio:1;object-fit:cover;border-radius:10px;background:#000}
 .cam-video.espelho{transform:scaleX(-1)}
+
+/* Cards de acesso nas Configurações (Integrantes e Modalidades lado a lado) */
+.cfg-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.cfg-cards .panel{margin:0;display:flex;flex-direction:column}
+.cfg-cards .panel .row{margin-top:auto;margin-bottom:0}
+@media (max-width:620px){.cfg-cards{gap:8px}.cfg-cards .panel{padding:12px 10px}.cfg-cards .panel h2{font-size:17px}.cfg-cards .muted{font-size:12px}.cfg-cards .btn{white-space:normal;justify-content:center;text-align:center}}
 </style>
 </head>
 <body>
@@ -348,14 +354,14 @@ const catNome = id => (CATS.find(c => c.id === +id) || {}).n || '';
 const TABS = [
  ['placar','Placar geral','#/'],
  ['mod','Modalidades','#/modalidades'],
- ['membros','Integrantes','#/integrantes'],
  ['insta','Instagram','#/instagram'],
  ['torc','Torcida famosa','#/torcida'],
  ['cfg','Configurações','#/configuracoes']
 ];
 const ROUTES = {
  ...Object.fromEntries(TABS.map(([k,,h]) => [h, k])),
- '#/configuracoes/modalidades': 'modedit'   // página vinculada às Configurações
+ '#/configuracoes/modalidades': 'modedit',  // página vinculada às Configurações
+ '#/integrantes': 'membros'                  // página vinculada às Configurações
 };
 
 /* Colunas da tabela cfg que cada página precisa ler (requisição focada) */
@@ -733,7 +739,7 @@ function pvHTML(t, d, final) {
 function sec(ci) { const el = $('sec'+ci); if (el) el.innerHTML = secHTML(ci); }
 
 function renderNav() {
- const ativa = pg == 'modedit' ? 'cfg' : pg;
+ const ativa = pg == 'modedit' || pg == 'membros' ? 'cfg' : pg;
  $('tabs').innerHTML = TABS.map(([k, n, h]) => `<a href="${h}" ${ativa==k?'aria-current="page"':''}>${n}</a>`).join('');
 }
 
@@ -761,7 +767,7 @@ function render() {
  }
  renderNav();
  $('main').innerHTML = Views[pg]();
- setTitle(pg == 'placar' ? '' : pg == 'modedit' ? 'Editar modalidades' : TABS.find(x => x[0] == pg)[1]);
+ setTitle(pg == 'placar' ? '' : pg == 'modedit' ? 'Editar modalidades' : pg == 'membros' ? 'Integrantes' : TABS.find(x => x[0] == pg)[1]);
  $('sub').textContent = (pg == 'placar' || pg == 'mod')
   ? `${totals().done} de ${ACTS.length*CATS.length} resultados confirmados · ${db ? 'sincronizado' : 'modo local'}`
   : sync.charAt(0).toUpperCase() + sync.slice(1);
@@ -1566,7 +1572,7 @@ function memListaHTML() {
  <div class="mem-grid">${g.map(m => `<button class="mem-card" data-memed="${esc(m.id)}">${fotoHTML(m)}<span class="mem-info"><span class="mem-nome">${esc(m.nome)}</span><span class="mem-sub">${esc(memSub(m))}</span></span></button>`).join('')}</div>`).join('');
 }
 
-Views.membros = () => `<section class="panel"><h2>Integrantes das equipes</h2>
+Views.membros = () => `<div class="page-head"><a class="back" href="#/configuracoes">← Voltar às configurações</a></div><section class="panel"><h2>Integrantes das equipes</h2>
  <div class="row" id="memcont" style="font-size:13px;gap:10px">${memContHTML()}</div>
  <div class="mem-tools">
   <input class="busca" id="membusca" type="search" placeholder="Buscar por nome ou turma" value="${esc(memF.q)}" autocomplete="off">
@@ -1754,6 +1760,15 @@ document.addEventListener('change', async e => {
   if (blob) definirFoto(blob); else avisar('Não foi possível ler essa imagem. Tente outra foto.');
  }
 });
+
+/* Acesso à página de integrantes pelas Configurações */
+const cfgAntesMembros = Views.cfg;
+Views.cfg = () => cardsCfg(`<section class="panel"><h2>Integrantes</h2><p class="muted">Cadastro dos integrantes de cada equipe, com foto, categoria e turma. Transferências e permutas entre equipes também são feitas lá.</p><div class="row"><a class="btn" href="#/integrantes" style="text-decoration:none;display:inline-flex;align-items:center">Gerenciar integrantes</a></div></section>`, cfgAntesMembros());
+/* Integrantes e Modalidades lado a lado, como dois cartões na mesma linha */
+function cardsCfg(painelInt, resto) {
+ const k = resto.indexOf('</section>') + 10;
+ return `<div class="cfg-cards">${painelInt}${resto.slice(0, k)}</div>` + resto.slice(k);
+}
 
 /* Inicialização */
 route();
