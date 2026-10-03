@@ -159,7 +159,7 @@ button:disabled,input:disabled,select:disabled,.csel:disabled{opacity:.45;cursor
 }
 @media (max-width:380px){.st{gap:2px}.sb{width:34px;height:34px}.st input{width:38px}}
 /* Editor de modalidades */
-.me-row{display:grid;grid-template-columns:minmax(0,1fr) 150px auto auto;gap:6px;align-items:center;margin-bottom:8px}
+.me-row{display:grid;grid-template-columns:minmax(0,1fr) 150px auto auto auto auto;gap:6px;align-items:center;margin-bottom:8px}
 .me-row.novo{grid-template-columns:minmax(0,1fr) 150px auto}
 .me-row input,.me-row select,.me-row .csel{min-width:0}
 .me-grupo{font-size:15px;margin:18px 0 8px}
@@ -180,7 +180,7 @@ button:disabled,input:disabled,select:disabled,.csel:disabled{opacity:.45;cursor
 .crit-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 @media (max-width:620px){.crit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .me-reg.on{border-color:var(--ink);background:var(--soft)}
-@media (max-width:620px){.me-row{grid-template-columns:minmax(0,1fr) 110px auto auto}.me-row.novo{grid-template-columns:minmax(0,1fr) 110px auto}}
+@media (max-width:620px){.me-row{grid-template-columns:minmax(0,1fr) auto auto auto auto}.me-row:not(.novo)>input{grid-column:1/-1}.me-row.novo{grid-template-columns:minmax(0,1fr) 110px auto}}
 
 /* Partidas (em edição e finalizadas) no mesmo padrão de placar */
 .match.fim{border-color:#1f9d55;background:rgba(31,157,85,.07)}
@@ -305,6 +305,39 @@ select[data-csel]{position:absolute!important;width:1px!important;height:1px!imp
 .massa-tag{flex:none;font-size:11px;color:#1f9d55;font-weight:600}
 .massa-item.fora span:first-child{color:var(--mute);text-decoration:line-through;font-weight:400}
 .massa-item.fora .massa-tag{color:var(--mute)}
+
+/* Modalidades extra e visualização de integrantes */
+.ex-cell{grid-column:span var(--n,3)}
+.ex-form{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 84px auto;gap:6px;align-items:center;margin:8px 0 12px}
+@media (max-width:620px){.ex-form{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.ex-form #exdesc{grid-column:1/-1}.ex-form .btn{grid-column:1/-1}}
+.ex-cfg{display:grid;grid-template-columns:1fr 100px;gap:8px;align-items:center;font-size:13px;color:var(--mute);font-weight:600}
+.mem-card.ro{cursor:default}
+.mem-card.ro:hover{border-color:var(--line)}
+#tabs a[aria-label="Configurações"]{font-size:18px;padding:8px 12px}
+@media (max-width:620px){#tabs{gap:4px;flex-wrap:nowrap}#tabs a{padding:8px 10px;font-size:13px;white-space:nowrap}#tabs a[aria-label="Configurações"]{font-size:16px;padding:8px 9px}}
+@media (max-width:380px){#tabs a{padding:7px 8px;font-size:12px;min-height:36px}#tabs a[aria-label="Configurações"]{font-size:15px;padding:7px 8px}}
+
+/* Instagram e Torcida famosa no editor */
+.fx-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.fx-row:last-child{border-bottom:0}
+.fx-pts{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mute);font-weight:600}
+.fx-pts input{width:84px}
+.fx-vis{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;cursor:pointer}
+@media (max-width:620px){.fx-row{grid-template-columns:minmax(0,1fr) auto auto auto}.fx-row strong{grid-column:1/-1}}
+
+/* Ícones */
+.ico{display:block;flex:none}
+.me-ico{display:inline-flex;align-items:center;justify-content:center;border-color:var(--line);color:var(--ink)}
+.me-vis.off{color:var(--mute);background:var(--soft)}
+.me-row.oculta input[data-mn]{color:var(--mute)}
+#tabs a[aria-label="Configurações"]{display:inline-flex;align-items:center;justify-content:center}
+
+/* Ordem da lista de modalidades: botão só com ícone */
+.ord-ico{position:relative;display:inline-flex}
+.ord-ico .csel{width:40px;min-width:40px;height:40px;min-height:40px;padding:0;border-radius:999px;justify-content:center;background:var(--card);border:1px solid var(--line);color:var(--ink)}
+.ord-ico.ativo .csel{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.ord-ico .csel-txt,.ord-ico .csel-arr{display:none}
+.ord-ico .csel::before{content:"";width:18px;height:18px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m21%2016-4%204-4-4%22/%3E%3Cpath%20d%3D%22M17%2020V4%22/%3E%3Cpath%20d%3D%22m3%208%204-4%204%204%22/%3E%3Cpath%20d%3D%22M7%204v16%22/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m21%2016-4%204-4-4%22/%3E%3Cpath%20d%3D%22M17%2020V4%22/%3E%3Cpath%20d%3D%22m3%208%204-4%204%204%22/%3E%3Cpath%20d%3D%22M7%204v16%22/%3E%3C/svg%3E") center/contain no-repeat}
 </style>
 </head>
 <body>
@@ -327,7 +360,7 @@ const L = {
  crit: ['Free Fire','Operações Matemáticas','Prova dos Sentidos','Soletrando','Ciências','Do Lixo ao Luxo','Master Chef'],
  pontos: ['Boliche Humano','Adedonha']
 };
-const TN = {chav:'Chaveamento',rank:'Ranking',marca:'Marca (tempo/distância)',crit:'Critérios',pontos:'Pontuação'};
+const TN = {chav:'Chaveamento',rank:'Ranking',marca:'Marca',crit:'Critérios',pontos:'Pontuação',extra:'Extra'};
 const slug = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 /* Lista padrão de modalidades (usada só enquanto nada foi salvo no servidor).
    O "id" é fixo: é ele que liga a modalidade aos resultados na tabela res. */
@@ -353,7 +386,7 @@ S = Object.assign(fresh(), S || {});
 /* Monta ACTS e BY a partir da lista de modalidades salva */
 function buildActs() {
  const lista = Array.isArray(S.mods) ? S.mods : MODS_PADRAO;
- ACTS = lista.filter(m => m && m.id && m.n && TN[m.t]).map(m => ({n: m.n, t: m.t, s: m.id, r: !!m.r, u: m.u === 'dist' ? 'dist' : 'tempo', inv: !!m.inv, cn: m.cn || null}));
+ ACTS = lista.filter(m => m && m.id && m.n && TN[m.t]).map(m => ({n: m.n, t: m.t, s: m.id, r: !!m.r, oc: !!m.oc, u: m.u === 'dist' ? 'dist' : 'tempo', inv: !!m.inv, cn: m.cn || null, xv: m.xv == null ? 100 : +m.xv}));
  BY = Object.fromEntries(ACTS.map(a => [a.s, a]));
 }
 buildActs();
@@ -371,26 +404,28 @@ const catNome = id => (CATS.find(c => c.id === +id) || {}).n || '';
 const TABS = [
  ['placar','Placar geral','#/'],
  ['mod','Modalidades','#/modalidades'],
- ['insta','Instagram','#/instagram'],
- ['torc','Torcida famosa','#/torcida'],
- ['cfg','Configurações','#/configuracoes']
+ ['memver','Integrantes','#/integrantes'],
+ ['cfg','⚙️','#/configuracoes']
 ];
 const ROUTES = {
  ...Object.fromEntries(TABS.map(([k,,h]) => [h, k])),
  '#/configuracoes/modalidades': 'modedit',  // página vinculada às Configurações
- '#/integrantes': 'membros'                  // página vinculada às Configurações
+ '#/configuracoes/integrantes': 'membros',   // gerenciar integrantes (Configurações)
+ '#/instagram': 'insta',                     // modalidade extra (acesso por Modalidades)
+ '#/torcida': 'torc'                         // modalidade extra (acesso por Modalidades)
 };
 
 /* Colunas da tabela cfg que cada página precisa ler (requisição focada) */
 const COLS = {
  placar:  'teams,pts,fan,ig,insta,fans,mods,colors,cats',
- mod:     'teams,pts,mods,colors,cats',
+ mod:     'teams,pts,mods,colors,cats,ig,insta,fan,fans',
  m:       'teams,pts,mods,colors,cats',
- insta:   'teams,ig,insta,colors',
- torc:    'teams,fan,fans,colors',
+ insta:   'teams,ig,insta,colors,mods',
+ torc:    'teams,fan,fans,colors,mods',
  membros: 'teams,colors,cats',
+ memver:  'teams,colors,cats',
  cfg:     'teams,pts,fan,ig,mods,colors,cats',
- modedit: 'mods,cats'
+ modedit: 'mods,cats,ig,fan'
 };
 
 let cur = null, curC = 0, pg = 'placar', flt = 'todas', first = true;
@@ -519,7 +554,7 @@ const DB = {
    ch.on('postgres_changes', { event: '*', schema: 'public', table: 'res', filter: `id=eq.${cur.s}_${curC}` }, onRes);
   } else if (pg === 'placar' || pg === 'mod') {
    ch.on('postgres_changes', { event: '*', schema: 'public', table: 'res' }, onRes);
-  } else if (pg === 'membros') {
+  } else if (pg === 'membros' || pg === 'memver') {
    ch.on('postgres_changes', { event: '*', schema: 'public', table: 'membros' }, onMem);
   }
   ch.subscribe();
@@ -602,7 +637,8 @@ function totals() {
  const cat = {}; let done = 0; CATS.forEach(c => cat[c.id] = [0,0,0,0]);
  ACTS.forEach(a => CATS.forEach(c => { const p = place(a.t, S.res[rk(a, c.id)], a); if (p) { done++; p.forEach((x, i) => { if (x) cat[c.id][i] += S.pts[x-1] || 0 }) } }));
  const ig = T.map(i => (S.insta[i] || []).filter(Boolean).length * S.ig), fn = T.map(i => (S.fans || []).filter(f => +f.team === i).length * S.fan);
- return {cat, ig, fn, done, tot: T.map(i => CATS.reduce((a, c) => a + cat[c.id][i], 0) + ig[i] + fn[i])};
+ const ex = ACTS.filter(a => a.t == 'extra').map(a => ({n: a.n, v: extraSoma(a)}));
+ return {cat, ig, fn, ex, done, tot: T.map(i => CATS.reduce((a, c) => a + cat[c.id][i], 0) + ig[i] + fn[i] + ex.reduce((s, x) => s + x.v[i], 0))};
 }
 
 /* ==========================================================================
@@ -617,13 +653,14 @@ const Views = {
   const ln = (n, a) => `<tr><td>${n}</td>${a.map(v => `<td>${v}</td>`).join('')}</tr>`;
   return`<section class="panel ${first?'grow':''}"><h2>Classificação geral</h2><div class="race">${rows}</div></section>
   <section class="panel"><h2>Pontos por categoria</h2><div class="scroll"><table class="pts-cat"><thead><tr><th>Categoria</th>${T.map(i => `<th>${tn(i)}</th>`).join('')}</tr></thead><tbody>
-  ${CATS.map(c => ln(esc(c.n), o.cat[c.id])).join('')}${ln('Instagram', o.ig)}${ln('Torcida famosa', o.fn)}</tbody><tfoot><tr><td>Total geral</td>${o.tot.map(v => `<td>${v}</td>`).join('')}</tr></tfoot></table></div></section>`;
+  ${CATS.map(c => ln(esc(c.n), o.cat[c.id])).join('')}${ln('Instagram', o.ig)}${ln('Torcida famosa', o.fn)}${o.ex.map(x => ln(esc(x.n), x.v)).join('')}</tbody><tfoot><tr><td>Total geral</td>${o.tot.map(v => `<td>${v}</td>`).join('')}</tr></tfoot></table></div></section>`;
  },
 
  mod() {
   const fl = ['todas', ...Object.keys(TN)].map(k => `<button class="chipbtn" data-flt="${k}" aria-pressed="${flt==k}">${k=='todas'?'Todas':TN[k]}</button>`).join('');
-  const rows = ACTS.filter(a => flt=='todas'||a.t==flt).map(a => `<div class="act" style="--n:${CATS.length}"><div><a href="#/m/${a.s}/${CATS[0].id}"><strong>${esc(a.n)}</strong></a><small>${descTipo(a)}</small></div>${CATS.map(c => { const p = place(a.t, S.res[rk(a, c.id)], a); return`<a class="cell ${p?'done':''}" href="#/m/${a.s}/${c.id}"><span class="l">${esc(c.n)}</span>${chips(p)}</a>` }).join('')}</div>`).join('');
-  return`<section class="panel"><h2>Modalidades e atividades</h2><p class="muted">Cada modalidade e cada categoria têm a sua própria página. Toque numa categoria para lançar o resultado.</p><div class="filters">${fl}</div><div class="acts">${rows}</div></section>`;
+  const itens = ACTS.filter(a => a.t != 'extra' && !a.oc && (flt=='todas'||a.t==flt)).map(a => ({n: a.n, t: a.t, prog: CATS.filter(c => place(a.t, S.res[rk(a, c.id)], a)).length / CATS.length, h: `<div class="act" style="--n:${CATS.length}"><div><a href="#/m/${a.s}/${CATS[0].id}"><strong>${esc(a.n)}</strong></a><small>${descTipo(a)}</small></div>${CATS.map(c => { const p = place(a.t, S.res[rk(a, c.id)], a); return`<a class="cell ${p?'done':''}" href="#/m/${a.s}/${c.id}"><span class="l">${esc(c.n)}</span>${chips(p)}</a>` }).join('')}</div>`}));
+  const rows = ordenarMods(itens.concat(extrasItens())).map(x => x.h).join('');
+  return`<section class="panel"><h2>Modalidades e atividades</h2><p class="muted">Cada modalidade e cada categoria têm a sua própria página. Toque numa categoria para lançar o resultado.</p><div class="filters">${ordemHTML()}${fl}</div><div class="acts">${rows}</div></section>`;
  },
 
  insta() {
@@ -697,6 +734,7 @@ function mrow(x, m, sel, label, d) {
 }
 
 function secHTML(ci) {
+ if (cur.t == 'extra') return extraHTML(cur);
  const a = cur, d = view(rk(a, ci)), lock = !!d.ok; let h = '';
  if (a.t == 'rank') h = rankHTML(d, lock);
  if (a.t == 'pontos') h = pontosHTML(d, lock);
@@ -756,13 +794,17 @@ function pvHTML(t, d, final) {
 function sec(ci) { const el = $('sec'+ci); if (el) el.innerHTML = secHTML(ci); }
 
 function renderNav() {
- const ativa = pg == 'modedit' || pg == 'membros' ? 'cfg' : pg;
- $('tabs').innerHTML = TABS.map(([k, n, h]) => `<a href="${h}" ${ativa==k?'aria-current="page"':''}>${n}</a>`).join('');
+ const ativa = pg == 'modedit' || pg == 'membros' ? 'cfg' : pg == 'insta' || pg == 'torc' ? 'mod' : pg;
+ $('tabs').innerHTML = TABS.map(([k, n, h]) => `<a href="${h}" ${ativa==k?'aria-current="page"':''} ${k=='cfg'?'aria-label="Configurações" title="Configurações"':''}>${k=='cfg' ? icone('eng') : n}</a>`).join('');
 }
 
 /* Página de uma modalidade: vinculada à página MODALIDADES */
 function page() {
  $('tabs').innerHTML = '';
+ if (cur.t == 'extra') {
+  $('main').innerHTML = `<div class="page-head"><a class="back" href="#/modalidades">← Voltar às modalidades</a><h2 class="ptitle">${esc(cur.n)}</h2><p class="muted">Extra</p>${cur.r ? `<div class="row" style="margin-top:8px"><button class="btn alt" data-verreg>📄 Ver regulamento</button></div>` : ''}</div><section class="panel"><div id="sec${EXTRA_CI}"></div></section>`;
+  sec(EXTRA_CI); return;
+ }
  const links = CATS.map(c => `<a href="#/m/${cur.s}/${c.id}" ${c.id===curC?'aria-current="page"':''}>${esc(c.n)}</a>`).join('');
  const btnReg = cur.r ? `<div class="row" style="margin-top:8px"><button class="btn alt" data-verreg>📄 Ver regulamento</button></div>` : '';
  $('main').innerHTML = `<div class="page-head"><a class="back" href="#/modalidades">← Voltar às modalidades</a><h2 class="ptitle">${esc(cur.n)}</h2><p class="muted">${descTipo(cur)}</p>${btnReg}</div><nav class="catnav" aria-label="Categorias">${links}</nav><section class="panel"><h2>${esc(catNome(curC))}</h2><div id="sec${curC}"></div></section>`;
@@ -784,9 +826,9 @@ function render() {
  }
  renderNav();
  $('main').innerHTML = Views[pg]();
- setTitle(pg == 'placar' ? '' : pg == 'modedit' ? 'Editar modalidades' : pg == 'membros' ? 'Integrantes' : TABS.find(x => x[0] == pg)[1]);
+ setTitle();
  $('sub').textContent = (pg == 'placar' || pg == 'mod')
-  ? `${totals().done} de ${ACTS.length*CATS.length} resultados confirmados · ${db ? 'sincronizado' : 'modo local'}`
+  ? `${totals().done} de ${ACTS.filter(a => a.t != 'extra').length*CATS.length} resultados confirmados · ${db ? 'sincronizado' : 'modo local'}`
   : sync.charAt(0).toUpperCase() + sync.slice(1);
  if (pg == 'placar') first = false;
 }
@@ -807,7 +849,7 @@ async function route() {
  }
 
  cur = m && BY[m[1]] || null;
- curC = m && m[2] != null && CATS.some(c => c.id === +m[2]) ? +m[2] : CATS[0].id;
+ curC = cur && cur.t == 'extra' ? EXTRA_CI : m && m[2] != null && CATS.some(c => c.id === +m[2]) ? +m[2] : CATS[0].id;
  pg = cur ? 'mod' : (ROUTES[h] || 'placar');
  pendente = false;
 
@@ -822,7 +864,7 @@ async function route() {
   await DB.fetchCfg(COLS[cur ? 'm' : pg]);
   if (cur) await DB.fetchSingleRes(cur, curC);
   else if (pg == 'placar' || pg == 'mod') await DB.fetchAllRes();
-  else if (pg == 'membros') await MEM.listar();
+  else if (pg == 'membros' || pg == 'memver') await MEM.listar();
   save();
  } catch (e) { console.error(e); }
 
@@ -966,7 +1008,7 @@ const mesmoNome = (a, b) => slug(a) === slug(b);
 
 /* Gera um id único e permanente para uma nova modalidade */
 function novoId(nome, lista) {
- const base = slug(nome) || 'modalidade', usados = new Set(lista.map(x => x.id));
+ const base = slug(nome) || 'modalidade', usados = new Set([...lista.map(x => x.id), 'instagram', 'torcida-famosa']);
  let id = base, n = 2;
  while (usados.has(id)) id = `${base}-${n++}`;
  return id;
@@ -983,10 +1025,10 @@ function syncCur() {
 
 /* Apaga os resultados de uma modalidade nas três categorias */
 async function apagarResultados(id) {
- CATS.forEach(c => { delete S.res[id + '|' + c.id]; delete D[id + '|' + c.id]; });
+ [...CATS.map(c => c.id), EXTRA_CI].forEach(ci => { delete S.res[id + '|' + ci]; delete D[id + '|' + ci]; });
  save();
  if (!db) return;
- const { error } = await db.from('res').delete().in('id', CATS.map(c => `${id}_${c.id}`));
+ const { error } = await db.from('res').delete().in('id', [...CATS.map(c => c.id), EXTRA_CI].map(ci => `${id}_${ci}`));
  if (error) fail(error);
 }
 
@@ -1055,7 +1097,8 @@ async function salvarReg(id, btn) {
  /* Marca na lista de modalidades se existe regulamento (só um indicador leve, o texto fica na tabela reg) */
  await DB.patchCfg(['mods'], () => {
   S.mods = listaMods();
-  const x = S.mods.find(y => y.id === id);
+  let x = S.mods.find(y => y.id === id);
+  if (!x && ['instagram', 'torcida-famosa'].includes(id)) { x = {id, fx: 1, t: 'fixo', n: id == 'instagram' ? 'Instagram' : 'Torcida famosa'}; S.mods.push(x); }
   if (x) { if (txt) x.r = 1; else delete x.r; }
   buildActs();
  });
@@ -1078,15 +1121,17 @@ Views.modedit = () => {
   const itens = ACTS.filter(a => a.t == t);
   if (!itens.length) return '';
   return `<h3 class="me-grupo">${TN[t]} <span>(${itens.length})</span></h3>` + itens.map(a => `
-  <div class="me-row">
+  <div class="me-row ${a.oc ? 'oculta' : ''}">
    <input data-mn="${a.s}" value="${esc(a.n)}" aria-label="Nome da modalidade">
    <select data-mt="${a.s}" aria-label="Tipo de ${esc(a.n)}">${opts(a.t)}</select>
+   ${btnVis(a.s, a.n, a.oc)}
    <button class="btn alt btn-del me-reg ${a.r?'on':''}" data-mreg="${a.s}" title="${a.r?'Editar regulamento':'Cadastrar regulamento'}" aria-label="Regulamento de ${esc(a.n)}">📄</button>
+   ${btnLimpar(a.s, a.n)}
    <button class="btn warn btn-del" data-mdel="${a.s}" aria-label="Excluir ${esc(a.n)}">×</button>
   </div>${a.t == 'marca' ? `<div class="me-sub">
    <select data-mu="${a.s}" aria-label="Medida de ${esc(a.n)}"><option value="tempo" ${a.u=='tempo'?'selected':''}>Medida: Tempo</option><option value="dist" ${a.u=='dist'?'selected':''}>Medida: Distância</option></select>
    <select data-mi="${a.s}" aria-label="Modo de ${esc(a.n)}"><option value="0" ${!a.inv?'selected':''}>Normal (${a.u=='dist'?'maior distância':'menor tempo'} vence)</option><option value="1" ${a.inv?'selected':''}>Invertido (${a.u=='dist'?'menor distância':'maior tempo'} vence)</option></select>
-  </div>` : ''}${a.t == 'crit' ? `<div class="me-sub1"><button class="btn alt" data-mcrit="${a.s}">✎ Nomear critérios por categoria${a.cn ? ' ✔' : ''}</button></div>` : ''}`).join('');
+  </div>` : ''}${a.t == 'extra' ? `<div class="me-sub1"><label class="ex-cfg">Pontos padrão por lançamento<input type="number" min="0" step="any" data-mxv="${a.s}" value="${a.xv}"></label></div>` : ''}${a.t == 'crit' ? `<div class="me-sub1"><button class="btn alt" data-mcrit="${a.s}">✎ Nomear critérios por categoria${a.cn ? ' ✔' : ''}</button></div>` : ''}`).join('');
  }).join('');
  return `<div class="page-head"><a class="back" href="#/configuracoes">← Voltar às configurações</a></div>
  <section class="panel"><h2>Nova modalidade</h2>
@@ -1259,7 +1304,7 @@ const listaCats = () => CATS.map(c => ({id: c.id, n: c.n}));
 
 /* Se a categoria aberta foi excluída em outro aparelho, vai para a primeira */
 function syncCat() {
- if (cur && !CATS.some(c => c.id === curC)) { location.hash = `#/m/${cur.s}/${CATS[0].id}`; }
+ if (cur && cur.t != 'extra' && !CATS.some(c => c.id === curC)) { location.hash = `#/m/${cur.s}/${CATS[0].id}`; }
 }
 
 /* Painel de categorias, logo depois do painel de Modalidades */
@@ -1570,7 +1615,7 @@ function onMem(p) {
  atualizaListaMem();
 }
 function atualizaListaMem() {
- if (cur || pg !== 'membros') return;
+ if (cur || (pg !== 'membros' && pg !== 'memver')) return;
  const l = $('memlista'), c = $('memcont');
  if (l) l.innerHTML = memListaHTML(); else softRender();
  if (c) c.innerHTML = memContHTML();
@@ -1578,15 +1623,15 @@ function atualizaListaMem() {
 
 const memContHTML = () => T.map(i => `<span>${tn(i)}: <strong>${membros().filter(m => m.team === i).length}</strong></span>`).join('');
 
-function memListaHTML() {
- if (!membros().length) return '<p class="muted">Nenhum integrante cadastrado ainda. Toque em “+ Novo integrante” para começar.</p>';
+function memListaHTML(ro = pg === 'memver') {
+ if (!membros().length) return ro ? '<p class="muted">Nenhum integrante cadastrado ainda.</p>' : '<p class="muted">Nenhum integrante cadastrado ainda. Toque em “+ Novo integrante” para começar.</p>';
  const q = slug(memF.q);
  const l = membros().filter(m => (memF.team === '' || String(m.team) === memF.team) && (memF.cat === '' || String(m.cat) === memF.cat) && (!q || slug(m.nome + ' ' + m.turma).includes(q)))
   .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
  if (!l.length) return '<p class="muted">Nenhum integrante encontrado com esses filtros.</p>';
  const grupos = [...T.map(String), ''].map(t => [t, l.filter(m => String(m.team) === t)]).filter(([, g]) => g.length);
  return grupos.map(([t, g]) => `<div class="mem-grupo"><h3>${esc(teamNome(t))}</h3><span>${g.length} ${g.length == 1 ? 'integrante' : 'integrantes'}</span></div>
- <div class="mem-grid">${g.map(m => `<button class="mem-card" data-memed="${esc(m.id)}">${fotoHTML(m)}<span class="mem-info"><span class="mem-nome">${esc(m.nome)}</span><span class="mem-sub">${esc(memSub(m))}</span></span></button>`).join('')}</div>`).join('');
+ <div class="mem-grid">${g.map(m => `<${ro ? 'div' : 'button'} class="mem-card${ro ? ' ro' : ''}" ${ro ? '' : `data-memed="${esc(m.id)}"`}>${fotoHTML(m)}<span class="mem-info"><span class="mem-nome">${esc(m.nome)}</span><span class="mem-sub">${esc(memSub(m))}</span></span></${ro ? 'div' : 'button'}>`).join('')}</div>`).join('');
 }
 
 Views.membros = () => `<div class="page-head"><a class="back" href="#/configuracoes">← Voltar às configurações</a></div><section class="panel"><h2>Integrantes das equipes</h2>
@@ -1780,7 +1825,7 @@ document.addEventListener('change', async e => {
 
 /* Acesso à página de integrantes pelas Configurações */
 const cfgAntesMembros = Views.cfg;
-Views.cfg = () => cardsCfg(`<section class="panel"><h2>Integrantes</h2><p class="muted">Cadastro dos integrantes de cada equipe, com foto, categoria e turma. Transferências e permutas entre equipes também são feitas lá.</p><div class="row"><a class="btn" href="#/integrantes" style="text-decoration:none;display:inline-flex;align-items:center">Gerenciar integrantes</a></div></section>`, cfgAntesMembros());
+Views.cfg = () => cardsCfg(`<section class="panel"><h2>Integrantes</h2><p class="muted">Cadastro dos integrantes de cada equipe, com foto, categoria e turma. Transferências e permutas entre equipes também são feitas lá.</p><div class="row"><a class="btn" href="#/configuracoes/integrantes" style="text-decoration:none;display:inline-flex;align-items:center">Gerenciar integrantes</a></div></section>`, cfgAntesMembros());
 /* Integrantes e Modalidades lado a lado, como dois cartões na mesma linha */
 function cardsCfg(painelInt, resto) {
  const k = resto.indexOf('</section>') + 10;
@@ -1872,6 +1917,240 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('change', e => {
  if (e.target.id === 'massaexist' && massa) { massa.incluirExist = e.target.checked; telaRevisao(); }
+});
+
+/* ==========================================================================
+   16. MODALIDADES "EXTRA" + PÁGINA DE VISUALIZAÇÃO DOS INTEGRANTES
+   Extra: pontos lançados direto para a equipe (sem categoria). Instagram e
+   Torcida famosa são extras fixos, com páginas próprias.
+   ========================================================================== */
+const EXTRA_CI = -1;   // resultados de modalidades extra ficam em "<modalidade>_-1"
+const EXTRAS_FIXOS = [
+ {id: 'instagram', n: 'Instagram', href: '#/instagram', resumo: () => { const n = T.reduce((s, i) => s + (S.insta[i] || []).filter(Boolean).length, 0); return `${n} ${n == 1 ? 'post' : 'posts'}`; }},
+ {id: 'torcida-famosa', n: 'Torcida famosa', href: '#/torcida', resumo: () => { const n = (S.fans || []).length; return `${n} ${n == 1 ? 'torcedor' : 'torcedores'}`; }}
+];
+const extraLanc = a => ((S.res[rk(a, EXTRA_CI)] || {}).e || []);
+const extraSoma = a => T.map(i => extraLanc(a).filter(x => +x.team === i).reduce((s, x) => s + (+x.pts || 0), 0));
+
+/* Linha de uma modalidade extra na lista de Modalidades (um quadro só, sem categorias) */
+const extraLinha = (n, href, resumo) => `<div class="act" style="--n:${CATS.length}"><div><a href="${href}"><strong>${esc(n)}</strong></a><small>Extra</small></div><a class="cell done ex-cell" href="${href}"><span class="l">Lançar pontos</span><span class="chips">${esc(resumo)}</span></a></div>`;
+function extrasLista() {
+ if (flt != 'todas' && flt != 'extra') return '';
+ return EXTRAS_FIXOS.filter(x => !fixoCfg(x.id).oc).map(x => extraLinha(x.n, x.href, x.resumo())).join('') +
+  ACTS.filter(a => a.t == 'extra' && !a.oc).map(a => { const n = extraLanc(a).length; return extraLinha(a.n, `#/m/${a.s}`, `${n} ${n == 1 ? 'lançamento' : 'lançamentos'}`); }).join('');
+}
+
+/* Página de uma modalidade extra */
+function extraHTML(a) {
+ const e = extraLanc(a), v = a.xv, soma = extraSoma(a);
+ return `<p class="muted">Cada lançamento soma pontos direto no placar geral da equipe. Valor padrão: ${v} pontos.</p>
+ <div class="row" style="font-size:13px;gap:10px">${T.map(i => `<span>${tn(i)}: <strong>${soma[i]}</strong></span>`).join('')}</div>
+ <div class="ex-form">
+  <input id="exdesc" placeholder="Descrição (opcional)" autocomplete="off">
+  <select id="exteam" aria-label="Equipe">${T.map(i => `<option value="${i}">${tn(i)}</option>`).join('')}</select>
+  <input id="expts" type="number" min="0" step="any" inputmode="decimal" value="${v}" aria-label="Pontos">
+  <button class="btn" data-exadd>Adicionar</button>
+ </div>
+ <div class="scroll"><table><thead><tr><th>Descrição</th><th style="text-align:left">Equipe</th><th>Pontos</th><th></th></tr></thead><tbody>
+ ${e.length ? e.map(x => `<tr><td>${esc(x.desc || '—')}</td><td style="text-align:left">${tn(+x.team)}</td><td>${+x.pts || 0}</td><td><button class="btn warn" data-exdel="${esc(x.id)}">Remover</button></td></tr>`).join('') : '<tr><td colspan="4" class="muted">Nenhum lançamento ainda.</td></tr>'}
+ </tbody></table></div>`;
+}
+
+/* Grava relendo a versão mais recente do servidor (evita sobrescrever outro aparelho) */
+async function patchExtra(a, mutate) {
+ const key = rk(a, EXTRA_CI);
+ if (db) {
+  const { data, error } = await db.from('res').select('*').eq('id', `${a.s}_${EXTRA_CI}`);
+  if (!error) { if (data && data.length) S.res[key] = data[0].d; else delete S.res[key]; }
+ }
+ const d = clone(S.res[key] || {}); d.e = d.e || []; mutate(d); S.res[key] = d;
+ await DB.persistRes(a, EXTRA_CI);
+ sec(EXTRA_CI);
+}
+
+document.addEventListener('click', async e => {
+ const t = e.target.closest('button'); if (!t || !cur || cur.t != 'extra') return;
+ if (t.dataset.exadd !== undefined) {
+  const desc = $('exdesc').value.trim(), team = +$('exteam').value, pts = Math.max(0, +$('expts').value || 0);
+  if (!pts) { avisar('Informe os pontos do lançamento.'); return; }
+  t.disabled = true;
+  await patchExtra(cur, d => d.e.push({id: uid(), desc, team, pts}));
+ }
+ else if (t.dataset.exdel) {
+  const id = t.dataset.exdel;
+  if (!await confirmar('Remover este lançamento?')) return;
+  await patchExtra(cur, d => { d.e = d.e.filter(x => x.id !== id); });
+ }
+});
+
+/* Editor de modalidades: pontos padrão das modalidades extra */
+document.addEventListener('change', async e => {
+ const el = e.target;
+ if (cur || pg !== 'modedit' || !el.dataset.mxv) return;
+ const id = el.dataset.mxv, v = Math.max(0, +el.value || 0);
+ await DB.patchCfg(['mods'], () => { S.mods = listaMods(); const x = S.mods.find(y => y.id === id); if (x) x.xv = v; buildActs(); });
+ softRender();
+});
+
+/* Instagram e Torcida famosa: acesso pela página de Modalidades */
+['insta', 'torc'].forEach(k => {
+ const antes = Views[k];
+ const fid = k == 'insta' ? 'instagram' : 'torcida-famosa';
+ Views[k] = () => `<div class="page-head"><a class="back" href="#/modalidades">← Voltar às modalidades</a>${fixoCfg(fid).r ? `<div class="row" style="margin-top:4px"><button class="btn alt" data-verfx="${fid}">📄 Ver regulamento</button></div>` : ''}</div>` + antes();
+});
+
+/* Página só de visualização dos integrantes (menu principal) */
+Views.memver = () => `<section class="panel"><h2>Integrantes das equipes</h2>
+ <div class="row" id="memcont" style="font-size:13px;gap:10px">${memContHTML()}</div>
+ <div class="mem-tools">
+  <input class="busca" id="membusca" type="search" placeholder="Buscar por nome ou turma" value="${esc(memF.q)}" autocomplete="off">
+  <select id="memfteam" aria-label="Filtrar por equipe"><option value="">Todas as equipes</option>${T.map(i => `<option value="${i}" ${memF.team === String(i) ? 'selected' : ''}>${tn(i)}</option>`).join('')}</select>
+  <select id="memfcat" aria-label="Filtrar por categoria"><option value="">Todas as categorias</option>${CATS.map(c => `<option value="${c.id}" ${memF.cat === String(c.id) ? 'selected' : ''}>${esc(c.n)}</option>`).join('')}</select>
+ </div>
+ <div id="memlista">${memListaHTML()}</div></section>`;
+
+/* ==========================================================================
+   17. INSTAGRAM E TORCIDA FAMOSA NO EDITOR DE MODALIDADES
+   Ocultar da página Modalidades, pontuação e regulamento. As opções ficam na
+   própria lista de modalidades (entrada "fixa", que não vira modalidade comum).
+   ========================================================================== */
+const FIXOS = [
+ {id: 'instagram', n: 'Instagram', k: 'ig', rot: 'Pontos por dia de post'},
+ {id: 'torcida-famosa', n: 'Torcida famosa', k: 'fan', rot: 'Pontos por torcedor'}
+];
+const fixoCfg = id => (S.mods || []).find(m => m && m.id === id && m.fx) || {};
+
+/* Cria (se preciso) e altera a entrada fixa dentro da lista de modalidades */
+function patchFixo(id, mudar) {
+ return DB.patchCfg(['mods'], () => {
+  S.mods = listaMods();
+  let x = S.mods.find(y => y.id === id);
+  if (!x) { x = {id, fx: 1, t: 'fixo', n: (FIXOS.find(f => f.id === id) || {}).n || id}; S.mods.push(x); }
+  mudar(x); buildActs();
+ });
+}
+
+/* Painel no editor, antes da lista de modalidades cadastradas */
+const modeditAntesFixos = Views.modedit;
+Views.modedit = () => {
+ const h = modeditAntesFixos(), i = h.indexOf('<section class="panel"><h2>Modalidades cadastradas');
+ const painel = `<section class="panel"><h2>Instagram e Torcida famosa</h2>
+  <p class="muted">Modalidades extras fixas. Ocultar tira a modalidade da página Modalidades; os pontos já lançados continuam no placar.</p>
+  ${FIXOS.map(f => { const c = fixoCfg(f.id); return `<div class="fx-row">
+   <strong>${f.n}</strong>
+   <label class="fx-pts">${f.rot}<input type="number" min="0" step="any" inputmode="decimal" data-fxpts="${f.k}" value="${S[f.k]}"></label>
+${btnVis(f.id, f.n, c.oc)}
+   <button class="btn alt btn-del me-reg ${c.r ? 'on' : ''}" data-fxreg="${f.id}" title="${c.r ? 'Editar regulamento' : 'Cadastrar regulamento'}" aria-label="Regulamento de ${f.n}">📄</button>
+   ${btnLimpar(f.id, f.n)}
+  </div>`; }).join('')}
+ </section>`;
+ return i < 0 ? h + painel : h.slice(0, i) + painel + h.slice(i);
+};
+
+document.addEventListener('click', e => {
+ const t = e.target.closest('button'); if (!t) return;
+ if (t.dataset.fxreg && pg === 'modedit' && !cur) { const f = FIXOS.find(x => x.id === t.dataset.fxreg); if (f) abrirReg({s: f.id, n: f.n}, true); }
+ else if (t.dataset.verfx) { const f = FIXOS.find(x => x.id === t.dataset.verfx); if (f) abrirReg({s: f.id, n: f.n}, false); }
+});
+
+document.addEventListener('change', async e => {
+ const el = e.target;
+ if (cur || pg !== 'modedit') return;
+ if (el.dataset.fxvis) {
+  const oc = !el.checked;
+  await patchFixo(el.dataset.fxvis, x => { if (oc) x.oc = 1; else delete x.oc; });
+  softRender();
+ }
+ else if (el.dataset.fxpts) {
+  const k = el.dataset.fxpts, v = Math.max(0, +el.value || 0);
+  await DB.patchCfg([k], () => { S[k] = v; });
+  softRender();
+ }
+});
+
+/* ==========================================================================
+   18. ÍCONES, MOSTRAR/OCULTAR E LIMPAR DADOS DAS MODALIDADES
+   ========================================================================== */
+function icone(n) {
+ const p = {
+  olho: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  olhoX: '<path d="M9.9 9.9a3 3 0 1 0 4.2 4.2"/><path d="M10.7 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a13 13 0 0 1-1.7 2.7"/><path d="M6.6 6.6A13.5 13.5 0 0 0 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M2 2l20 20"/>',
+  limpar: '<path d="M7 21l-4.3-4.3a2.4 2.4 0 0 1 0-3.4l9.6-9.6a2.4 2.4 0 0 1 3.4 0l5.6 5.6a2.4 2.4 0 0 1 0 3.4L13 21"/><path d="M22 21H7"/><path d="M5 11l9 9"/>',
+  eng: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'
+ }[n] || '';
+ return `<svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+}
+const btnVis = (id, nome, oculto) => `<button class="btn alt btn-del me-ico me-vis ${oculto ? 'off' : ''}" data-mvis="${id}" aria-pressed="${!oculto}" title="${oculto ? 'Oculta na página Modalidades – toque para mostrar' : 'Visível na página Modalidades – toque para ocultar'}" aria-label="${oculto ? 'Mostrar' : 'Ocultar'} ${esc(nome)}">${icone(oculto ? 'olhoX' : 'olho')}</button>`;
+const btnLimpar = (id, nome) => `<button class="btn alt btn-del me-ico" data-mlimpar="${id}" title="Limpar dados" aria-label="Limpar dados de ${esc(nome)}">${icone('limpar')}</button>`;
+
+/* Mostrar/ocultar e limpar dados (modalidades comuns e fixas) */
+document.addEventListener('click', async e => {
+ const t = e.target.closest('button'); if (!t || cur || pg !== 'modedit') return;
+ const fixo = id => FIXOS.find(f => f.id === id);
+
+ if (t.dataset.mvis) {
+  const id = t.dataset.mvis;
+  t.disabled = true;
+  if (fixo(id)) await patchFixo(id, x => { if (x.oc) delete x.oc; else x.oc = 1; });
+  else await DB.patchCfg(['mods'], () => { S.mods = listaMods(); const x = S.mods.find(y => y.id === id); if (x) { if (x.oc) delete x.oc; else x.oc = 1; } buildActs(); });
+  render();
+ }
+
+ else if (t.dataset.mlimpar) {
+  const id = t.dataset.mlimpar, f = fixo(id), nome = f ? f.n : (BY[id] || {}).n;
+  if (!nome) return;
+  const o_que = id == 'instagram' ? 'Todos os dias de post marcados serão desmarcados.' : id == 'torcida-famosa' ? 'Todos os torcedores cadastrados serão removidos.' : 'Todos os resultados, marcas, notas e lançamentos dessa modalidade, em todas as categorias, serão apagados.';
+  if (!await confirmar(`Limpar os dados de "${nome}"?\n${o_que}\nOs pontos dela saem do placar geral. Nome, tipo, configurações e regulamento são mantidos.`)) return;
+  t.disabled = true;
+  if (id == 'instagram') await DB.patchCfg(['insta'], () => { S.insta = T.map(() => Array(20).fill(false)); });
+  else if (id == 'torcida-famosa') await DB.patchCfg(['fans'], () => { S.fans = []; });
+  else await apagarResultados(id);
+  render();
+  avisar(`Dados de "${nome}" limpos.`);
+ }
+});
+
+/* ==========================================================================
+   19. ORDEM DA LISTA DE MODALIDADES (padrão: alfabética)
+   ========================================================================== */
+const ORDENS = [['az', 'Ordem alfabética (A–Z)'], ['za', 'Ordem alfabética (Z–A)'], ['tipo', 'Por tipo de modalidade'], ['feitas', 'Mais concluídas primeiro'], ['pend', 'Mais pendentes primeiro']];
+let ordMod = 'az';
+try { const o = localStorage.getItem('olimp-ordem-mod'); if (ORDENS.some(x => x[0] === o)) ordMod = o; } catch (e) {}
+
+/* Extras como itens da lista (para entrarem na mesma ordenação) */
+function extrasItens() {
+ if (flt != 'todas' && flt != 'extra') return [];
+ return EXTRAS_FIXOS.filter(x => !fixoCfg(x.id).oc).map(x => {
+   const r = x.resumo();
+   return {n: x.n, t: 'extra', prog: /^0 /.test(r) ? 0 : 1, h: extraLinha(x.n, x.href, r)};
+  })
+  .concat(ACTS.filter(a => a.t == 'extra' && !a.oc).map(a => {
+   const n = extraLanc(a).length;
+   return {n: a.n, t: 'extra', prog: n ? 1 : 0, h: extraLinha(a.n, `#/m/${a.s}`, `${n} ${n == 1 ? 'lançamento' : 'lançamentos'}`)};
+  }));
+}
+
+function ordenarMods(l) {
+ const nome = (a, b) => a.n.localeCompare(b.n, 'pt-BR', {sensitivity: 'base'});
+ const tipos = Object.keys(TN);
+ const cmp = {
+  az: nome,
+  za: (a, b) => nome(b, a),
+  tipo: (a, b) => tipos.indexOf(a.t) - tipos.indexOf(b.t) || nome(a, b),
+  feitas: (a, b) => b.prog - a.prog || nome(a, b),
+  pend: (a, b) => a.prog - b.prog || nome(a, b)
+ }[ordMod] || nome;
+ return l.slice().sort(cmp);
+}
+
+/* Só o ícone de ordenar (setas), antes de "Todas"; destacado quando a ordem não é a padrão */
+const ordemHTML = () => `<span class="ord-ico ${ordMod != 'az' ? 'ativo' : ''}" title="Ordenar"><select id="modord" aria-label="Ordenar modalidades">${ORDENS.map(([k, n]) => `<option value="${k}" ${ordMod == k ? 'selected' : ''}>${n}</option>`).join('')}</select></span>`;
+
+document.addEventListener('change', e => {
+ if (e.target.id !== 'modord') return;
+ ordMod = e.target.value;
+ try { localStorage.setItem('olimp-ordem-mod', ordMod); } catch (er) {}
+ render();
 });
 
 /* Inicialização */
