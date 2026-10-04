@@ -1747,20 +1747,26 @@ document.addEventListener('click', async e => {
  /* Posiciona a lista junto do campo (abaixo, ou acima se não couber) */
  function posicionar(btn, pop) {
   const r = btn.getBoundingClientRect(), vv = window.visualViewport;
-  const altTela = vv ? vv.height + vv.offsetTop : innerHeight;   // área realmente visível (barra do navegador e teclado do celular)
+  /* Limites: a área visível da tela e, dentro de uma janela, a própria janela (a lista não "vaza" por cima dela) */
+  let lTop = vv ? vv.offsetTop : 0, lBot = vv ? vv.height + vv.offsetTop : innerHeight;
+  const dlg = btn.closest('dialog');
+  if (dlg) { const d = dlg.getBoundingClientRect(); lTop = Math.max(lTop, d.top); lBot = Math.min(lBot, d.bottom); }
   pop.style.minWidth = Math.max(r.width, 160) + 'px';
   pop.style.maxHeight = 'none';
-  const natural = pop.scrollHeight + 2, abaixo = altTela - r.bottom - 12, acima = r.top - 12;
+  const natural = pop.scrollHeight + 2, abaixo = lBot - r.bottom - 10, acima = r.top - lTop - 10;
+  /* Preferência: abrir logo abaixo do campo, rolando por dentro se preciso; só abre para cima quando embaixo não há espaço razoável */
+  const minimo = Math.min(natural, 150);   // cerca de 3 a 4 opções visíveis já bastam para abrir embaixo
   let top, alt;
-  if (natural <= abaixo || abaixo >= acima) { alt = Math.max(96, Math.min(natural, abaixo)); top = r.bottom + 4; }
+  if (abaixo >= minimo || abaixo >= acima) { alt = Math.max(Math.min(natural, abaixo), Math.min(natural, 120)); top = r.bottom + 4; }
   else { alt = Math.min(natural, acima); top = r.top - 4 - alt; }
   pop.style.maxHeight = alt + 'px';
-  pop.style.top = Math.max(8, top) + 'px';
+  pop.style.top = Math.max(lTop + 4, top) + 'px';
   const w = pop.offsetWidth;
   pop.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + 'px';
   const sel = pop.querySelector('[aria-selected=true]');
   if (sel) pop.scrollTop = Math.max(0, sel.offsetTop - alt / 2);   // opção atual visível dentro da lista
  }
+
 
  function escolher(i) {
   const {sel} = aberto; fechar(true);
