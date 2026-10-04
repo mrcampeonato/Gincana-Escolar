@@ -2516,7 +2516,7 @@ Views.insc = () => {
   </div>
   <div id="insclista" class="mem-grid">${inscListaHTML()}</div></section>`;
  return head + `<section class="panel">
-  <div class="insc-topo">${fotoHTML(m)}<span class="mem-info"><span class="mem-nome">${esc(m.nome)}</span><span class="mem-sub">${esc(teamNome(m.team))} · ${esc(memSub(m))}</span></span><button class="btn alt" data-inscoutro title="Voltar à lista e escolher outro integrante">Outro integrante</button></div>
+  <div class="insc-topo">${fotoHTML(m)}<span class="mem-info"><span class="mem-nome">${esc(m.nome)}</span><span class="mem-sub">${esc(teamNome(m.team))} · ${esc(memSub(m))}</span></span><button class="btn alt" data-inscoutro title="Fechar e escolher outro integrante" aria-label="Fechar e escolher outro integrante">✕</button></div>
   <p class="muted" id="insccont" style="margin:10px 0 0">${inscContTxt()}</p>
   <div id="inscmods">${inscModsHTML()}</div></section>`;
 };
