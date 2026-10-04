@@ -394,6 +394,7 @@ select[data-csel]{position:absolute!important;width:1px!important;height:1px!imp
 @media (max-width:620px){.cad-cards{grid-template-columns:1fr}}
 .cad-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center;margin-bottom:8px}
 .cad-row.novo{margin:0 0 12px;padding-bottom:12px;border-bottom:1px dashed var(--line)}
+#cadbody .muted{text-align:left}
 .ag-sec{font-size:15px;margin:4px 0 8px;text-align:left}
 .ag-sec span{display:block;font:400 12px Figtree,sans-serif;color:var(--mute);margin-top:2px}
 .ag-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
@@ -580,6 +581,90 @@ input[type=checkbox]:focus{box-shadow:none}
 .csel-pop{max-height:min(60vh,360px);overscroll-behavior:contain}
 .btn-del .ico{width:17px;height:17px}
 
+.cfg-card{text-align:center;padding:16px 14px}
+.cfg-card h2{font-size:15px;margin-bottom:6px;color:var(--mute);font-family:Figtree,sans-serif;font-weight:600;letter-spacing:0}
+.cfg-num{font:800 34px/1 'Bricolage Grotesque',sans-serif;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.cfg-rot{font-size:12px;color:var(--mute);margin:4px 0 14px}
+.cfg-card .row .btn{width:100%;display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+
+/* Atalhos das Configurações */
+.cfg-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.cfg-tile{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--ink);text-decoration:none;cursor:pointer;font:inherit;text-align:left;box-shadow:var(--sh);transition:transform .15s var(--ease),border-color .2s,box-shadow .2s;min-height:0;width:100%}
+.cfg-tile:hover{transform:translateY(-2px);border-color:var(--ink);box-shadow:var(--sh-hi)}
+.cfg-tile:active{transform:scale(.98)}
+.cfg-ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--soft);color:var(--ink);flex:none}
+.cfg-ico .ico{width:22px;height:22px}
+.cfg-txt{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
+.cfg-txt strong{font-weight:600;font-size:15px}
+.cfg-txt small{font-size:12px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cfg-seta{font-size:24px;line-height:1;color:var(--mute);flex:none;transition:transform .2s var(--ease)}
+.cfg-tile:hover .cfg-seta{transform:translateX(3px);color:var(--ink)}
+@media (max-width:620px){.cfg-tiles{grid-template-columns:1fr;gap:8px}.cfg-tile{padding:12px}}
+
+.cfg-jbody .muted{text-align:left}
+.cfg-jbody .row{justify-content:flex-start}
+
+/* Cronograma */
+@media (max-width:420px){.nav-x{display:none}}
+.cr-dia-tit{font-size:15px;margin:0 0 8px;text-align:center;color:var(--mute);font-family:Figtree,sans-serif;font-weight:600;text-transform:capitalize}
+.cr-dias{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 2px 8px;margin-bottom:6px;justify-content:center}
+.cr-dias::-webkit-scrollbar{display:none}
+.cr-dias .chipbtn{flex:none;text-transform:capitalize}
+.cr-cats .chipbtn{min-height:34px;padding:6px 12px;font-size:13px}
+.cr-grade{display:grid;grid-template-columns:76px repeat(var(--nc),minmax(0,1fr));margin-top:6px}
+.cr-cab,.cr-linha{display:contents}
+.cr-cab span{font:600 11px Figtree,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);padding:8px 6px;border-bottom:2px solid var(--ink);text-align:center}
+.cr-cab span:first-child{text-align:left}
+.cr-h{display:flex;align-items:center;gap:6px;padding:12px 6px;font:600 13px Figtree,sans-serif;font-variant-numeric:tabular-nums;color:var(--ink);border-bottom:1px solid var(--line)}
+.cr-h .ico{width:14px;height:14px;color:var(--mute)}
+.cr-cel{display:grid;gap:8px;align-content:start;padding:8px 6px;border-bottom:1px solid var(--line);min-width:0}
+.cr-card{display:flex;flex-direction:column;gap:4px;text-align:left;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--soft) 55%,var(--card));color:var(--ink);text-decoration:none;font:inherit;cursor:pointer;min-width:0;width:100%;transition:transform .15s var(--ease),border-color .2s,box-shadow .2s}
+.cr-card:hover{transform:translateY(-2px);border-color:var(--ink);box-shadow:var(--sh)}
+.cr-nome{font-weight:600;font-size:14px;line-height:1.25}
+.cr-hora,.cr-meta span{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--mute);min-width:0}
+.cr-hora .ico,.cr-meta .ico{width:12px;height:12px;flex:none}
+.cr-meta{display:flex;flex-wrap:wrap;gap:2px 10px;padding-top:4px;border-top:1px solid var(--line)}
+.cr-card.conf{border-color:#c8283a;background:rgba(200,40,58,.06)}
+.cr-alerta{font-size:11px;font-weight:600;color:#c8283a}
+.cr-vazio{text-align:center;color:var(--mute);padding:18px 8px}
+.cr-vazio .ico{width:34px;height:34px;margin:0 auto 6px;color:var(--mute)}
+.cr-n{display:inline-grid;place-items:center;min-width:26px;height:22px;padding:0 6px;border-radius:999px;background:var(--soft);font:600 13px Figtree,sans-serif;vertical-align:middle;color:var(--mute)}
+.cr-pend{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:0 18px}
+.cr-prow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 2px;border-bottom:1px solid var(--line);min-width:0}
+.cr-prow strong{font-size:13px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cr-pcats{display:flex;gap:4px;flex:none}
+.cr-pchip{padding:4px 8px;border:1px dashed var(--mute);border-radius:999px;background:var(--card);color:var(--ink);font:600 11px Figtree,sans-serif;cursor:pointer;min-height:28px;white-space:nowrap}
+.cr-pchip:hover{border-style:solid;border-color:var(--ink);background:var(--soft)}
+.cr-status{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:6px}
+.cr-status li{padding:8px 10px;border-radius:10px;font-size:13px;line-height:1.4;border:1px solid var(--line);text-align:left}
+.cr-status li.bom{border-color:color-mix(in srgb,#1f9d55 45%,var(--line));background:rgba(31,157,85,.07)}
+.cr-status li.ruim{border-color:#c8283a;background:rgba(200,40,58,.07)}
+.cr-status li.aviso{border-color:#d99a00;background:rgba(217,154,0,.09)}
+.cr-status li.neutro{color:var(--mute)}
+#crdlg .ag-grid .btn{width:100%;min-height:40px}
+.cr-conf{border-color:#c8283a;box-shadow:0 0 0 1px rgba(200,40,58,.25),var(--sh)}
+.cr-conf h2{color:#c8283a}
+.cr-crow{display:flex;flex-direction:column;gap:6px;padding:8px 0;border-bottom:1px solid var(--line);text-align:left}
+.cr-crow:last-child{border-bottom:0}
+.cr-ctit{font-size:13px}
+.cr-crow .cr-pcats{flex-wrap:wrap}
+.cr-crow .cr-pchip{border-color:#c8283a;border-style:solid;white-space:normal;text-align:left}
+.cr-atalho{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:4px}
+.cr-atalho .ico{width:18px;height:18px}
+.cr-aviso{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:12px;background:var(--soft);font-size:13px;text-align:left;margin-top:4px}
+.cr-aviso .ico{width:18px;height:18px;flex:none;margin-top:1px}
+.cr-aviso a{color:var(--ink);font-weight:600}
+@media (max-width:620px){
+ .cr-grade{display:block}
+ .cr-cab{display:none}
+ .cr-linha{display:block;padding:6px 0;border-bottom:1px solid var(--line)}
+ .cr-h{border:0;padding:6px 2px}
+ .cr-cel{border:0;padding:0 0 8px}
+ .cr-cel.vazia{display:none}
+ .cr-cel::before{content:attr(data-cat);display:block;font:600 11px Figtree,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--mute);margin:0 2px 2px}
+ .cr-dias{justify-content:flex-start}
+}
+
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -648,13 +733,15 @@ const TABS = [
  ['placar','Placar geral','#/'],
  ['mod','Modalidades','#/modalidades'],
  ['memver','Integrantes','#/integrantes'],
+ ['crono','Cronograma','#/cronograma'],
  ['cfg','⚙️','#/configuracoes']
 ];
 const ROUTES = {
  ...Object.fromEntries(TABS.map(([k,,h]) => [h, k])),
  '#/configuracoes/modalidades': 'modedit',  // página vinculada às Configurações
  '#/configuracoes/integrantes': 'membros',   // gerenciar integrantes (Configurações)
- '#/configuracoes/inscricoes': 'insc',       // inscrições nas modalidades (pela página de integrantes)
+ '#/configuracoes/inscricoes': 'insc',
+ '#/configuracoes/cronograma': 'cronoed',     // montagem do cronograma (Configurações)       // inscrições nas modalidades (pela página de integrantes)
  '#/instagram': 'insta',                     // modalidade extra (acesso por Modalidades)
  '#/torcida': 'torc'                         // modalidade extra (acesso por Modalidades)
 };
@@ -669,6 +756,8 @@ const COLS = {
  membros: 'teams,colors,cats',
  memver:  'teams,colors,cats',
  insc:    'teams,colors,cats,mods',
+ crono:   'teams,mods,cats,locais,arbitros',
+ cronoed: 'teams,mods,cats,locais,arbitros',
  cfg:     'teams,pts,fan,ig,mods,colors,cats,locais,arbitros',
  modedit: 'mods,cats,ig,fan,locais,arbitros'
 };
@@ -1033,8 +1122,8 @@ function pvHTML(t, d, final) {
 function sec(ci) { const el = $('sec'+ci); if (el) el.innerHTML = secHTML(ci); }
 
 function renderNav() {
- const ativa = pg == 'modedit' || pg == 'membros' || pg == 'insc' ? 'cfg' : pg == 'insta' || pg == 'torc' ? 'mod' : pg;
- $('tabs').innerHTML = TABS.map(([k, n, h]) => `<a href="${h}" ${ativa==k?'aria-current="page"':''} ${k=='cfg'?'aria-label="Configurações" title="Configurações"':''}>${k=='cfg' ? icone('eng') : n}</a>`).join('');
+ const ativa = pg == 'modedit' || pg == 'membros' || pg == 'insc' || pg == 'cronoed' ? 'cfg' : pg == 'insta' || pg == 'torc' ? 'mod' : pg;
+ $('tabs').innerHTML = TABS.map(([k, n, h]) => `<a href="${h}" ${ativa==k?'aria-current="page"':''} ${k=='cfg'?'aria-label="Configurações" title="Configurações"':''}>${k=='cfg' ? icone('eng') : k=='placar' ? 'Placar<span class="nav-x"> geral</span>' : n}</a>`).join('');
 }
 
 /* Página de uma modalidade: vinculada à página MODALIDADES */
@@ -1079,6 +1168,7 @@ function loadingView() {
 
 async function route() {
  const tok = ++navTok, h = location.hash;
+ if (h !== rotaAtual) { rotaAnt = rotaAtual; rotaAtual = h; }
  const m = h.match(/^#\/m\/([^/]+)(?:\/(\d+))?$/);
 
  /* Modalidade ou categoria criada em outro aparelho e ainda desconhecida aqui: busca as listas antes */
@@ -1094,7 +1184,7 @@ async function route() {
  pendente = false;
 
  /* Páginas com edição só abrem depois de buscar a versão mais recente do servidor */
- const editavel = !!cur || pg == 'insta' || pg == 'torc' || pg == 'cfg' || pg == 'modedit' || pg == 'membros' || pg == 'insc';
+ const editavel = !!cur || pg == 'insta' || pg == 'torc' || pg == 'cfg' || pg == 'modedit' || pg == 'membros' || pg == 'insc' || pg == 'cronoed';
  carregando = editavel && !!db;
  if (carregando) loadingView(); else render();
  scrollTo(0, 0);
@@ -1102,10 +1192,12 @@ async function route() {
  DB.setupRealtime();
  try {
   await DB.fetchCfg(COLS[cur ? 'm' : pg]);
-  if (cur) await DB.fetchSingleRes(cur, curC);
+  if (cur) { await DB.fetchSingleRes(cur, curC); await AG.daMod(cur.s); }
   else if (pg == 'placar' || pg == 'mod') await DB.fetchAllRes();
   else if (pg == 'membros' || pg == 'memver') await MEM.listar();
   else if (pg == 'insc') { await MEM.listar(); if (inscSel) await carregarInsc(); }
+  else if (pg == 'crono' || pg == 'cronoed') await AG.listar();
+  if (pg == 'mod' && !cur) await AG.listar();
   save();
  } catch (e) { console.error(e); }
 
@@ -1346,7 +1438,7 @@ $('regdlg').addEventListener('click', e => { if (e.target === $('regdlg') && !$(
 
 /* Atalho para o editor dentro da página de Configurações */
 const cfgOriginal = Views.cfg;
-Views.cfg = () => `<section class="panel"><h2>Modalidades</h2><p class="muted">${ACTS.length} modalidades cadastradas. Edite as modalidades e o regulamento de cada uma.</p><div class="row"><a class="btn" href="#/configuracoes/modalidades" style="text-decoration:none;display:inline-flex;align-items:center">Editar modalidades</a></div></section>` + cfgOriginal();
+Views.cfg = () => cardCfg('Modalidades', ACTS.length, ACTS.length == 1 ? 'cadastrada' : 'cadastradas', '<a class="btn" href="#/configuracoes/modalidades">Editar</a>') + cfgOriginal();
 
 Views.modedit = () => {
  const tipos = Object.keys(TN);
@@ -2085,7 +2177,21 @@ document.addEventListener('change', async e => {
 
 /* Acesso à página de integrantes pelas Configurações */
 const cfgAntesMembros = Views.cfg;
-Views.cfg = () => cardsCfg(`<section class="panel"><h2>Integrantes</h2><p class="muted">Cadastro, edição e transferências dos integrantes de cada equipe.</p><div class="row"><a class="btn" href="#/configuracoes/integrantes" style="text-decoration:none;display:inline-flex;align-items:center">Gerenciar integrantes</a></div></section>`, cfgAntesMembros());
+Views.cfg = () => cardsCfg(cardCfg('Integrantes', '<span id="cfgnmem">' + (nMembros == null ? '–' : nMembros) + '</span>', 'cadastrados', '<a class="btn" href="#/configuracoes/integrantes">Gerenciar</a>'), cfgAntesMembros());
+/* Cartão das Configurações: título, número em destaque, rótulo curto e um botão */
+function cardCfg(titulo, num, rotulo, botao) {
+ return `<section class="panel cfg-card"><h2>${titulo}</h2><div class="cfg-num">${num}</div><div class="cfg-rot">${rotulo}</div><div class="row">${botao}</div></section>`;
+}
+/* Total de integrantes: contagem leve no servidor (sem baixar a lista), só na página de Configurações */
+let nMembros = null, nMembrosEm = 0;
+async function contarMembros() {
+ if (Date.now() - nMembrosEm < 10000) return;
+ nMembrosEm = Date.now();
+ let n = membros().length;
+ if (db) { const { count, error } = await db.from('membros').select('id', {count: 'exact', head: true}); if (!error && count != null) n = count; }
+ nMembros = n;
+ const el = $('cfgnmem'); if (el) el.textContent = n;
+}
 /* Integrantes e Modalidades lado a lado, como dois cartões na mesma linha */
 function cardsCfg(painelInt, resto) {
  const k = resto.indexOf('</section>') + 10;
@@ -2341,6 +2447,12 @@ function icone(n) {
   cal: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
   rel: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
   lixo: '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/>',
+  grupo: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/>',
+  trofeu: '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.7V17c0 .6-.5 1-1 1.2C7.9 18.8 7 20.2 7 22"/><path d="M14 14.7V17c0 .6.5 1 1 1.2 1.1.6 2 2 2 3.8"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/>',
+  bandeira: '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/>',
+  camadas: '<path d="M12 2l10 5-10 5L2 7z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>',
+  escudo: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  medalha: '<circle cx="12" cy="15" r="6"/><path d="M8.2 9.8L5 2h4l3 6 3-6h4l-3.2 7.8"/><path d="M12 13v4"/>',
   pessoa: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>',
   eng: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'
  }[n] || '';
@@ -2859,15 +2971,15 @@ const nomeArb = v => { if (!v) return ''; const x = cadLista('arbitros').find(y 
 
 function cadastroHTML(k) {
  const c = CAD[k], l = cadLista(k);
- return `<section class="panel"><h2>${c.titulo}</h2>
+ return `
   <div class="cad-row novo"><input id="cadnovo-${k}" placeholder="${c.ph}" maxlength="60" autocomplete="off"><button class="btn" data-cadadd="${k}">Adicionar</button></div>
   ${l.length ? l.map(x => `<div class="cad-row"><input data-cadn="${k},${x.id}" value="${esc(x.n)}" aria-label="Nome do ${c.um}" maxlength="60"><button class="btn warn btn-del" data-caddel="${k},${x.id}" aria-label="Excluir ${esc(x.n)}">${icone('lixo')}</button></div>`).join('') : `<p class="muted">Nenhum ${c.um} cadastrado.</p>`}
- </section>`;
+ `;
 }
 const cfgAntesCad = Views.cfg;
 Views.cfg = () => {
  const h = cfgAntesCad(), i = h.indexOf('<div class="cfg-cards">'), j = i < 0 ? -1 : h.indexOf('</section></div>', i);
- const bloco = `<div class="cad-cards">${cadastroHTML('locais')}${cadastroHTML('arbitros')}</div>`;
+ const bloco = `<div class="cfg-cards">${cadCardHTML('locais')}${cadCardHTML('arbitros')}</div>`;
  return j < 0 ? h + bloco : h.slice(0, j + 16) + bloco + h.slice(j + 16);
 };
 
@@ -2925,7 +3037,7 @@ function agHTML(a, ci) {
   p.push(`<span>${icone('cal')}${esc(dia)}</span>`);
  }
  let hr = g.hr;
- if (ci == null && !hr && Object.values(a.agc || {}).some(o => o && o.hr)) hr = 'horário por categoria';
+ if (ci == null && !hr && (Object.values(a.agc || {}).some(o => o && o.hr) || agRows(a.s).some(r => r.hr))) hr = 'horário por categoria';
  if (hr) p.push(`<span>${icone('rel')}${esc(hr)}</span>`);
  if (ci != null) { const arb = nomeArb(g.arb); if (arb) p.push(`<span>${icone('pessoa')}${esc(arb)}</span>`); }
  return p.length ? `<span class="ag">${p.join('')}</span>` : '';
@@ -3028,12 +3140,7 @@ function abrirNovaMod() {
    <label class="nv-extra" hidden>Pontos padrão por lançamento<input id="nvxv" type="number" min="0" step="any" value="100"></label>
    <div class="nv-crit" hidden><span class="nv-tit">Nomes dos critérios (opcional, valem para todas as categorias)</span><div class="crit-grid">${Array.from({length: NCRIT}, (_, k) => `<input data-nvcrit="${k}" placeholder="Critério ${k+1}" maxlength="40" aria-label="Critério ${k+1}">`).join('')}</div></div>
    <div class="nv-cats"><span class="nv-tit">Categorias</span><div class="nv-chips">${CATS.map(c => `<label class="nv-chip"><input type="checkbox" data-nvcat="${c.id}" checked><span>${esc(c.n)}</span></label>`).join('')}</div></div>
-   <div class="ag-grid">
-    <label>Local<select id="nvloc">${op('locais', '—')}</select></label>
-    <label>Árbitro<select id="nvarb">${op('arbitros', '—')}</select></label>
-    <label>Data<input id="nvdt" type="date"></label>
-    <label>Horário<input id="nvhr" type="time"></label>
-   </div>
+   <div class="cr-aviso">${icone('cal')}<span>Dia, horário, local e árbitro de cada categoria são definidos no Cronograma, que confere os conflitos.</span></div>
    <label>Regulamento (opcional)<textarea id="nvreg" class="massa-txt" style="min-height:120px" placeholder="Cole ou digite o regulamento"></textarea></label>
    <label class="ag-por nv-ins"><input type="checkbox" id="nvins" checked> Exige inscrição de integrantes</label>
    <label class="ag-por"><input type="checkbox" id="nvvis" checked> Visível na página Modalidades</label>
@@ -3069,7 +3176,7 @@ async function criarMod(btn) {
   if (t == 'extra') x.xv = Math.max(0, +$('nvxv').value || 0);
   if (t == 'crit') { const nomes = [...$('novadlg').querySelectorAll('[data-nvcrit]')].map(i => i.value.trim()); if (nomes.some(Boolean)) x.cn = {todos: nomes}; }
   if (t != 'extra' && cats.length < CATS.length) x.cats = cats;
-  [['loc', 'nvloc'], ['arb', 'nvarb'], ['dt', 'nvdt'], ['hr', 'nvhr']].forEach(([f, el]) => { const v = $(el).value; if (v) x[f] = v; });
+  [['loc', 'nvloc'], ['arb', 'nvarb'], ['dt', 'nvdt'], ['hr', 'nvhr']].forEach(([f, el]) => { const v = $(el) && $(el).value; if (v) x[f] = v; });
   if (!$('nvvis').checked) x.oc = 1;
   if (t != 'extra' && !$('nvins').checked) x.si = 1;
   if (reg) x.r = 1;
@@ -3247,6 +3354,449 @@ document.addEventListener('click', e => {
  const alvo = x ? (ed && ed.closest('.match')) : (s.querySelector('[data-edit=""]') && s.querySelector('.pv'));
  if (alvo) { alvo.classList.remove('salvo'); void alvo.offsetWidth; alvo.classList.add('salvo'); }
 });
+
+/* ==========================================================================
+   28. LOCAIS E ÁRBITROS EM JANELA PRÓPRIA (acesso por cartões nas Configurações)
+   ========================================================================== */
+const CAD_TXT = {locais: {plural: 'locais', botao: 'Gerenciar locais', titulo: 'Locais'}, arbitros: {plural: 'árbitros', botao: 'Gerenciar árbitros', titulo: 'Árbitros'}};
+function cadCardHTML(k) {
+ const n = cadLista(k).length;
+ return cardCfg(CAD_TXT[k].titulo, n, n == 1 ? 'cadastrado' : 'cadastrados', `<button class="btn" data-cadabrir="${k}">Gerenciar</button>`);
+}
+document.body.insertAdjacentHTML('beforeend', '<dialog id="caddlg" class="reg-dlg" aria-label="Cadastro"></dialog>');
+let cadAberto = null;
+function abrirCad(k) {
+ cadAberto = k;
+ const dlg = $('caddlg');
+ dlg.innerHTML = `<div class="reg-box">
+  <div class="reg-head"><h2>${CAD[k].titulo}</h2><button class="btn alt" data-cadfechar aria-label="Fechar">✕</button></div>
+  <div class="reg-body" style="white-space:normal" id="cadbody">${cadastroHTML(k)}</div>
+  <div class="reg-foot"><button class="btn" data-cadfechar>Fechar</button></div>
+ </div>`;
+ if (!dlg.open) dlg.showModal();
+ $('cadnovo-' + k).focus();
+}
+/* Depois de adicionar, renomear ou excluir, a janela é redesenhada junto com a página */
+function atualizaCadDlg() {
+ const dlg = $('caddlg'); if (!dlg || !dlg.open || !cadAberto) return;
+ const a = document.activeElement, eraNovo = a && a.id === 'cadnovo-' + cadAberto;
+ if (a && a.dataset && a.dataset.cadn && dlg.contains(a)) return;   // não atrapalha quem está renomeando
+ const rol = $('cadbody').scrollTop;
+ $('cadbody').innerHTML = cadastroHTML(cadAberto);
+ $('cadbody').scrollTop = rol;
+ if (eraNovo || !dlg.contains(document.activeElement)) $('cadnovo-' + cadAberto).focus();
+}
+const renderAntesCad = render;
+render = function () { renderAntesCad(); atualizaCadDlg(); };
+$('caddlg').addEventListener('close', () => { cadAberto = null; });
+document.addEventListener('click', e => {
+ const t = e.target.closest('button'); if (!t) return;
+ if (t.dataset.cadabrir) abrirCad(t.dataset.cadabrir);
+ else if (t.dataset.cadfechar !== undefined) $('caddlg').close();
+});
+
+/* ==========================================================================
+   29. ATALHOS DAS CONFIGURAÇÕES EM BLOCOS LIMPOS
+   Ícone + título + uma linha curta; o bloco inteiro é clicável.
+   ========================================================================== */
+const TILES_CFG = [
+ {titulo: 'Integrantes', sub: 'Equipes, fotos e inscrições', ico: 'grupo', abre: 'href="#/configuracoes/integrantes"'},
+ {titulo: 'Modalidades', sub: 'Tipos, agenda e regulamentos', ico: 'trofeu', abre: 'href="#/configuracoes/modalidades"'},
+ {titulo: 'Cronograma', sub: 'Dias, horários, locais e árbitros', ico: 'cal', abre: 'href="#/configuracoes/cronograma"'},
+ {titulo: 'Locais', sub: 'Onde acontecem as partidas', ico: 'pin', abre: 'data-cadabrir="locais"'},
+ {titulo: 'Árbitros', sub: 'Quem apita as partidas', ico: 'bandeira', abre: 'data-cadabrir="arbitros"'}
+];
+const tilesCfgHTML = () => `<nav class="cfg-tiles" aria-label="Atalhos das configurações">${TILES_CFG.map(t => {
+ const tag = t.abre.startsWith('href') ? 'a' : 'button';
+ return `<${tag} class="cfg-tile" ${t.abre} ${tag == 'button' ? 'type="button"' : ''}><span class="cfg-ico">${icone(t.ico)}</span><span class="cfg-txt"><strong>${t.titulo}</strong><small>${t.sub}</small></span><span class="cfg-seta" aria-hidden="true">›</span></${tag}>`;
+}).join('')}</nav>`;
+const cfgAntesTiles = Views.cfg;
+Views.cfg = () => {
+ let primeiro = true;
+ /* troca os dois grupos de cartões antigos (Integrantes/Modalidades e Locais/Árbitros) por um único bloco de atalhos */
+ return cfgAntesTiles().replace(/<div class="cfg-cards">[\s\S]*?<\/section><\/div>/g, () => { if (primeiro) { primeiro = false; return tilesCfgHTML(); } return ''; });
+};
+
+/* ==========================================================================
+   30. PADRÃO "ATALHO → JANELA" PARA CATEGORIAS, EQUIPES E PONTOS POR POSIÇÃO
+   O conteúdo de cada painel sai da página e passa a abrir numa janela própria,
+   com as mesmas funções de antes (os campos e botões são os mesmos).
+   ========================================================================== */
+const JANELAS_CFG = {
+ cats:    {h2: 'Categorias',          sub: 'Séries que competem nos jogos',  ico: 'camadas'},
+ equipes: {h2: 'Equipes',             sub: 'Nomes e cores das equipes',      ico: 'escudo'},
+ pontos:  {h2: 'Pontos por posição',  sub: 'Quanto vale cada colocação',     ico: 'medalha'}
+};
+/* novos atalhos, depois de Modalidades */
+TILES_CFG.splice(2, 0, ...Object.entries(JANELAS_CFG).map(([k, j]) => ({titulo: j.h2, sub: j.sub, ico: j.ico, abre: `data-cfgjanela="${k}"`})));
+
+let cfgPartes = {}, cfgJanela = null;
+const cfgAntesJanelas = Views.cfg;
+Views.cfg = () => {
+ let h = cfgAntesJanelas();
+ Object.entries(JANELAS_CFG).forEach(([k, j]) => {
+  const ini = `<section class="panel"><h2>${j.h2}</h2>`, i = h.indexOf(ini);
+  if (i < 0) return;
+  const fim = h.indexOf('</section>', i) + 10;
+  cfgPartes[k] = h.slice(i + ini.length, fim - 10);   // conteúdo do painel, guardado para a janela
+  h = h.slice(0, i) + h.slice(fim);
+ });
+ return h;
+};
+
+document.body.insertAdjacentHTML('beforeend', '<dialog id="cfgdlg" class="reg-dlg" aria-label="Configurações"></dialog>');
+function abrirCfgJanela(k) {
+ cfgJanela = k;
+ const dlg = $('cfgdlg');
+ dlg.innerHTML = `<div class="reg-box">
+  <div class="reg-head"><h2>${JANELAS_CFG[k].h2}</h2><button class="btn alt" data-cfgjfechar aria-label="Fechar">✕</button></div>
+  <div class="reg-body cfg-jbody" style="white-space:normal" id="cfgjbody">${cfgPartes[k] || ''}</div>
+  <div class="reg-foot"><button class="btn" data-cfgjfechar>Fechar</button></div>
+ </div>`;
+ if (!dlg.open) dlg.showModal();
+}
+/* Depois de qualquer alteração, a janela mostra a versão atualizada (sem atrapalhar quem está digitando) */
+function atualizaCfgJanela() {
+ const dlg = $('cfgdlg'); if (!dlg || !dlg.open || !cfgJanela || pg !== 'cfg' || cur) return;
+ const a = document.activeElement;
+ if (a && dlg.contains(a) && /^(INPUT|TEXTAREA)$/.test(a.tagName)) return;
+ const corpo = $('cfgjbody'), rol = corpo.scrollTop;
+ corpo.innerHTML = cfgPartes[cfgJanela] || '';
+ corpo.scrollTop = rol;
+}
+const renderAntesJanelas = render;
+render = function () { renderAntesJanelas(); atualizaCfgJanela(); };
+$('cfgdlg').addEventListener('close', () => { cfgJanela = null; });
+document.addEventListener('focusout', e => { if ($('cfgdlg').contains(e.target)) setTimeout(atualizaCfgJanela, 0); });
+document.addEventListener('click', e => {
+ const t = e.target.closest('button'); if (!t) return;
+ if (t.dataset.cfgjanela) abrirCfgJanela(t.dataset.cfgjanela);
+ else if (t.dataset.cfgjfechar !== undefined) $('cfgdlg').close();
+});
+
+/* ==========================================================================
+   31. CRONOGRAMA
+   - Tabela própria "agenda": uma linha por modalidade + categoria (dia, início,
+     duração, local e árbitro). Cada linha é gravada sozinha, sem tocar no resto.
+   - Página de visualização no menu (#/cronograma) e página de montagem nas
+     Configurações (#/configuracoes/cronograma), com checagem de conflitos de
+     local, árbitro e categoria e sugestão de horário livre.
+   - Horários que já existiam na edição das modalidades continuam valendo até
+     serem ajustados no cronograma.
+   ========================================================================== */
+const DUR_PADRAO = 60, DURS = [15, 20, 30, 40, 45, 50, 60, 75, 90, 120, 150, 180];
+const DIA_INI = 7 * 60, DIA_FIM = 22 * 60;   // faixa usada para sugerir horários
+const agId = (mod, cat) => `${mod}_${cat}`;
+const toMin = h => { const m = String(h || '').match(/^(\d{1,2}):(\d{2})/); return m ? +m[1] * 60 + +m[2] : null; };
+const fmtMin = n => `${String(Math.floor(n / 60)).padStart(2, '0')}:${String(n % 60).padStart(2, '0')}`;
+const fmtDia = (dt, longo) => { const d = new Date(dt + 'T12:00:00'); if (isNaN(d)) return dt; const sem = d.toLocaleDateString('pt-BR', {weekday: longo ? 'long' : 'short'}).replace('.', ''); return `${sem} ${d.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}`; };
+
+const AG = {
+ async listar() {
+  if (!db) return;
+  const { data, error } = await db.from('agenda').select('*');
+  if (error) { console.error(error); return; }
+  S.agenda = data || []; save();
+ },
+ async daMod(mod) {
+  if (!db) return;
+  const { data, error } = await db.from('agenda').select('*').eq('mod', mod);
+  if (error) { console.error(error); return; }
+  S.agenda = (S.agenda || []).filter(r => r.mod !== mod).concat(data || []); save();
+ },
+ async salvar(r) {
+  const row = {id: agId(r.mod, r.cat), mod: r.mod, cat: +r.cat, dt: r.dt || null, hr: r.hr || null, dur: r.dur || null, loc: r.loc || null, arb: r.arb || null, updated_at: new Date().toISOString()};
+  if (db) { const { error } = await db.from('agenda').upsert(row); if (error) { fail(error); return false; } }
+  S.agenda = (S.agenda || []).filter(x => x.id !== row.id).concat([row]); save();
+  return true;
+ }
+};
+const agRow = (mod, cat) => (S.agenda || []).find(r => r.id === agId(mod, cat));
+const agRows = mod => (S.agenda || []).filter(r => r.mod === mod);
+
+/* Agendamento efetivo de uma modalidade numa categoria: o do cronograma, ou o antigo da edição de modalidades */
+const agDeLegado = agDe;
+function efetivo(a, cat) {
+ const r = agRow(a.s, cat);
+ if (r) return {dt: r.dt || '', hr: r.hr || '', dur: +r.dur || DUR_PADRAO, loc: r.loc || '', arb: r.arb || '', novo: true};
+ const g = agDeLegado(a, cat), propria = !!((a.agc || {})[cat] && (a.agc || {})[cat].hr);
+ return {dt: g.dt, hr: g.hr, dur: DUR_PADRAO, loc: g.loc, arb: g.arb, novo: false, pre: !propria};   // pre: só sugestão, não está agendado
+}
+/* As páginas de modalidades passam a mostrar o que está no cronograma */
+agDe = function (a, ci) {
+ if (a.t == 'extra') return agDeLegado(a, ci);
+ const vazio = {loc: '', dt: '', hr: '', arb: ''};
+ const ag = c => { const e = efetivo(a, c); return e.dt && e.hr && !e.pre ? e : null; };
+ if (ci != null) { const e = ag(ci); return e ? {loc: e.loc, dt: e.dt, hr: `${e.hr}–${fmtMin(toMin(e.hr) + e.dur)}`, arb: e.arb} : vazio; }
+ const v = catsDe(a).map(c => ag(c.id)).filter(Boolean);
+ if (!v.length) return vazio;
+ const comum = f => v.every(x => x[f] === v[0][f]) ? v[0][f] : '';
+ return {loc: comum('loc'), dt: comum('dt'), hr: v.length == catsDe(a).length ? comum('hr') : '', arb: ''};
+};
+
+/* Todas as atividades agendadas (ou pendentes) */
+function itensAgenda() {
+ const l = [];
+ ACTS.filter(a => a.t != 'extra').forEach(a => catsDe(a).forEach(c => {
+  const e = efetivo(a, c.id);
+  l.push({mod: a.s, n: a.n, cat: c.id, ...e, ok: !!(e.dt && e.hr && !e.pre)});
+ }));
+ return l;
+}
+const sobrepoe = (a, b) => { const i1 = toMin(a.hr), f1 = i1 + (a.dur || DUR_PADRAO), i2 = toMin(b.hr), f2 = i2 + (b.dur || DUR_PADRAO); return i1 < f2 && i2 < f1; };
+/* Conflitos de um horário candidato com tudo o que já está agendado */
+function conflitos(c) {
+ if (!c.dt || !c.hr) return {loc: [], arb: [], cat: []};
+ const outros = itensAgenda().filter(x => x.ok && !(x.mod === c.mod && +x.cat === +c.cat) && x.dt === c.dt && sobrepoe(x, c));
+ return {
+  loc: c.loc ? outros.filter(x => x.loc === c.loc) : [],
+  arb: c.arb ? outros.filter(x => x.arb === c.arb) : [],
+  cat: outros.filter(x => +x.cat === +c.cat)
+ };
+}
+const faixa = x => `${x.hr}–${fmtMin(toMin(x.hr) + (x.dur || DUR_PADRAO))}`;
+const quem = x => `${x.n} (${catNome(x.cat)}, ${faixa(x)})`;
+
+/* ---------- Grade do cronograma (usada na visualização e na montagem) ---------- */
+let crDia = null, crCat = '';
+function diasAgenda() { return [...new Set(itensAgenda().filter(x => x.ok).map(x => x.dt))].sort(); }
+function gradeHTML(edita) {
+ const dias = diasAgenda();
+ if (!dias.length) return `<div class="cr-vazio">${icone('cal')}<p>${edita ? 'Nenhuma atividade agendada ainda. Toque em “Agendar” ou escolha uma pendente abaixo.' : 'O cronograma ainda não foi publicado.'}</p></div>`;
+ if (!dias.includes(crDia)) crDia = dias[0];
+ const cats = CATS.filter(c => crCat === '' || String(c.id) === crCat);
+ const doDia = itensAgenda().filter(x => x.ok && x.dt === crDia && cats.some(c => c.id === +x.cat));
+ const horas = [...new Set(doDia.map(x => x.hr))].sort((a, b) => toMin(a) - toMin(b));
+ const card = x => {
+  const loc = nomeLocal(x.loc), arb = nomeArb(x.arb);
+  const conf = edita && (conflitos(x).loc.length || conflitos(x).arb.length);
+  const meta = [loc && `<span>${icone('pin')}${esc(loc)}</span>`, arb && `<span>${icone('pessoa')}${esc(arb)}</span>`].filter(Boolean).join('');
+  const attrs = edita ? `type="button" data-cragendar="${x.mod},${x.cat}"` : `href="#/m/${x.mod}/${x.cat}"`;
+  const tag = edita ? 'button' : 'a';
+  return `<${tag} class="cr-card ${conf ? 'conf' : ''}" ${attrs}><span class="cr-nome">${esc(x.n)}</span><span class="cr-hora">${icone('rel')}${faixa(x)}</span>${meta ? `<span class="cr-meta">${meta}</span>` : ''}${conf ? '<span class="cr-alerta">Conflito de local ou árbitro</span>' : ''}</${tag}>`;
+ };
+ const diasHTML = dias.length < 2 ? '' : `<div class="cr-dias" role="tablist" aria-label="Dias">${dias.map(d => `<button class="chipbtn" data-crdia="${d}" aria-pressed="${d === crDia}">${fmtDia(d)}</button>`).join('')}</div>`;
+ const catsHTML = CATS.length > 1 ? `<div class="filters cr-cats">${[['', 'Todas'], ...CATS.map(c => [String(c.id), c.n])].map(([v, n]) => `<button class="chipbtn" data-crcat="${v}" aria-pressed="${crCat === v}">${esc(n)}</button>`).join('')}</div>` : '';
+ const corpo = !horas.length ? '<p class="muted">Nada agendado neste dia para esta categoria.</p>' :
+  `<div class="cr-grade" style="--nc:${cats.length}">
+   <div class="cr-cab"><span>Horário</span>${cats.map(c => `<span>${esc(c.n)}</span>`).join('')}</div>
+   ${horas.map(h => `<div class="cr-linha"><div class="cr-h">${icone('rel')}${h}</div>${cats.map(c => { const l = doDia.filter(x => x.hr === h && +x.cat === c.id).sort((p, q) => p.n.localeCompare(q.n, 'pt-BR')); return `<div class="cr-cel ${l.length ? '' : 'vazia'}" data-cat="${esc(c.n)}">${l.map(card).join('')}</div>`; }).join('')}</div>`).join('')}
+  </div>`;
+ return `<h3 class="cr-dia-tit">${fmtDia(crDia, true)}</h3>` + diasHTML + catsHTML + corpo;
+}
+
+/* Página de visualização (menu principal) */
+Views.crono = () => `<section class="panel"><h2>Cronograma</h2><div id="crgrade">${gradeHTML(false)}</div></section>`;
+
+/* Página de montagem (Configurações) */
+Views.cronoed = () => {
+ const pend = itensAgenda().filter(x => !x.ok).sort((a, b) => a.n.localeCompare(b.n, 'pt-BR') || a.cat - b.cat);
+ return `<div class="page-head">${crVoltarHTML()}</div>
+ <div class="row nv-topo"><button class="btn" data-cragendar="">Agendar atividade</button></div>
+ ${crConflitosHTML()}
+ <section class="panel"><h2>Cronograma</h2><div id="crgrade">${gradeHTML(true)}</div></section>
+ <section class="panel"><h2>Sem horário <span class="cr-n">${pend.length}</span></h2>
+  ${pend.length ? `<p class="muted">Toque na categoria para agendar.</p><div class="cr-pend">${[...new Set(pend.map(x => x.mod))].map(mod => { const l = pend.filter(x => x.mod === mod); return `<div class="cr-prow"><strong>${esc(l[0].n)}</strong><span class="cr-pcats">${l.map(x => `<button class="cr-pchip" data-cragendar="${x.mod},${x.cat}">${esc(catNome(x.cat))}</button>`).join('')}</span></div>`; }).join('')}</div>` : '<p class="muted">Todas as modalidades estão com dia e horário.</p>'}
+ </section>`;
+};
+
+/* Lista de conflitos já existentes (local ou árbitro com duas atividades ao mesmo tempo) */
+function crConflitosHTML() {
+ const l = [], vistos = new Set();
+ itensAgenda().filter(x => x.ok).forEach(x => {
+  const k = conflitos(x);
+  [['loc', 'Local'], ['arb', 'Árbitro']].forEach(([f, rot]) => k[f].forEach(y => {
+   const chave = [f, ...[x.mod + x.cat, y.mod + y.cat].sort()].join('|');
+   if (vistos.has(chave)) return; vistos.add(chave);
+   l.push({rot, nome: f == 'loc' ? nomeLocal(x.loc) : nomeArb(x.arb), a: x, b: y});
+  }));
+ });
+ if (!l.length) return '';
+ return `<section class="panel cr-conf"><h2>Conflitos <span class="cr-n">${l.length}</span></h2>
+  <p class="muted">Duas atividades no mesmo local ou com o mesmo árbitro ao mesmo tempo. Toque para reagendar.</p>
+  ${l.map(c => `<div class="cr-crow"><span class="cr-ctit">${c.rot}: <strong>${esc(c.nome)}</strong> · ${fmtDia(c.a.dt)}</span><span class="cr-pcats">${[c.a, c.b].map(x => `<button class="cr-pchip" data-cragendar="${x.mod},${x.cat}">${esc(x.n)} · ${esc(catNome(x.cat))} · ${faixa(x)}</button>`).join('')}</span></div>`).join('')}
+ </section>`;
+}
+
+/* ---------- Janela de agendamento com checagem de disponibilidade ---------- */
+document.body.insertAdjacentHTML('beforeend', '<dialog id="crdlg" class="reg-dlg" aria-label="Agendar atividade"></dialog>');
+let crEd = null;
+const crModsOrd = () => ACTS.filter(a => a.t != 'extra').slice().sort((a, b) => a.n.localeCompare(b.n, 'pt-BR'));
+function crLer() {
+ return {mod: $('crmod').value, cat: $('crcat').value === '' ? '' : +$('crcat').value, dt: $('crdt').value, hr: $('crhr').value, dur: +$('crdur').value || DUR_PADRAO, loc: $('crloc').value, arb: $('crarb').value};
+}
+function crOpcoesCad(k, c) {
+ const vazio = k == 'locais' ? 'Sem local' : 'Sem árbitro';
+ const cand = {...c};
+ const ops = [['', vazio], ...cadLista(k).map(x => {
+  const ocup = c.dt && c.hr ? conflitos({...cand, [k == 'locais' ? 'loc' : 'arb']: x.id})[k == 'locais' ? 'loc' : 'arb'] : [];
+  return [x.id, ocup.length ? `${x.n} · ocupado ${faixa(ocup[0])}` : x.n];
+ })];
+ const atual = c[k == 'locais' ? 'loc' : 'arb'];
+ if (atual && !cadLista(k).some(x => x.id === atual) && k == 'locais' && nomeLocal(atual)) ops.push([atual, nomeLocal(atual)]);
+ return ops.map(([v, n]) => `<option value="${esc(v)}" ${v === atual ? 'selected' : ''}>${esc(n)}</option>`).join('');
+}
+function crStatus() {
+ const c = crLer(), box = $('crstatus'); if (!box) return;
+ if (!c.mod || c.cat === '') { box.innerHTML = '<p class="muted">Escolha a modalidade e a categoria.</p>'; return; }
+ if (!c.dt || !c.hr) { box.innerHTML = '<p class="muted">Informe o dia e o horário de início para conferir a disponibilidade.</p>'; return; }
+ const k = conflitos(c), l = [];
+ const item = (cls, txt) => `<li class="${cls}">${txt}</li>`;
+ l.push(c.loc ? (k.loc.length ? item('ruim', `<strong>Local ocupado:</strong> ${esc(k.loc.map(quem).join('; '))}`) : item('bom', `<strong>Local livre</strong> das ${faixa(c)}`)) : item('neutro', 'Sem local definido'));
+ l.push(c.arb ? (k.arb.length ? item('ruim', `<strong>Árbitro ocupado:</strong> ${esc(k.arb.map(quem).join('; '))}`) : item('bom', '<strong>Árbitro livre</strong> no horário')) : item('neutro', 'Sem árbitro definido'));
+ l.push(k.cat.length ? item('aviso', `<strong>${esc(catNome(c.cat))} tem outra atividade no horário:</strong> ${esc(k.cat.map(x => `${x.n} (${faixa(x)})`).join('; '))}`) : item('bom', `<strong>${esc(catNome(c.cat))}</strong> sem outra atividade no horário`));
+ box.innerHTML = `<ul class="cr-status">${l.join('')}</ul>`;
+}
+/* Recalcula as listas de local e árbitro (marcando os ocupados) e o quadro de disponibilidade */
+function crAtualiza() {
+ const c = crLer();
+ ['locais', 'arbitros'].forEach(k => { const sel = $(k == 'locais' ? 'crloc' : 'crarb'), v = sel.value; sel.innerHTML = crOpcoesCad(k, c); sel.value = v; });
+ crStatus();
+}
+function abrirCrono(mod, cat) {
+ const mods = crModsOrd();
+ const a = BY[mod] || null;
+ const c0 = a ? (cat !== '' && cat != null && temCat(a, cat) ? +cat : catsDe(a)[0].id) : '';
+ const e = a && c0 !== '' ? efetivo(a, c0) : {dt: crDia || '', hr: '', dur: +(localStorage.getItem('olimp-dur') || DUR_PADRAO), loc: '', arb: ''};
+ crEd = {orig: a && c0 !== '' ? {mod, cat: c0, tinha: !!(e.dt || e.hr || e.loc || e.arb)} : null};
+ const dlg = $('crdlg');
+ dlg.innerHTML = `<div class="reg-box">
+  <div class="reg-head"><h2>${a ? 'Agendar · ' + esc(a.n) : 'Agendar atividade'}</h2><button class="btn alt" data-crfechar aria-label="Fechar">✕</button></div>
+  <div class="reg-body" style="white-space:normal"><div class="mem-form">
+   <div class="ag-grid">
+    <label>Modalidade<select id="crmod"><option value="">— escolha —</option>${mods.map(m => `<option value="${m.s}" ${m.s === mod ? 'selected' : ''}>${esc(m.n)}</option>`).join('')}</select></label>
+    <label>Categoria<select id="crcat">${a ? catsDe(a).map(c => `<option value="${c.id}" ${c.id === c0 ? 'selected' : ''}>${esc(c.n)}</option>`).join('') : '<option value="">—</option>'}</select></label>
+    <label>Dia<input id="crdt" type="date" value="${esc(e.dt || '')}"></label>
+    <label>Início<input id="crhr" type="time" step="300" value="${esc(e.hr || '')}"></label>
+    <label>Duração<select id="crdur">${DURS.map(d => `<option value="${d}" ${d === (e.dur || DUR_PADRAO) ? 'selected' : ''}>${d < 60 ? d + ' min' : (d % 60 ? Math.floor(d / 60) + 'h' + (d % 60) : d / 60 + 'h')}</option>`).join('')}</select></label>
+    <label>&nbsp;<button class="btn alt" type="button" data-crsugerir>Sugerir horário livre</button></label>
+    <label>Local<select id="crloc"></select></label>
+    <label>Árbitro<select id="crarb"></select></label>
+   </div>
+   <div id="crstatus"></div>
+  </div></div>
+  <div class="reg-foot mem-foot">${crEd.orig && crEd.orig.tinha ? '<button class="btn warn" data-crlimpar>Tirar do cronograma</button>' : ''}<span class="mem-esp"></span><button class="btn alt" data-crfechar>Cancelar</button><button class="btn" data-crsalvar>Salvar</button></div>
+ </div>`;
+ const cand = {mod, cat: c0, dt: e.dt, hr: e.hr, dur: e.dur, loc: e.loc, arb: e.arb};
+ $('crloc').innerHTML = crOpcoesCad('locais', cand);
+ $('crarb').innerHTML = crOpcoesCad('arbitros', cand);
+ if (!dlg.open) dlg.showModal();
+ crStatus();
+}
+/* Procura, no mesmo dia, o primeiro início em que local, árbitro e categoria estão livres */
+function crSugerir() {
+ const c = crLer();
+ if (!c.mod || c.cat === '' || !c.dt) { avisar('Escolha a modalidade, a categoria e o dia para receber uma sugestão.'); return; }
+ /* procura a partir do horário escolhido (arredondado de 5 em 5 min) e, se não achar, volta ao começo do dia */
+ const base = Math.ceil(Math.max(DIA_INI, c.hr ? toMin(c.hr) : DIA_INI) / 5) * 5, tentativas = [];
+ for (let t = base; t + c.dur <= DIA_FIM; t += 5) tentativas.push(t);
+ for (let t = DIA_INI; t < base && t + c.dur <= DIA_FIM; t += 5) tentativas.push(t);
+ for (const t of tentativas) {
+  const k = conflitos({...c, hr: fmtMin(t)});
+  if (!k.loc.length && !k.arb.length && !k.cat.length) { $('crhr').value = fmtMin(t); crAtualiza(); return; }
+ }
+ avisar('Não há horário livre neste dia para esse local, árbitro e categoria. Tente outro dia, local ou árbitro.');
+}
+async function crSalvar(btn, limpar) {
+ const c = crLer();
+ if (!c.mod || c.cat === '') { avisar('Escolha a modalidade e a categoria.'); return; }
+ if (!limpar && (!c.dt || !c.hr)) { avisar('Informe o dia e o horário de início.'); return; }
+ btn.disabled = true;
+ await AG.listar();   // confere com a versão mais recente antes de gravar
+ const k = limpar ? {loc: [], arb: []} : conflitos(c);
+ if (k.loc.length || k.arb.length) {
+  const txt = [k.loc.length && `Local ocupado: ${k.loc.map(quem).join('; ')}`, k.arb.length && `Árbitro ocupado: ${k.arb.map(quem).join('; ')}`].filter(Boolean).join('\n');
+  avisar(`Não foi possível salvar: há conflito neste horário.\n${txt}\nEscolha outro horário, local ou árbitro, ou toque em “Sugerir horário livre”.`);
+  btn.disabled = false; crAtualiza(); return;
+ }
+ const linha = limpar ? {mod: c.mod, cat: c.cat} : c;
+ if (!await AG.salvar(linha)) { btn.disabled = false; return; }
+ /* se mudou de modalidade ou categoria no meio da edição, o lugar antigo fica livre */
+ const o = crEd && crEd.orig;
+ if (!limpar && o && o.tinha && (o.mod !== c.mod || +o.cat !== +c.cat)) await AG.salvar({mod: o.mod, cat: o.cat});
+ if (!limpar) { try { localStorage.setItem('olimp-dur', c.dur); } catch (e) {} crDia = c.dt; }
+ $('crdlg').close();
+ render();
+}
+
+document.addEventListener('click', async e => {
+ const t = e.target.closest('button'); if (!t) return;
+ const d = t.dataset;
+ if (d.crdia) { crDia = d.crdia; const g = $('crgrade'); if (g) g.innerHTML = gradeHTML(pg == 'cronoed'); }
+ else if (d.crcat !== undefined) { crCat = d.crcat; const g = $('crgrade'); if (g) g.innerHTML = gradeHTML(pg == 'cronoed'); }
+ else if (d.cragendar !== undefined && pg == 'cronoed') { const [mod, cat] = d.cragendar.split(','); abrirCrono(mod || '', cat == null ? '' : cat); }
+ else if (d.crfechar !== undefined) $('crdlg').close();
+ else if (d.crsugerir !== undefined) crSugerir();
+ else if (d.crsalvar !== undefined) crSalvar(t, false);
+ else if (d.crlimpar !== undefined) { if (await confirmar('Tirar esta atividade do cronograma? Ela volta para a lista “Sem horário”.')) crSalvar(t, true); }
+});
+document.addEventListener('change', e => {
+ const id = e.target.id;
+ if (id === 'crmod') {
+  const a = BY[e.target.value], sel = $('crcat');
+  sel.innerHTML = a ? catsDe(a).map(c => `<option value="${c.id}">${esc(c.n)}</option>`).join('') : '<option value="">—</option>';
+  sel.value = sel.options.length ? sel.options[0].value : '';
+  if (a) { const x = efetivo(a, +sel.value); if (x.dt) $('crdt').value = x.dt; if (x.hr) $('crhr').value = x.hr; }
+  crAtualiza();
+ }
+ else if (['crcat', 'crdt', 'crhr', 'crdur', 'crloc', 'crarb'].includes(id)) crAtualiza();
+});
+document.addEventListener('input', e => { if (e.target.id === 'crhr' || e.target.id === 'crdt') crStatus(); });
+
+/* Tempo real do cronograma: só nas páginas que mostram horários */
+const rtAntesAg = DB.setupRealtime;
+DB.setupRealtime = function () {
+ rtAntesAg.call(DB);
+ if (!db) return;
+ const quer = cur || pg == 'crono' || pg == 'cronoed' || pg == 'mod';
+ if (!quer) return;
+ const filtro = cur ? {filter: `mod=eq.${cur.s}`} : {};
+ db.channel('olimp-agenda-' + (cur ? cur.s : pg))
+  .on('postgres_changes', {event: '*', schema: 'public', table: 'agenda', ...filtro}, p => {
+   if (p.eventType === 'DELETE') { const id = p.old && p.old.id; S.agenda = (S.agenda || []).filter(r => r.id !== id); }
+   else if (p.new) S.agenda = (S.agenda || []).filter(r => r.id !== p.new.id).concat([p.new]);
+   save();
+   if ($('crdlg').open) crAtualiza();
+   softRender();
+  }).subscribe();
+};
+
+/* Janela da modalidade: categorias, inscrição, local e árbitro (padrões da modalidade)
+   e um atalho que salva e abre o Cronograma, onde ficam dia e horário de cada categoria */
+const agAntesCrono = abrirAgenda;
+abrirAgenda = function (a) {
+ agAntesCrono(a);
+ const corpo = $('agdlg').querySelector('.reg-body');
+ /* sai: título "Geral", dia, horário e os ajustes por categoria (agora no cronograma) */
+ corpo.querySelectorAll('.ag-sec, #agcats').forEach(el => { el.hidden = true; });
+ const porCat = $('agporcat'); if (porCat) porCat.closest('.ag-por').hidden = true;
+ corpo.querySelectorAll('[data-agf="g,dt"], [data-agf="g,hr"]').forEach(el => { el.closest('label').hidden = true; });
+ /* fica: local e árbitro da modalidade, usados como sugestão ao agendar cada categoria */
+ if (a.t != 'extra') corpo.insertAdjacentHTML('beforeend', `<button type="button" class="btn alt cr-atalho" data-agcrono>${icone('cal')}<span>Abrir cronograma</span></button>`);
+ const lim = $('agdlg').querySelector('[data-aglimpar]'); if (lim) lim.hidden = true;
+};
+/* Atalho: salva o que foi marcado, fecha a janela e abre o cronograma */
+document.addEventListener('click', async e => {
+ const t = e.target.closest('[data-agcrono]'); if (!t) return;
+ const sv = $('agdlg').querySelector('[data-agsalvar]'); if (!sv) return;
+ t.disabled = true;
+ await salvarAgenda(sv.dataset.agsalvar, false);
+ if ($('agdlg').open) { t.disabled = false; return; }   // não salvou (ex.: nenhuma categoria marcada)
+ location.hash = '#/configuracoes/cronograma';
+});
+
+/* Cronograma: o "voltar" leva de onde o usuário veio (Configurações ou edição de modalidades) */
+let rotaAnt = null, rotaAtual = null;
+function crVoltarHTML() {
+ let origem;
+ if (rotaAnt === '#/configuracoes/modalidades') origem = 'modedit';
+ else if (rotaAnt) origem = 'cfg';
+ else { try { origem = sessionStorage.getItem('olimp-cr-origem') || 'cfg'; } catch (e) { origem = 'cfg'; } }   // página recarregada: mantém a origem
+ try { sessionStorage.setItem('olimp-cr-origem', origem); } catch (e) {}
+ return origem == 'modedit'
+  ? '<a class="back" href="#/configuracoes/modalidades">← Voltar às modalidades</a>'
+  : '<a class="back" href="#/configuracoes">← Voltar às configurações</a>';
+}
 
 /* Inicialização */
 route();
