@@ -470,7 +470,7 @@ S = Object.assign(fresh(), S || {});
 /* Monta ACTS e BY a partir da lista de modalidades salva */
 function buildActs() {
  const lista = Array.isArray(S.mods) ? S.mods : MODS_PADRAO;
- ACTS = lista.filter(m => m && m.id && m.n && TN[m.t]).map(m => ({n: m.n, t: m.t, s: m.id, r: !!m.r, oc: !!m.oc, u: m.u === 'dist' ? 'dist' : 'tempo', inv: !!m.inv, cn: m.cn || null, xv: m.xv == null ? 100 : +m.xv, loc: m.loc || '', dt: m.dt || '', hr: m.hr || '', arb: m.arb || '', agc: m.agc || {}, cats: Array.isArray(m.cats) ? m.cats.map(Number) : null}));
+ ACTS = lista.filter(m => m && m.id && m.n && TN[m.t]).map(m => ({n: m.n, t: m.t, s: m.id, r: !!m.r, oc: !!m.oc, u: m.u === 'dist' ? 'dist' : 'tempo', inv: !!m.inv, cn: m.cn || null, xv: m.xv == null ? 100 : +m.xv, loc: m.loc || '', dt: m.dt || '', hr: m.hr || '', arb: m.arb || '', agc: m.agc || {}, cats: Array.isArray(m.cats) ? m.cats.map(Number) : null, semIns: !!m.si}));
  BY = Object.fromEntries(ACTS.map(a => [a.s, a]));
 }
 buildActs();
@@ -886,7 +886,7 @@ function page() {
   sec(EXTRA_CI); return;
  }
  const links = catsDe(cur).map(c => `<a href="#/m/${cur.s}/${c.id}" ${c.id===curC?'aria-current="page"':''}>${esc(c.n)}</a>`).join('');
- const btnReg = `<div class="row" style="margin-top:8px"><button class="btn alt" data-inscver>Inscritos</button>${cur.r ? '<button class="btn alt" data-verreg>Ver regulamento</button>' : ''}</div>`;
+ const btnReg = `<div class="row" style="margin-top:8px">${cur.semIns ? '' : '<button class="btn alt" data-inscver>Inscritos</button>'}${cur.r ? '<button class="btn alt" data-verreg>Ver regulamento</button>' : ''}</div>`;
  $('main').innerHTML = `<div class="page-head"><a class="back" href="#/modalidades">← Voltar às modalidades</a><h2 class="ptitle">${esc(cur.n)}</h2><p class="muted">${descTipo(cur)}</p>${agHTML(cur, curC) ? `<p class="ag-pag">${agHTML(cur, curC)}</p>` : ''}${btnReg}</div><nav class="catnav" aria-label="Categorias">${links}</nav><section class="panel"><h2>${esc(catNome(curC))}</h2><div id="sec${curC}"></div></section>`;
  sec(curC);
 }
@@ -1709,10 +1709,10 @@ function atualizaListaMem() {
 const memContHTML = () => T.map(i => `<span>${tn(i)}: <strong>${membros().filter(m => m.team === i).length}</strong></span>`).join('');
 
 function memListaHTML(ro = pg === 'memver') {
- if (!membros().length) return ro ? '<p class="muted">Nenhum integrante cadastrado ainda.</p>' : '<p class="muted">Nenhum integrante cadastrado ainda. Toque em “+ Novo integrante” para começar.</p>';
+ if (!membros().length) return ro ? '<p class="muted">Nenhum integrante cadastrado ainda.</p>' : '<p class="muted">Nenhum integrante cadastrado ainda. Toque em “Novo integrante” para começar.</p>';
  const q = slug(memF.q);
  const l = membros().filter(m => (memF.team === '' || String(m.team) === memF.team) && (memF.cat === '' || String(m.cat) === memF.cat) && (!q || slug(m.nome + ' ' + m.turma).includes(q)))
-  .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  .sort(memComparar);
  if (!l.length) return '<p class="muted">Nenhum integrante encontrado com esses filtros.</p>';
  const grupos = [...T.map(String), ''].map(t => [t, l.filter(m => String(m.team) === t)]).filter(([, g]) => g.length);
  return grupos.map(([t, g]) => `<div class="mem-grupo"><h3>${esc(teamNome(t))}</h3><span>${g.length} ${g.length == 1 ? 'integrante' : 'integrantes'}</span></div>
@@ -1726,7 +1726,7 @@ Views.membros = () => `<div class="page-head"><a class="back" href="#/configurac
   <select id="memfteam" aria-label="Filtrar por equipe"><option value="">Todas as equipes</option>${T.map(i => `<option value="${i}" ${memF.team === String(i) ? 'selected' : ''}>${tn(i)}</option>`).join('')}</select>
   <select id="memfcat" aria-label="Filtrar por categoria"><option value="">Todas as categorias</option>${CATS.map(c => `<option value="${c.id}" ${memF.cat === String(c.id) ? 'selected' : ''}>${esc(c.n)}</option>`).join('')}</select>
  </div>
- <div class="row"><button class="btn" data-memnovo>+ Novo integrante</button><button class="btn alt" data-memmassa>⇪ Inserir em massa</button><a class="btn alt" href="#/configuracoes/inscricoes" style="text-decoration:none;display:inline-flex;align-items:center">📋 Inscrições nas modalidades</a></div>
+ <div class="row">${ordemMemHTML()}<button class="btn" data-memnovo>Novo integrante</button><button class="btn alt" data-memmassa>Inserir em massa</button><a class="btn alt" href="#/configuracoes/inscricoes" style="text-decoration:none;display:inline-flex;align-items:center">Inscrições nas modalidades</a></div>
  <div id="memlista">${memListaHTML()}</div></section>`;
 
 /* ---------- Janela de cadastro / edição ---------- */
@@ -1754,7 +1754,7 @@ function abrirMem(m) {
     <label>Equipe<select id="memteam"><option value="">— escolha —</option>${T.map(i => `<option value="${i}" ${m.team === i ? 'selected' : ''}>${tn(i)}</option>`).join('')}</select></label>
     <label>Categoria<select id="memcat"><option value="">— escolha —</option>${CATS.map(c => `<option value="${c.id}" ${m.cat === c.id ? 'selected' : ''}>${esc(c.n)}</option>`).join('')}</select></label>
     <label>Turma<input id="memturma" value="${esc(m.turma)}" placeholder="Ex.: 8º B" autocomplete="off"></label>
-    ${novo ? '' : '<p class="muted" style="margin:0">Para transferir, basta mudar a equipe e salvar.</p><button class="btn alt" data-meminsc>📋 Modalidades em que está inscrito</button>'}
+    ${novo ? '' : '<p class="muted" style="margin:0">Para transferir, basta mudar a equipe e salvar.</p><button class="btn alt" data-meminsc>Modalidades em que está inscrito</button>'}
    </div>
   </div>
   <div class="reg-foot mem-foot">${novo ? '' : '<button class="btn warn" data-memexcl>Excluir</button><button class="btn alt" data-mempermuta>⇄ Permutar</button>'}<span class="mem-esp"></span><button class="btn alt" data-memfechar>Cancelar</button><button class="btn" data-memsalvar>Salvar</button></div>
@@ -2326,7 +2326,7 @@ function inscListaHTML() {
 function inscModsHTML() {
  if (!inscSet) return '<p class="muted">Carregando inscrições…</p>';
  const mm = membros().find(x => x.id === inscSel);
- const l = modsInscreviveis().filter(a => !mm || temCat(a, mm.cat));   // só modalidades da categoria do integrante
+ const l = modsInscreviveis().filter(a => !a.semIns && (!mm || temCat(a, mm.cat)));   // só modalidades da categoria do integrante
  if (!l.length) return '<p class="muted">Nenhuma modalidade para a categoria deste integrante.</p>';
  return Object.keys(TN).filter(t => t != 'extra').map(t => {
   const g = l.filter(a => a.t == t).sort((x, y) => x.n.localeCompare(y.n, 'pt-BR'));
@@ -2468,8 +2468,9 @@ async function garantirInscPag() {
  const mod = cur.s, cat = curC, chave = mod + '|' + cat;
  if ((inscPag && inscPag.chave === chave) || inscBuscando === chave) return;
  inscBuscando = chave;
- const rows = await INSC.daModalidade(mod, cat) || [];
- const ms = await MEM.porIds(rows.map(r => r.membro));
+ let rows, ms;
+ if (cur.semIns) { ms = await MEM.daCategoria(cat); rows = ms.map(m => ({id: 'm_' + m.id, membro: m.id, partidas: []})); }
+ else { rows = await INSC.daModalidade(mod, cat) || []; ms = await MEM.porIds(rows.map(r => r.membro)); }
  inscBuscando = '';
  if (!cur || cur.s !== mod || curC !== cat) return;
  const by = Object.fromEntries(ms.map(m => [m.id, m]));
@@ -2479,6 +2480,7 @@ async function garantirInscPag() {
 
 /* Bloco recolhível "Integrantes" com presença: x = chave da partida (s1, s2, t3, f) ou 'g' (modalidade sem partidas) */
 function inscBlocoHTML(x, times) {
+ if (cur && cur.semIns) return '';   // modalidade sem inscrição: sem lista de chamada
  const aberto = inscAbertos.has(x), ok = !!inscPag && inscPag.chave === cur.s + '|' + curC;
  const tog = `<button class="insc-tog" data-insctog="${x}" aria-expanded="${aberto}">Integrantes<span class="seta" aria-hidden="true">›</span></button>`;
  if (!aberto) return tog;
@@ -2842,6 +2844,7 @@ function abrirNovaMod() {
     <label>Horário<input id="nvhr" type="time"></label>
    </div>
    <label>Regulamento (opcional)<textarea id="nvreg" class="massa-txt" style="min-height:120px" placeholder="Cole ou digite o regulamento"></textarea></label>
+   <label class="ag-por nv-ins"><input type="checkbox" id="nvins" checked> Exige inscrição de integrantes</label>
    <label class="ag-por"><input type="checkbox" id="nvvis" checked> Visível na página Modalidades</label>
   </div></div>
   <div class="reg-foot mem-foot"><span class="mem-esp"></span><button class="btn alt" data-nvfechar>Cancelar</button><button class="btn" data-nvcriar>Criar modalidade</button></div>
@@ -2855,6 +2858,7 @@ function nvTipo() {
  $('novadlg').querySelector('.nv-extra').hidden = t != 'extra';
  $('novadlg').querySelector('.nv-crit').hidden = t != 'crit';
  $('novadlg').querySelector('.nv-cats').hidden = t == 'extra';
+ $('novadlg').querySelector('.nv-ins').hidden = t == 'extra';
 }
 async function criarMod(btn) {
  const nome = $('nvnome').value.trim().replace(/\s+/g, ' '), t = $('nvtipo').value;
@@ -2876,6 +2880,7 @@ async function criarMod(btn) {
   if (t != 'extra' && cats.length < CATS.length) x.cats = cats;
   [['loc', 'nvloc'], ['arb', 'nvarb'], ['dt', 'nvdt'], ['hr', 'nvhr']].forEach(([f, el]) => { const v = $(el).value; if (v) x[f] = v; });
   if (!$('nvvis').checked) x.oc = 1;
+  if (t != 'extra' && !$('nvins').checked) x.si = 1;
   if (reg) x.r = 1;
   S.mods.push(x); buildActs();
  });
@@ -2900,7 +2905,7 @@ abrirAgenda = function (a) {
  agAntesCats(a);
  if (a.t == 'extra') return;
  const corpo = $('agdlg').querySelector('.reg-body');
- corpo.insertAdjacentHTML('afterbegin', `<div class="nv-cats" style="margin-bottom:12px"><span class="nv-tit">Categorias que terá</span><div class="nv-chips">${CATS.map(c => `<label class="nv-chip"><input type="checkbox" data-agcatsel="${c.id}" ${temCat(a, c.id) ? 'checked' : ''}><span>${esc(c.n)}</span></label>`).join('')}</div></div>`);
+ corpo.insertAdjacentHTML('afterbegin', `<label class="ag-por"><input type="checkbox" id="aginsc" ${a.semIns ? '' : 'checked'}> Exige inscrição de integrantes</label><div class="nv-cats" style="margin-bottom:12px"><span class="nv-tit">Categorias que terá</span><div class="nv-chips">${CATS.map(c => `<label class="nv-chip"><input type="checkbox" data-agcatsel="${c.id}" ${temCat(a, c.id) ? 'checked' : ''}><span>${esc(c.n)}</span></label>`).join('')}</div></div>`);
  corpo.querySelectorAll('.ag-cat').forEach((el, i) => { el.dataset.catid = CATS[i] && CATS[i].id; el.hidden = !(CATS[i] && temCat(a, CATS[i].id)); });
 };
 document.addEventListener('change', e => {
@@ -2913,10 +2918,28 @@ salvarAgenda = async function (id, limpar) {
  if (sel.length) {
   const cats = sel.filter(x => x.checked).map(x => +x.dataset.agcatsel);
   if (!cats.length) { avisar('Escolha pelo menos uma categoria.'); return; }
-  await DB.patchCfg(['mods'], () => { S.mods = listaMods(); const x = S.mods.find(y => y.id === id); if (x) { if (cats.length < CATS.length) x.cats = cats; else delete x.cats; } buildActs(); });
+  await DB.patchCfg(['mods'], () => { S.mods = listaMods(); const x = S.mods.find(y => y.id === id); if (x) { if (cats.length < CATS.length) x.cats = cats; else delete x.cats; if ($('aginsc')) { if ($('aginsc').checked) delete x.si; else x.si = 1; } } buildActs(); });
  }
  return salvarAgAntesCats(id, limpar);
 };
+
+/* Ordem da lista de integrantes: alfabética ou por categoria */
+const ORDENS_MEM = [['az', 'Ordem alfabética'], ['cat', 'Por categoria']];
+let memOrd = 'az';
+try { const o = localStorage.getItem('olimp-ordem-mem'); if (ORDENS_MEM.some(x => x[0] === o)) memOrd = o; } catch (e) {}
+function memComparar(a, b) {
+ const nome = a.nome.localeCompare(b.nome, 'pt-BR');
+ if (memOrd != 'cat') return nome;
+ const ix = m => { const i = CATS.findIndex(c => c.id === m.cat); return i < 0 ? 999 : i; };
+ return ix(a) - ix(b) || nome;
+}
+const ordemMemHTML = () => `<span class="ord-ico ${memOrd != 'az' ? 'ativo' : ''}" title="Ordenar"><select id="memord" aria-label="Ordenar integrantes">${ORDENS_MEM.map(([k, n]) => `<option value="${k}" ${memOrd == k ? 'selected' : ''}>${n}</option>`).join('')}</select></span>`;
+document.addEventListener('change', e => {
+ if (e.target.id !== 'memord') return;
+ memOrd = e.target.value;
+ try { localStorage.setItem('olimp-ordem-mem', memOrd); } catch (er) {}
+ render();
+});
 
 /* Inicialização */
 route();
