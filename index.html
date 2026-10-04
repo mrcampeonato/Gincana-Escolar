@@ -572,6 +572,14 @@ input[type=checkbox]:focus{box-shadow:none}
 .skel span:nth-child(3){width:64%}
 @keyframes skel{from{background-position:200% 0}to{background-position:-200% 0}}
 
+/* Janelas e listas cabendo na área visível do celular (barra do navegador e teclado) */
+.reg-dlg{max-height:calc(100vh - 32px);max-height:calc(100dvh - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));margin:auto}
+.reg-box{max-height:inherit;min-height:0}
+.reg-body{flex:1 1 auto;min-height:0;overscroll-behavior:contain}
+.reg-head,.reg-foot{flex:none}
+.csel-pop{max-height:min(60vh,360px);overscroll-behavior:contain}
+.btn-del .ico{width:17px;height:17px}
+
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -1351,7 +1359,7 @@ Views.modedit = () => {
    <button class="btn alt btn-del me-reg ${a.r?'on':''}" data-mreg="${a.s}" title="${a.r?'Editar regulamento':'Cadastrar regulamento'}" aria-label="Regulamento de ${esc(a.n)}">📄</button>
    ${btnAgenda(a)}
    ${btnLimpar(a.s, a.n)}
-   <button class="btn warn btn-del" data-mdel="${a.s}" aria-label="Excluir ${esc(a.n)}">×</button>
+   <button class="btn warn btn-del" data-mdel="${a.s}" aria-label="Excluir ${esc(a.n)}">${icone('lixo')}</button>
   </div>${a.t == 'marca' ? `<div class="me-sub">
    <select data-mu="${a.s}" aria-label="Medida de ${esc(a.n)}"><option value="tempo" ${a.u=='tempo'?'selected':''}>Medida: Tempo</option><option value="dist" ${a.u=='dist'?'selected':''}>Medida: Distância</option></select>
    <select data-mi="${a.s}" aria-label="Modo de ${esc(a.n)}"><option value="0" ${!a.inv?'selected':''}>Normal (${a.u=='dist'?'maior distância':'menor tempo'} vence)</option><option value="1" ${a.inv?'selected':''}>Invertido (${a.u=='dist'?'menor distância':'maior tempo'} vence)</option></select>
@@ -1545,7 +1553,7 @@ Views.cfg = () => {
  const h = cfgAntesCats(), k = h.indexOf('</section>') + 10;
  const linhas = CATS.map((c, i) => `<div class="cat-row">
   <input data-cn="${c.id}" value="${esc(c.n)}" aria-label="Nome da categoria">
-  <button class="btn warn btn-del" data-cdel="${c.id}" ${CATS.length<2?'disabled':''} aria-label="Excluir ${esc(c.n)}">×</button>
+  <button class="btn warn btn-del" data-cdel="${c.id}" ${CATS.length<2?'disabled':''} aria-label="Excluir ${esc(c.n)}">${icone('lixo')}</button>
  </div>`).join('');
  const painel = `<section class="panel"><h2>Categorias</h2>
   <p class="muted">Renomear mantém os resultados. Excluir apaga os resultados dessa categoria em todas as modalidades.</p>
@@ -1738,14 +1746,22 @@ document.addEventListener('click', async e => {
  }
  /* Posiciona a lista junto do campo (abaixo, ou acima se não couber) */
  function posicionar(btn, pop) {
-  const r = btn.getBoundingClientRect();
+  const r = btn.getBoundingClientRect(), vv = window.visualViewport;
+  const altTela = vv ? vv.height + vv.offsetTop : innerHeight;   // área realmente visível (barra do navegador e teclado do celular)
   pop.style.minWidth = Math.max(r.width, 160) + 'px';
-  const h = pop.offsetHeight, w = pop.offsetWidth;
-  let top = r.bottom + 4;
-  if (top + h > innerHeight - 8 && r.top - h - 4 > 8) top = r.top - h - 4;
-  pop.style.top = top + 'px';
+  pop.style.maxHeight = 'none';
+  const natural = pop.scrollHeight + 2, abaixo = altTela - r.bottom - 12, acima = r.top - 12;
+  let top, alt;
+  if (natural <= abaixo || abaixo >= acima) { alt = Math.max(96, Math.min(natural, abaixo)); top = r.bottom + 4; }
+  else { alt = Math.min(natural, acima); top = r.top - 4 - alt; }
+  pop.style.maxHeight = alt + 'px';
+  pop.style.top = Math.max(8, top) + 'px';
+  const w = pop.offsetWidth;
   pop.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + 'px';
+  const sel = pop.querySelector('[aria-selected=true]');
+  if (sel) pop.scrollTop = Math.max(0, sel.offsetTop - alt / 2);   // opção atual visível dentro da lista
  }
+
  function escolher(i) {
   const {sel} = aberto; fechar(true);
   if (sel.selectedIndex !== i) {
@@ -1777,6 +1793,7 @@ document.addEventListener('click', async e => {
  const acompanhar = e => { if (aberto && !(e && e.target && e.target.nodeType === 1 && aberto.pop.contains(e.target))) posicionar(aberto.btn, aberto.pop); };
  addEventListener('scroll', acompanhar, true);
  addEventListener('resize', acompanhar);
+ if (window.visualViewport) { visualViewport.addEventListener('resize', acompanhar); visualViewport.addEventListener('scroll', acompanhar); }
 
  const varrer = () => document.querySelectorAll('select:not([data-csel])').forEach(melhorar);
  new MutationObserver(() => { varrer(); if (aberto && !document.contains(aberto.btn)) fechar(); })
@@ -2317,6 +2334,7 @@ function icone(n) {
   pin: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/>',
   cal: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
   rel: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  lixo: '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/>',
   pessoa: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>',
   eng: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'
  }[n] || '';
@@ -2498,7 +2516,7 @@ Views.insc = () => {
   </div>
   <div id="insclista" class="mem-grid">${inscListaHTML()}</div></section>`;
  return head + `<section class="panel">
-  <div class="insc-topo">${fotoHTML(m)}<span class="mem-info"><span class="mem-nome">${esc(m.nome)}</span><span class="mem-sub">${esc(teamNome(m.team))} · ${esc(memSub(m))}</span></span><button class="btn alt" data-inscoutro>Trocar</button></div>
+  <div class="insc-topo">${fotoHTML(m)}<span class="mem-info"><span class="mem-nome">${esc(m.nome)}</span><span class="mem-sub">${esc(teamNome(m.team))} · ${esc(memSub(m))}</span></span><button class="btn alt" data-inscoutro title="Voltar à lista e escolher outro integrante">Outro integrante</button></div>
   <p class="muted" id="insccont" style="margin:10px 0 0">${inscContTxt()}</p>
   <div id="inscmods">${inscModsHTML()}</div></section>`;
 };
@@ -2533,7 +2551,7 @@ function desenharInscritos() {
  $('inscbody').innerHTML = !l.length ? '<p class="muted">Ninguém inscrito nesta modalidade e categoria ainda.</p>' :
   (porPartida ? `<p class="insc-resumo">${l.length} ${l.length == 1 ? 'inscrito' : 'inscritos'} · a presença é conferida ${inscD.a.t == 'chav' ? 'em cada partida' : 'em “Integrantes”, na página da modalidade'}</p>` : `<p class="insc-resumo"><strong>${pres}</strong> de ${l.length} presentes</p>`) +
   grupos.map(([t, g]) => `<div class="mem-grupo"><h3>${esc(teamNome(t))}</h3><span>${porPartida ? g.length : g.filter(x => x.ins.presente).length + '/' + g.length}</span></div>` +
-   g.map(x => `<label class="insc-row">${porPartida ? '' : `<input type="checkbox" data-pres="${esc(x.ins.id)}" ${x.ins.presente ? 'checked' : ''} aria-label="Presença de ${esc(x.m.nome)}">`}${fotoHTML(x.m)}<span class="mem-info"><span class="mem-nome">${esc(x.m.nome)}</span><span class="mem-sub">${esc(x.m.turma || '—')}</span></span><button class="btn warn btn-del insc-del" data-inscdel="${esc(x.ins.id)}" aria-label="Remover inscrição de ${esc(x.m.nome)}" title="Remover inscrição">×</button></label>`).join('')).join('');
+   g.map(x => `<label class="insc-row">${porPartida ? '' : `<input type="checkbox" data-pres="${esc(x.ins.id)}" ${x.ins.presente ? 'checked' : ''} aria-label="Presença de ${esc(x.m.nome)}">`}${fotoHTML(x.m)}<span class="mem-info"><span class="mem-nome">${esc(x.m.nome)}</span><span class="mem-sub">${esc(x.m.turma || '—')}</span></span><button class="btn warn btn-del insc-del" data-inscdel="${esc(x.ins.id)}" aria-label="Remover inscrição de ${esc(x.m.nome)}" title="Remover inscrição">${icone('lixo')}</button></label>`).join('')).join('');
  $('inscfoot').innerHTML = '<button class="btn alt" data-inscadd>+ Inscrever na hora</button><span class="mem-esp"></span><button class="btn" data-inscfechar>Fechar</button>';
 }
 async function mostrarCandidatos() {
@@ -2792,7 +2810,7 @@ function marcaHTML(a, d, lock) {
   ${SEL(`e.${k}.team`, x.team, TO(), lock)}
   ${atletas(x, k)}
   ${I(`e.${k}.t`, x.t, dist ? `placeholder="0m00cm" class="input-dist" inputmode="numeric" ${lock?'disabled':''}` : `placeholder="00'00'00" class="input-tempo" inputmode="numeric" ${lock?'disabled':''}`)}
-  <button class="btn warn btn-del" data-rme="${k}" ${lock?'disabled':''} aria-label="Remover">×</button>
+  <button class="btn warn btn-del" data-rme="${k}" ${lock?'disabled':''} aria-label="Remover">${icone('lixo')}</button>
  </div>`).join('') +
  `<div class="row" style="margin-top:10px"><button class="btn alt" data-adde ${lock?'disabled':''}>+ Atleta</button></div>
  <p class="muted" style="font-size:12px">Atleta fora da lista? Inscreva pelo botão “Inscritos”, no topo da página.</p>`;
@@ -2837,7 +2855,7 @@ function cadastroHTML(k) {
  const c = CAD[k], l = cadLista(k);
  return `<section class="panel"><h2>${c.titulo}</h2>
   <div class="cad-row novo"><input id="cadnovo-${k}" placeholder="${c.ph}" maxlength="60" autocomplete="off"><button class="btn" data-cadadd="${k}">Adicionar</button></div>
-  ${l.length ? l.map(x => `<div class="cad-row"><input data-cadn="${k},${x.id}" value="${esc(x.n)}" aria-label="Nome do ${c.um}" maxlength="60"><button class="btn warn btn-del" data-caddel="${k},${x.id}" aria-label="Excluir ${esc(x.n)}">×</button></div>`).join('') : `<p class="muted">Nenhum ${c.um} cadastrado.</p>`}
+  ${l.length ? l.map(x => `<div class="cad-row"><input data-cadn="${k},${x.id}" value="${esc(x.n)}" aria-label="Nome do ${c.um}" maxlength="60"><button class="btn warn btn-del" data-caddel="${k},${x.id}" aria-label="Excluir ${esc(x.n)}">${icone('lixo')}</button></div>`).join('') : `<p class="muted">Nenhum ${c.um} cadastrado.</p>`}
  </section>`;
 }
 const cfgAntesCad = Views.cfg;
