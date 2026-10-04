@@ -422,6 +422,15 @@ select[data-csel]{position:absolute!important;width:1px!important;height:1px!imp
 .me-item .me-sub,.me-item .me-sub1{margin:8px 0 0;padding-top:8px;border-top:1px dashed var(--line)}
 .me-item.oculta{background:var(--soft)}
 .nv-crit .crit-grid{margin-top:0}
+
+/* Inscrever na hora: filtro por equipe e seleção múltipla */
+.cand-filtros{justify-content:flex-start;margin:0 0 8px}
+.cand-filtros .chipbtn{min-height:34px;padding:6px 12px;font-size:13px}
+.insc-cand-lista{display:grid}
+.cand-todos{justify-self:end;background:none;border:0;color:var(--mute);font:600 13px Figtree,sans-serif;cursor:pointer;padding:4px 2px;min-height:32px}
+.cand-todos:hover{color:var(--ink)}
+.insc-row.cand:has(input:checked){background:rgba(31,157,85,.07)}
+.insc-row.cand:has(input:checked) .mem-nome{color:#1f9d55}
 </style>
 </head>
 <body>
@@ -2386,23 +2395,39 @@ function desenharInscritos() {
  $('inscfoot').innerHTML = '<button class="btn alt" data-inscadd>+ Inscrever na hora</button><span class="mem-esp"></span><button class="btn" data-inscfechar>Fechar</button>';
 }
 async function mostrarCandidatos() {
- inscD.modo = 'add';
+ inscD.modo = 'add'; inscD.sel = new Set(); inscD.fteam = ''; inscD.q = '';
  $('inscbody').innerHTML = '<p class="muted">Carregando integrantes da categoria…</p>';
  $('inscfoot').innerHTML = '<button class="btn alt" data-inscvoltar>← Voltar</button>';
  const D0 = inscD, todos = await MEM.daCategoria(D0.cat);
  if (inscD !== D0) return;
  const ja = new Set(D0.lista.map(x => x.m.id));
  D0.cand = todos.filter(m => !ja.has(m.id));
- $('inscbody').innerHTML = `<p class="muted" style="margin-top:0;text-align:left">Integrantes de <strong>${esc(catNome(D0.cat))}</strong> que ainda não estão inscritos. Toque para inscrever (já entra como presente).</p>
+ $('inscbody').innerHTML = `<p class="muted" style="margin-top:0;text-align:left">Integrantes de <strong>${esc(catNome(D0.cat))}</strong> que ainda não estão inscritos. Marque um ou mais e toque em Inscrever.</p>
+  <div class="filters cand-filtros" id="candteams"></div>
   <input id="inscqbusca" type="search" placeholder="Buscar integrante" autocomplete="off" style="margin-bottom:8px">
-  <div id="insccand" class="mem-grid insc-cand">${candHTML('')}</div>`;
+  <div id="insccand" class="insc-cand-lista">${candHTML('')}</div>`;
+ candAtualiza();
+}
+/* Lista de candidatos com caixa de seleção (filtrada por equipe e busca) */
+function candVisiveis(q) {
+ q = slug(q == null ? inscD.q : q);
+ return inscD.cand.filter(m => (inscD.fteam === '' || String(m.team) === inscD.fteam) && (!q || slug(m.nome + ' ' + m.turma).includes(q))).sort(porNome);
 }
 function candHTML(q) {
- q = slug(q || '');
- const l = inscD.cand.filter(m => !q || slug(m.nome + ' ' + m.turma).includes(q)).sort(porNome);
+ if (q != null) inscD.q = q;
  if (!inscD.cand.length) return '<p class="muted">Todos os integrantes desta categoria já estão inscritos.</p>';
+ const l = candVisiveis();
  if (!l.length) return '<p class="muted">Ninguém encontrado.</p>';
- return l.map(m => `<button class="mem-card" data-inscnovo="${esc(m.id)}">${fotoHTML(m)}<span class="mem-info"><span class="mem-nome">${esc(m.nome)}</span><span class="mem-sub">${esc(teamNome(m.team))} · ${esc(m.turma || '—')}</span></span></button>`).join('');
+ const todos = l.every(m => inscD.sel.has(m.id));
+ return `<button class="cand-todos" data-candtodos>${todos ? 'Desmarcar todos' : 'Marcar todos'} (${l.length})</button>` +
+  l.map(m => `<label class="insc-row cand"><input type="checkbox" data-candsel="${esc(m.id)}" ${inscD.sel.has(m.id) ? 'checked' : ''}>${fotoHTML(m)}<span class="mem-info"><span class="mem-nome">${esc(m.nome)}</span><span class="mem-sub">${esc(teamNome(m.team))} · ${esc(m.turma || '—')}</span></span></label>`).join('');
+}
+function candAtualiza() {
+ const eq = [...new Set(inscD.cand.map(m => String(m.team)))].sort();
+ const f = $('candteams');
+ if (f) f.innerHTML = eq.length > 1 ? [['', 'Todas'], ...eq.map(t => [t, teamNome(t)])].map(([v, n]) => `<button class="chipbtn" data-candteam="${v}" aria-pressed="${inscD.fteam === v}">${esc(n)}</button>`).join('') : '';
+ const n = inscD.sel.size;
+ $('inscfoot').innerHTML = `<button class="btn alt" data-inscvoltar>← Voltar</button><span class="mem-esp"></span><button class="btn" data-candinscrever ${n ? '' : 'disabled'}>Inscrever${n ? ` (${n})` : ''}</button>`;
 }
 
 /* ---------- Eventos ---------- */
@@ -2939,6 +2964,31 @@ document.addEventListener('change', e => {
  memOrd = e.target.value;
  try { localStorage.setItem('olimp-ordem-mem', memOrd); } catch (er) {}
  render();
+});
+
+/* Inscrever na hora: eventos da seleção múltipla */
+document.addEventListener('click', async e => {
+ const t = e.target.closest('button'); if (!t || !inscD || inscD.modo !== 'add') return;
+ if (t.dataset.candteam !== undefined) { inscD.fteam = t.dataset.candteam; $('insccand').innerHTML = candHTML(); candAtualiza(); }
+ else if (t.dataset.candtodos !== undefined) {
+  const l = candVisiveis(), todos = l.every(m => inscD.sel.has(m.id));
+  l.forEach(m => todos ? inscD.sel.delete(m.id) : inscD.sel.add(m.id));
+  $('insccand').innerHTML = candHTML(); candAtualiza();
+ }
+ else if (t.dataset.candinscrever !== undefined) {
+  const ids = [...inscD.sel]; if (!ids.length) return;
+  t.disabled = true; t.textContent = 'Inscrevendo…';
+  if (!await INSC.inscrever(ids.map(id => ({membro: id, mod: inscD.a.s, cat: inscD.cat, presente: false})))) { candAtualiza(); return; }
+  inscPag = null;
+  await carregarInscritos();
+ }
+});
+document.addEventListener('change', e => {
+ const el = e.target; if (!el.dataset || !el.dataset.candsel || !inscD) return;
+ if (el.checked) inscD.sel.add(el.dataset.candsel); else inscD.sel.delete(el.dataset.candsel);
+ const b = $('insccand').querySelector('[data-candtodos]'), l = candVisiveis();
+ if (b) b.textContent = `${l.every(m => inscD.sel.has(m.id)) ? 'Desmarcar todos' : 'Marcar todos'} (${l.length})`;
+ candAtualiza();
 });
 
 /* Inicialização */
