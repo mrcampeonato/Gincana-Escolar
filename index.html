@@ -605,6 +605,9 @@ input[type=checkbox]:focus{box-shadow:none}
 .cfg-jbody .row{justify-content:flex-start}
 
 /* Cronograma */
+.nav-x{margin-left:.28em}
+@media (max-width:430px){#tabs{gap:1px;padding:4px}#tabs a{padding:7px 7px;font-size:12px}#tabs a[aria-label="Configurações"]{padding:7px 6px}}
+@media (max-width:340px){#tabs a{padding:6px 4px;font-size:11px}#tabs a[aria-label="Configurações"]{padding:6px 4px}}
 @media (max-width:420px){.nav-x{display:none}}
 .cr-dia-tit{font-size:15px;margin:0 0 8px;text-align:center;color:var(--mute);font-family:Figtree,sans-serif;font-weight:600;text-transform:capitalize}
 .cr-dias{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 2px 8px;margin-bottom:6px;justify-content:center}
@@ -714,7 +717,7 @@ S = Object.assign(fresh(), S || {});
 /* Monta ACTS e BY a partir da lista de modalidades salva */
 function buildActs() {
  const lista = Array.isArray(S.mods) ? S.mods : MODS_PADRAO;
- ACTS = lista.filter(m => m && m.id && m.n && TN[m.t]).map(m => ({n: m.n, t: m.t, s: m.id, r: !!m.r, oc: !!m.oc, u: m.u === 'dist' ? 'dist' : 'tempo', inv: !!m.inv, cn: m.cn || null, xv: m.xv == null ? 100 : +m.xv, loc: m.loc || '', dt: m.dt || '', hr: m.hr || '', arb: m.arb || '', agc: m.agc || {}, cats: Array.isArray(m.cats) ? m.cats.map(Number) : null, semIns: !!m.si}));
+ ACTS = lista.filter(m => m && m.id && m.n && TN[m.t]).map(m => ({n: m.n, t: m.t, s: m.id, r: !!m.r, oc: !!m.oc, u: m.u === 'dist' ? 'dist' : 'tempo', inv: !!m.inv, cn: m.cn || null, xv: m.xv == null ? 100 : +m.xv, loc: m.loc || '', dt: m.dt || '', hr: m.hr || '', arb: m.arb || '', agc: m.agc || {}, cats: Array.isArray(m.cats) ? m.cats.map(Number) : null, semIns: !!m.si, semCrono: !!m.sc}));
  BY = Object.fromEntries(ACTS.map(a => [a.s, a]));
 }
 buildActs();
@@ -730,7 +733,7 @@ const catNome = id => (CATS.find(c => c.id === +id) || {}).n || '';
 
 /* Páginas do sistema: cada uma tem a sua própria URL (hash) */
 const TABS = [
- ['placar','Placar Geral','#/'],
+ ['placar','Placar geral','#/'],
  ['mod','Modalidades','#/modalidades'],
  ['memver','Integrantes','#/integrantes'],
  ['crono','Cronograma','#/cronograma'],
@@ -906,8 +909,9 @@ const softRender = () => {
  if (carregando) return;
  if (hasDraft()) return;
  if (typing()) { pendente = true; return; }
- render();
+ rFlex = true; try { render(); } finally { rFlex = false; }   // atualização automática: só troca o que mudou
 };
+let rFlex = false;
 document.addEventListener('focusout', () => setTimeout(() => {
  if (pendente && !typing()) { pendente = false; softRender(); }
 }, 0));
@@ -987,7 +991,7 @@ const Views = {
   const o = totals(), order = T.slice().sort((a, b) => o.tot[b] - o.tot[a]), mx = Math.max(1, ...o.tot);
   const rows = order.map((i, k) => `<div class="rrow"><div class="rpos">${k+1}º</div><div><div class="rname">${tn(i)}</div><div class="bar" style="--c:var(--t${i});width:${Math.max(1, o.tot[i]/mx*100)}%"></div></div><div class="rpts">${o.tot[i]}</div></div>`).join('');
   const ln = (n, a) => `<tr><td>${n}</td>${a.map(v => `<td>${v}</td>`).join('')}</tr>`;
-  return`<section class="panel ${first?'grow':''}"><h2>Classificação geral</h2><div class="race">${rows}</div></section>
+  return`<section class="panel"><h2>Classificação geral</h2><div class="race">${rows}</div></section>
   <section class="panel"><h2>Pontos por categoria</h2><div class="scroll"><table class="pts-cat"><thead><tr><th>Categoria</th>${T.map(i => `<th>${tn(i)}</th>`).join('')}</tr></thead><tbody>
   ${CATS.map(c => ln(esc(c.n), o.cat[c.id])).join('')}${ln('Instagram', o.ig)}${ln('Torcida famosa', o.fn)}${o.ex.map(x => ln(esc(x.n), x.v)).join('')}</tbody><tfoot><tr><td>Total geral</td>${o.tot.map(v => `<td>${v}</td>`).join('')}</tr></tfoot></table></div></section>`;
  },
@@ -1123,12 +1127,12 @@ function sec(ci) { const el = $('sec'+ci); if (el) el.innerHTML = secHTML(ci); }
 
 function renderNav() {
  const ativa = pg == 'modedit' || pg == 'membros' || pg == 'insc' || pg == 'cronoed' ? 'cfg' : pg == 'insta' || pg == 'torc' ? 'mod' : pg;
- $('tabs').innerHTML = TABS.map(([k, n, h]) => `<a href="${h}" ${ativa==k?'aria-current="page"':''} ${k=='cfg'?'aria-label="Configurações" title="Configurações"':''}>${k=='cfg' ? icone('eng') : k=='placar' ? 'Placar<span class="nav-x"> geral</span>' : n}</a>`).join('');
+ $('tabs').innerHTML = TABS.map(([k, n, h]) => `<a href="${h}" ${ativa==k?'aria-current="page"':''} ${k=='cfg'?'aria-label="Configurações" title="Configurações"':''}>${k=='cfg' ? icone('eng') : k=='placar' ? 'Placar<span class="nav-x">geral</span>' : n}</a>`).join('');
 }
 
 /* Página de uma modalidade: vinculada à página MODALIDADES */
 function page() {
- $('tabs').innerHTML = '';
+ renderNav(); $('main')._html = null;
  if (cur.t == 'extra') {
   $('main').innerHTML = `<div class="page-head"><a class="back" href="#/modalidades">← Voltar às modalidades</a><h2 class="ptitle">${esc(cur.n)}</h2><p class="muted">Extra</p>${agHTML(cur) ? `<p class="ag-pag">${agHTML(cur)}</p>` : ''}${cur.r ? `<div class="row" style="margin-top:8px"><button class="btn alt" data-verreg>Ver regulamento</button></div>` : ''}</div><section class="panel"><div id="sec${EXTRA_CI}"></div></section>`;
   sec(EXTRA_CI); return;
@@ -1153,7 +1157,9 @@ function render() {
   return;
  }
  renderNav();
- $('main').innerHTML = Views[pg]();
+ const html = Views[pg](), mEl = $('main');
+ if (rFlex && html === mEl._html && mEl.firstElementChild && mEl.firstElementChild === mEl._first) mEl._mudou = false;
+ else { mEl.innerHTML = html; mEl._html = html; mEl._first = mEl.firstElementChild; mEl._mudou = true; }
  setTitle();
  $('sub').textContent = (pg == 'placar' || pg == 'mod')
   ? `${totals().done} de ${ACTS.filter(a => a.t != 'extra').reduce((n, a) => n + catsDe(a).length, 0)} resultados confirmados · ${db ? 'sincronizado' : 'modo local'}`
@@ -1162,7 +1168,7 @@ function render() {
 }
 
 function loadingView() {
- if (cur) $('tabs').innerHTML = ''; else renderNav();
+ renderNav(); $('main')._html = null;
  $('main').innerHTML = `<section class="panel"><p class="muted">Carregando dados atualizados…</p></section>`;
 }
 
@@ -1191,13 +1197,15 @@ async function route() {
 
  DB.setupRealtime();
  try {
-  await DB.fetchCfg(COLS[cur ? 'm' : pg]);
-  if (cur) { await DB.fetchSingleRes(cur, curC); await AG.daMod(cur.s); }
-  else if (pg == 'placar' || pg == 'mod') await DB.fetchAllRes();
-  else if (pg == 'membros' || pg == 'memver') await MEM.listar();
-  else if (pg == 'insc') { await MEM.listar(); if (inscSel) await carregarInsc(); }
-  else if (pg == 'crono' || pg == 'cronoed') await AG.listar();
-  if (pg == 'mod' && !cur) await AG.listar();
+  /* todas as buscas da página saem ao mesmo tempo (uma ida ao servidor em vez de várias em fila) */
+  const tarefas = [DB.fetchCfg(COLS[cur ? 'm' : pg])];
+  if (cur) tarefas.push(DB.fetchSingleRes(cur, curC), AG.daMod(cur.s));
+  else if (pg == 'placar') tarefas.push(DB.fetchAllRes());
+  else if (pg == 'mod') tarefas.push(DB.fetchAllRes(), AG.listar());
+  else if (pg == 'membros' || pg == 'memver') tarefas.push(MEM.listar());
+  else if (pg == 'insc') tarefas.push(MEM.listar(), inscSel ? carregarInsc() : null);
+  else if (pg == 'crono' || pg == 'cronoed') tarefas.push(AG.listar());
+  await Promise.all(tarefas);
   save();
  } catch (e) { console.error(e); }
 
@@ -3143,6 +3151,7 @@ function abrirNovaMod() {
    <div class="cr-aviso">${icone('cal')}<span>Dia, horário, local e árbitro de cada categoria são definidos no Cronograma, que confere os conflitos.</span></div>
    <label>Regulamento (opcional)<textarea id="nvreg" class="massa-txt" style="min-height:120px" placeholder="Cole ou digite o regulamento"></textarea></label>
    <label class="ag-por nv-ins"><input type="checkbox" id="nvins" checked> Exige inscrição de integrantes</label>
+   <label class="ag-por nv-cr"><input type="checkbox" id="nvcrono" checked> Agendar no cronograma</label>
    <label class="ag-por"><input type="checkbox" id="nvvis" checked> Visível na página Modalidades</label>
   </div></div>
   <div class="reg-foot mem-foot"><span class="mem-esp"></span><button class="btn alt" data-nvfechar>Cancelar</button><button class="btn" data-nvcriar>Criar modalidade</button></div>
@@ -3157,6 +3166,7 @@ function nvTipo() {
  $('novadlg').querySelector('.nv-crit').hidden = t != 'crit';
  $('novadlg').querySelector('.nv-cats').hidden = t == 'extra';
  $('novadlg').querySelector('.nv-ins').hidden = t == 'extra';
+ $('novadlg').querySelector('.nv-cr').hidden = t == 'extra';
 }
 async function criarMod(btn) {
  const nome = $('nvnome').value.trim().replace(/\s+/g, ' '), t = $('nvtipo').value;
@@ -3179,6 +3189,7 @@ async function criarMod(btn) {
   [['loc', 'nvloc'], ['arb', 'nvarb'], ['dt', 'nvdt'], ['hr', 'nvhr']].forEach(([f, el]) => { const v = $(el) && $(el).value; if (v) x[f] = v; });
   if (!$('nvvis').checked) x.oc = 1;
   if (t != 'extra' && !$('nvins').checked) x.si = 1;
+  if (t != 'extra' && !$('nvcrono').checked) x.sc = 1;
   if (reg) x.r = 1;
   S.mods.push(x); buildActs();
  });
@@ -3328,13 +3339,14 @@ render = function () {
   entrouEm = performance.now();
   main.classList.remove('entrar');
   if (!semMov()) { void main.offsetWidth; main.classList.add('entrar'); }
- } else main.classList.remove('entrar');
- if (!cur && pg == 'placar') animarPlacar(entrou); else placarAnt = null;
+  clearTimeout(main._fimEntrada); main._fimEntrada = setTimeout(() => main.classList.remove('entrar'), 900);
+ } else if (main._mudou) main.classList.remove('entrar');   // conteúdo novo: aparece direto, sem cortar animação em andamento
+ if (!cur && pg == 'placar') { if (entrou || main._mudou) animarPlacar(entrou); } else placarAnt = null;
 };
 
 /* Tela de carregamento com barras pulsando no lugar do texto solto */
 loadingView = function () {
- if (cur) $('tabs').innerHTML = ''; else renderNav();
+ renderNav(); $('main')._html = null;
  $('main').classList.remove('entrar');
  $('main').innerHTML = `<section class="panel" aria-busy="true"><div class="skel" aria-hidden="true"><span></span><span></span><span></span></div><p class="muted">Carregando dados atualizados…</p></section>`;
 };
@@ -3526,6 +3538,7 @@ function efetivo(a, cat) {
 agDe = function (a, ci) {
  if (a.t == 'extra') return agDeLegado(a, ci);
  const vazio = {loc: '', dt: '', hr: '', arb: ''};
+ if (a.semCrono) return vazio;
  const ag = c => { const e = efetivo(a, c); return e.dt && e.hr && !e.pre ? e : null; };
  if (ci != null) { const e = ag(ci); return e ? {loc: e.loc, dt: e.dt, hr: `${e.hr}–${fmtMin(toMin(e.hr) + e.dur)}`, arb: e.arb} : vazio; }
  const v = catsDe(a).map(c => ag(c.id)).filter(Boolean);
@@ -3537,7 +3550,7 @@ agDe = function (a, ci) {
 /* Todas as atividades agendadas (ou pendentes) */
 function itensAgenda() {
  const l = [];
- ACTS.filter(a => a.t != 'extra').forEach(a => catsDe(a).forEach(c => {
+ ACTS.filter(a => a.t != 'extra' && !a.semCrono).forEach(a => catsDe(a).forEach(c => {
   const e = efetivo(a, c.id);
   l.push({mod: a.s, n: a.n, cat: c.id, ...e, ok: !!(e.dt && e.hr && !e.pre)});
  }));
@@ -3582,7 +3595,7 @@ function gradeHTML(edita) {
    <div class="cr-cab"><span>Horário</span>${cats.map(c => `<span>${esc(c.n)}</span>`).join('')}</div>
    ${horas.map(h => `<div class="cr-linha"><div class="cr-h">${icone('rel')}${h}</div>${cats.map(c => { const l = doDia.filter(x => x.hr === h && +x.cat === c.id).sort((p, q) => p.n.localeCompare(q.n, 'pt-BR')); return `<div class="cr-cel ${l.length ? '' : 'vazia'}" data-cat="${esc(c.n)}">${l.map(card).join('')}</div>`; }).join('')}</div>`).join('')}
   </div>`;
- return `<h3 class="cr-dia-tit">${fmtDia(crDia, true)}</h3>` + diasHTML + catsHTML + corpo;
+ return (dias.length < 2 ? `<h3 class="cr-dia-tit">${fmtDia(crDia, true)}</h3>` : '') + diasHTML + catsHTML + corpo;
 }
 
 /* Página de visualização (menu principal) */
@@ -3621,7 +3634,7 @@ function crConflitosHTML() {
 /* ---------- Janela de agendamento com checagem de disponibilidade ---------- */
 document.body.insertAdjacentHTML('beforeend', '<dialog id="crdlg" class="reg-dlg" aria-label="Agendar atividade"></dialog>');
 let crEd = null;
-const crModsOrd = () => ACTS.filter(a => a.t != 'extra').slice().sort((a, b) => a.n.localeCompare(b.n, 'pt-BR'));
+const crModsOrd = () => ACTS.filter(a => a.t != 'extra' && !a.semCrono).slice().sort((a, b) => a.n.localeCompare(b.n, 'pt-BR'));
 function crLer() {
  return {mod: $('crmod').value, cat: $('crcat').value === '' ? '' : +$('crcat').value, dt: $('crdt').value, hr: $('crhr').value, dur: +$('crdur').value || DUR_PADRAO, loc: $('crloc').value, arb: $('crarb').value};
 }
@@ -3657,7 +3670,7 @@ function abrirCrono(mod, cat) {
  const mods = crModsOrd();
  const a = BY[mod] || null;
  const c0 = a ? (cat !== '' && cat != null && temCat(a, cat) ? +cat : catsDe(a)[0].id) : '';
- const e = a && c0 !== '' ? efetivo(a, c0) : {dt: crDia || '', hr: '', dur: +(localStorage.getItem('olimp-dur') || DUR_PADRAO), loc: '', arb: ''};
+ const e = a && c0 !== '' ? crPadrao(a, c0) : {dt: crDia || '', hr: '', dur: +(localStorage.getItem('olimp-dur') || DUR_PADRAO), loc: '', arb: ''};
  crEd = {orig: a && c0 !== '' ? {mod, cat: c0, tinha: !!(e.dt || e.hr || e.loc || e.arb)} : null};
  const dlg = $('crdlg');
  dlg.innerHTML = `<div class="reg-box">
@@ -3683,6 +3696,22 @@ function abrirCrono(mod, cat) {
  if (!dlg.open) dlg.showModal();
  crStatus();
 }
+/* Valores para a janela: o que está no cronograma; local e árbitro vazios usam os da modalidade */
+function crPadrao(a, cat) {
+ const e = efetivo(a, cat);
+ return {...e, loc: e.loc || a.loc || '', arb: e.arb || a.arb || ''};
+}
+function crPreencher(a, cat) {
+ const e = crPadrao(a, cat);
+ if (e.dt) $('crdt').value = e.dt;
+ $('crhr').value = e.hr || '';
+ $('crdur').value = String(e.dur || DUR_PADRAO);
+ const c = {...crLer(), loc: e.loc, arb: e.arb};
+ $('crloc').innerHTML = crOpcoesCad('locais', c); $('crloc').value = e.loc;
+ $('crarb').innerHTML = crOpcoesCad('arbitros', c); $('crarb').value = e.arb;
+ crStatus();
+}
+
 /* Procura, no mesmo dia, o primeiro início em que local, árbitro e categoria estão livres */
 function crSugerir() {
  const c = crLer();
@@ -3736,10 +3765,10 @@ document.addEventListener('change', e => {
   const a = BY[e.target.value], sel = $('crcat');
   sel.innerHTML = a ? catsDe(a).map(c => `<option value="${c.id}">${esc(c.n)}</option>`).join('') : '<option value="">—</option>';
   sel.value = sel.options.length ? sel.options[0].value : '';
-  if (a) { const x = efetivo(a, +sel.value); if (x.dt) $('crdt').value = x.dt; if (x.hr) $('crhr').value = x.hr; }
-  crAtualiza();
+  if (a) crPreencher(a, +sel.value); else crAtualiza();
  }
- else if (['crcat', 'crdt', 'crhr', 'crdur', 'crloc', 'crarb'].includes(id)) crAtualiza();
+ else if (id === 'crcat') { const a = BY[$('crmod').value]; if (a && e.target.value !== '') crPreencher(a, +e.target.value); else crAtualiza(); }
+ else if (['crdt', 'crhr', 'crdur', 'crloc', 'crarb'].includes(id)) crAtualiza();
 });
 document.addEventListener('input', e => { if (e.target.id === 'crhr' || e.target.id === 'crdt') crStatus(); });
 
@@ -3797,6 +3826,28 @@ function crVoltarHTML() {
   ? '<a class="back" href="#/configuracoes/modalidades">← Voltar às modalidades</a>'
   : '<a class="back" href="#/configuracoes">← Voltar às configurações</a>';
 }
+
+/* Opção "Agendar no cronograma", logo abaixo de "Exige inscrição de integrantes" */
+const agAntesSemCrono = abrirAgenda;
+abrirAgenda = function (a) {
+ agAntesSemCrono(a);
+ const ins = $('aginsc'); if (!ins || a.t == 'extra') return;
+ ins.closest('label').insertAdjacentHTML('afterend', `<label class="ag-por"><input type="checkbox" id="agcronochk" ${a.semCrono ? '' : 'checked'}> Agendar no cronograma</label>`);
+ const at = $('agdlg').querySelector('[data-agcrono]'); if (at) at.hidden = !!a.semCrono;
+};
+document.addEventListener('change', e => {
+ if (e.target.id !== 'agcronochk') return;
+ const at = $('agdlg').querySelector('[data-agcrono]'); if (at) at.hidden = !e.target.checked;
+});
+const salvarAntesSemCrono = salvarAgenda;
+salvarAgenda = async function (id, limpar) {
+ const chk = $('agcronochk');
+ if (chk) {
+  const sem = !chk.checked;
+  await DB.patchCfg(['mods'], () => { S.mods = listaMods(); const x = S.mods.find(y => y.id === id); if (x) { if (sem) x.sc = 1; else delete x.sc; } buildActs(); });
+ }
+ return salvarAntesSemCrono(id, limpar);
+};
 
 /* Inicialização */
 route();
