@@ -435,6 +435,49 @@ select[data-csel]{position:absolute!important;width:1px!important;height:1px!imp
 .cand-todos:hover{color:var(--ink)}
 .insc-row.cand:has(input:checked){background:rgba(31,157,85,.07)}
 .insc-row.cand:has(input:checked) .mem-nome{color:#1f9d55}
+/* Contas e acesso */
+.conta-bar{display:flex;justify-content:center;margin-top:10px;min-height:32px}
+.conta-bar:empty{display:none}
+.conta-btn{display:inline-flex;align-items:center;gap:6px;font:600 13px Figtree,sans-serif;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:5px 12px;min-height:32px;cursor:pointer;max-width:100%}
+.conta-btn:hover{border-color:var(--ink)}
+.conta-btn .ico{width:15px;height:15px}
+.conta-foto{width:22px;height:22px;border-radius:50%;object-fit:cover;flex:none;margin-left:-6px}
+.btn-google{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:48px;border:1px solid #dadce0;border-radius:999px;background:#fff;color:#1f1f1f;font:600 15px Figtree,sans-serif;cursor:pointer;transition:box-shadow .2s,background-color .2s}
+.btn-google:hover{box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.btn-google:disabled{opacity:.6;cursor:wait}
+.auth-txt{margin:0 0 14px;text-align:left;font-size:14px;color:var(--mute)}
+.auth-nota{margin:14px 0 0;text-align:left;font-size:12px;color:var(--mute)}
+.conta-nome{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.conta-papel{color:var(--mute);font-weight:400;flex:none}
+.conta-btn.pend .conta-papel{color:#b7791f}
+.auth-tabs{display:flex;gap:6px;margin-bottom:14px}
+.auth-tabs .chipbtn{flex:1;justify-content:center}
+.auth-msg{font-size:13px;line-height:1.45;border-radius:10px;padding:10px 12px;margin:0 0 12px;text-align:left}
+.auth-msg.erro{background:rgba(200,40,58,.09);color:#c8283a}
+.auth-msg.ok{background:rgba(31,157,85,.09);color:#1f9d55}
+.auth-msg.info{background:var(--soft);color:var(--ink)}
+.auth-link{background:none;border:0;color:var(--mute);font:600 13px Figtree,sans-serif;cursor:pointer;padding:4px 0;text-decoration:underline;justify-self:start;min-height:0}
+.auth-link:hover{color:var(--ink)}
+.auth-info{display:grid;gap:4px;margin-bottom:14px;text-align:left}
+.auth-info strong{font-size:16px}
+.auth-info span{font-size:13px;color:var(--mute)}
+.ct-row{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.ct-row:last-child{border-bottom:0}
+.ct-info{min-width:0;display:flex;flex-direction:column;text-align:left}
+.ct-info strong{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ct-info small{color:var(--mute);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ct-tag{font-size:12px;font-weight:600;color:var(--mute);text-align:center}
+.ct-pend{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;background:rgba(183,121,31,.13);color:#b7791f;font-size:11px;font-weight:600;vertical-align:middle}
+.ct-resumo{font-size:13px;gap:12px}
+@media (max-width:480px){.ct-row{grid-template-columns:1fr}}
+.acesso .ico{width:34px;height:34px;margin:0 auto 8px;color:var(--mute)}
+/* Sem permissão de edição: ações escondidas e campos só para leitura (a proteção real fica no banco) */
+body.ro #main :is([data-step],[data-conf],[data-edit],[data-sortear],[data-adde],[data-rme],[data-cmodo],[data-addfan],[data-delfan],[data-exadd],[data-exdel],[data-inscver],[data-insctog],[data-cragendar],[data-agcrono],.ex-form,.row:has(> #fn)){display:none!important}
+body.ro #main :is(input[data-k],input[data-ig],[id^=sec] .csel){pointer-events:none}
+body.ro #main input[data-k]{background:var(--card)}
+body:not(.adm) [data-soadmin]{display:none!important}
+body:not(.adm) .panel:has([data-reset]){display:none}
+
 /* Confirmação digitada (Zerar tudo) */
 .cx-dig{display:grid;gap:6px;margin-top:14px;white-space:normal;font-size:13px;font-weight:600;color:var(--mute);text-align:left}
 .cx-dig strong{color:var(--ink)}
@@ -758,7 +801,8 @@ const ROUTES = {
  '#/configuracoes/cronograma': 'cronoed',     // montagem do cronograma (Configurações)       // inscrições nas modalidades (pela página de integrantes)
  '#/instagram': 'insta',                     // modalidade extra (acesso por Modalidades)
  '#/torcida': 'torc',                        // modalidade extra (acesso por Modalidades)
- '#/configuracoes/dados': 'dados'            // planilha de resultados e zerar tudo (Configurações)
+ '#/configuracoes/dados': 'dados',           // planilha de resultados e zerar tudo (Configurações)
+ '#/configuracoes/contas': 'contas'          // contas de acesso (só administrador)
 };
 
 /* Colunas da tabela cfg que cada página precisa ler (requisição focada) */
@@ -771,6 +815,7 @@ const COLS = {
  membros: 'teams,colors,cats',
  memver:  'teams,colors,cats',
  dados:   'teams',
+ contas:  'teams',
  insc:    'teams,colors,cats,mods',
  crono:   'teams,mods,cats,locais,arbitros,periodo',
  cronoed: 'teams,mods,cats,locais,arbitros,periodo',
@@ -801,10 +846,15 @@ function setPath(o, path, val) { const k = path.split('.'); for (let n=0; n<k.le
    ========================================================================== */
 const SUPABASE_URL = 'https://eeqahersokenqsmfwpfb.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVlcWFoZXJzb2tlbnFzbWZ3cGZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MjgyNjksImV4cCI6MjEwNjUwNDI2OX0.5oErD8Un5o15G3Vow6YMfgb1d6pJhXdudkKjG4sHxZs';
-const db = null; // PRÉVIA: conexão com o Supabase desativada (o artefato bloqueia acesso a servidores externos)
+const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth: {flowType: 'pkce', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true}}) : null;
 
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)) } catch (e) {} };
-const fail = e => avisar('Não foi possível salvar no servidor: ' + (e && (e.message || e.code) || JSON.stringify(e)));
+const fail = e => {
+ const m = e && (e.message || e.code) || JSON.stringify(e);
+ avisar(/row-level security|permission denied|42501|sem permiss/i.test(m + ' ' + (e && e.code || ''))
+  ? 'Sua conta não tem permissão para alterar os dados. Entre com uma conta liberada pelo administrador.'
+  : 'Não foi possível salvar no servidor: ' + m);
+};
 
 function parseId(id) {
  const parts = String(id || '').split('_');
@@ -4226,8 +4276,271 @@ icone = n => n === 'planilha'
  : iconeAntesDados(n);
 TILES_CFG.push({titulo: 'Dados', sub: 'Planilha de resultados e zerar tudo', ico: 'planilha', abre: 'href="#/configuracoes/dados"'});
 
-/* Inicialização */
-route();
+/* ==========================================================================
+   34. CONTAS, LOGIN E PERMISSÕES
+   - Quem só olha (placar, modalidades, integrantes, cronograma) não precisa entrar.
+   - Para alterar qualquer dado é preciso entrar com uma conta liberada:
+     editor (lança resultados e mexe nas configurações) ou administrador
+     (também libera contas e pode zerar o sistema).
+   - Conta nova entra como "pendente" até o administrador liberar.
+   - A proteção de verdade está no banco (RLS do Supabase): mesmo que alguém
+     mexa no código da página, o servidor recusa gravações sem permissão.
+   ========================================================================== */
+const ADMIN_PRINCIPAL = 'mrcampeonato@gmail.com';
+const AUTH = {user: null, papel: null, nome: ''};
+const PAPEL_NOME = {pendente: 'Aguardando liberação', editor: 'Editor', admin: 'Administrador'};
+const podeEditar = () => !db || AUTH.papel === 'editor' || AUTH.papel === 'admin';
+const ehAdmin = () => !db || AUTH.papel === 'admin';
+const PAG_RESTRITAS = {cfg: 'editor', modedit: 'editor', membros: 'editor', insc: 'editor', cronoed: 'editor', dados: 'editor', contas: 'admin'};
+const temAcesso = p => PAG_RESTRITAS[p] === 'admin' ? ehAdmin() : podeEditar();
+const urlSite = () => location.origin + location.pathname;
+
+/* Ícones extras */
+const iconeAntesContas = icone;
+icone = n => n === 'cadeado'
+ ? '<svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>'
+ : iconeAntesContas(n);
+
+async function carregarPerfil() {
+ if (!db || !AUTH.user) { AUTH.papel = null; AUTH.nome = ''; return; }
+ const { data, error } = await db.from('perfis').select('papel,nome').eq('id', AUTH.user.id).maybeSingle();
+ if (error) { console.error(error); return; }   // mantém o que já sabia em caso de falha de rede
+ AUTH.papel = data ? data.papel : 'pendente';
+ const um = AUTH.user.user_metadata || {};
+ AUTH.nome = data && data.nome || um.full_name || um.name || um.nome || '';
+}
+
+function desenharContaBar() {
+ let bar = $('contabar');
+ if (!bar) { $('sub').insertAdjacentHTML('afterend', '<div id="contabar" class="conta-bar"></div>'); bar = $('contabar'); }
+ if (!db) { bar.innerHTML = ''; return; }
+ bar.innerHTML = AUTH.user
+  ? `<button class="conta-btn ${AUTH.papel === 'pendente' ? 'pend' : ''}" data-minhaconta>${fotoConta() ? `<img class="conta-foto" src="${esc(fotoConta())}" alt="" referrerpolicy="no-referrer">` : icone('pessoa')}<span class="conta-nome">${esc(AUTH.nome || AUTH.user.email)}</span><span class="conta-papel">· ${esc(PAPEL_NOME[AUTH.papel] || 'Conta')}</span></button>`
+  : `<button class="conta-btn" data-entrar>${icone('cadeado')}Entrar</button>`;
+}
+
+function aplicarAcesso() {
+ document.body.classList.toggle('ro', !podeEditar());
+ document.body.classList.toggle('adm', ehAdmin());
+ desenharContaBar();
+}
+
+const VOLTA_KEY = 'olimp-volta-login';
+const fotoConta = () => { const u = AUTH.user && AUTH.user.user_metadata || {}; return u.avatar_url || u.picture || ''; };
+async function iniciarAuth() {
+ if (!db) { aplicarAcesso(); return; }
+ /* retorno do Google: ?code=... (ou ?error=...) no endereço */
+ const qs = new URLSearchParams(location.search), hs = new URLSearchParams(location.hash.replace(/^#/, ''));
+ const voltou = qs.has('code') || qs.has('error') || hs.has('access_token') || hs.has('error');
+ const erroGoogle = qs.get('error_description') || hs.get('error_description') || qs.get('error') || hs.get('error');
+ try {
+  const { data } = await db.auth.getSession();
+  AUTH.user = data && data.session ? data.session.user : null;
+  await Promise.race([carregarPerfil(), new Promise(r => setTimeout(r, 4000))]);
+ } catch (e) { console.error(e); }
+ if (voltou) {
+  let volta = '#/';
+  try { volta = sessionStorage.getItem(VOLTA_KEY) || '#/'; sessionStorage.removeItem(VOLTA_KEY); } catch (e) {}
+  history.replaceState(null, '', urlSite() + volta);
+  setTimeout(() => {
+   if (erroGoogle) avisar('Não foi possível entrar com o Google: ' + String(erroGoogle).replace(/\+/g, ' '));
+   else if (!AUTH.user) avisar('Não foi possível concluir a entrada com o Google. Tente de novo.');
+   else if (AUTH.papel === 'pendente') avisar('Conta criada. Você já pode acompanhar tudo, mas só consegue alterar dados depois que o administrador liberar o seu acesso.');
+  }, 0);
+ }
+ aplicarAcesso();
+ db.auth.onAuthStateChange((ev, session) => {
+  const antes = (AUTH.user && AUTH.user.id || '') + '|' + AUTH.papel;
+  AUTH.user = session ? session.user : null;
+  /* fora do callback: o Supabase recomenda não fazer consultas dentro dele */
+  setTimeout(async () => {
+   await carregarPerfil();
+   if ((AUTH.user && AUTH.user.id || '') + '|' + AUTH.papel === antes) { desenharContaBar(); return; }
+   aplicarAcesso();
+   if (!typing()) render();
+  }, 0);
+ });
+}
+
+/* Páginas restritas: quem não tem acesso vê o convite para entrar */
+function bloqueioHTML(p) {
+ const precisa = PAG_RESTRITAS[p] === 'admin' ? 'administrador' : 'editor ou administrador';
+ const txt = !AUTH.user
+  ? `Entre com uma conta de ${precisa} para acessar esta área.`
+  : AUTH.papel === 'pendente'
+   ? 'Sua conta ainda não foi liberada. Peça ao administrador para liberar o seu acesso.'
+   : `Esta área é só para ${precisa}.`;
+ return `<section class="panel acesso">${icone('cadeado')}<h2>Área restrita</h2><p class="muted">${txt}</p><div class="row">${AUTH.user ? '' : '<button class="btn" data-entrar>Entrar</button>'}<a class="btn alt" href="#/" style="text-decoration:none;display:inline-flex;align-items:center">Ir para o placar</a></div></section>`;
+}
+const renderAntesAcesso = render;
+render = function () {
+ if (!cur && PAG_RESTRITAS[pg] && !temAcesso(pg)) {
+  pendente = false;
+  renderNav();
+  $('main').classList.remove('entrar');
+  $('main').innerHTML = bloqueioHTML(pg);
+  return;
+ }
+ renderAntesAcesso();
+};
+const renderNavAntesAcesso = renderNav;
+renderNav = function () {
+ renderNavAntesAcesso();
+ const cfg = $('tabs').querySelector('a[href="#/configuracoes"]');
+ if (cfg && !podeEditar()) cfg.remove();
+ else if (cfg && (pg == 'dados' || pg == 'contas')) cfg.setAttribute('aria-current', 'page');
+};
+
+/* Quem não pode editar: ações bloqueadas antes de chegar ao código de edição */
+const ACOES_EDICAO = '[data-step],[data-conf],[data-edit],[data-sortear],[data-adde],[data-rme],[data-cmodo],[data-addfan],[data-delfan],[data-exadd],[data-exdel],[data-inscver],[data-insctog],[data-ipres],[data-cragendar],[data-agcrono],[data-ig],[data-k]';
+function pedirLogin() {
+ if (!db) return;
+ if (!AUTH.user) abrirAuth('entrar', {tipo: 'info', txt: 'Entre com uma conta liberada para alterar os dados.'});
+ else avisar('Sua conta ainda não tem permissão para alterar dados. Peça ao administrador para liberar o seu acesso.');
+}
+document.addEventListener('click', e => {
+ const t = e.target.closest && e.target.closest('[data-reset]');
+ if (t && !ehAdmin()) { e.preventDefault(); e.stopImmediatePropagation(); avisar('Só o administrador pode zerar o sistema.'); return; }
+ if (podeEditar()) return;
+ const a = e.target.closest && e.target.closest(ACOES_EDICAO);
+ if (!a || !$('main').contains(a)) return;
+ e.preventDefault(); e.stopImmediatePropagation(); pedirLogin();
+}, true);
+['change', 'input'].forEach(tipo => document.addEventListener(tipo, e => {
+ if (podeEditar()) return;
+ const a = e.target.closest && e.target.closest('[data-k],[data-ig],[data-cfg]');
+ if (a && $('main').contains(a)) e.stopImmediatePropagation();
+}, true));
+
+/* ---------- Janela de login (conta Google) e da conta ---------- */
+document.body.insertAdjacentHTML('beforeend', '<dialog id="authdlg" class="reg-dlg cx-dlg" aria-label="Conta"></dialog>');
+let authModo = 'entrar', authMsg = null;
+const ICONE_GOOGLE = '<svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
+
+function desenharAuth() {
+ const m = authModo, msg = authMsg ? `<p class="auth-msg ${authMsg.tipo}" role="status">${esc(authMsg.txt)}</p>` : '';
+ let corpo = '', esq = '';
+ if (m == 'conta') {
+  const desc = {pendente: 'Sua conta ainda não foi liberada. Você pode ver tudo, mas só altera dados depois que o administrador liberar.', editor: 'Você pode lançar resultados e mexer nas configurações.', admin: 'Você pode lançar resultados, mexer nas configurações, liberar contas e zerar o sistema.'}[AUTH.papel] || '';
+  corpo = `<div class="auth-info"><strong>${esc(AUTH.nome || 'Sem nome')}</strong><span>${esc(AUTH.user ? AUTH.user.email : '')}</span><span>${esc(PAPEL_NOME[AUTH.papel] || '')}. ${desc}</span></div>`;
+  esq = '<button class="btn warn" data-sair>Sair</button>';
+ } else {
+  corpo = `<p class="auth-txt">Entre com a sua conta Google para lançar resultados e mexer nas configurações. Quem só acompanha os jogos não precisa entrar.</p>
+   <button class="btn-google" data-google>${ICONE_GOOGLE}<span>Entrar com Google</span></button>
+   <p class="auth-nota">No primeiro acesso a conta é criada sozinha e fica aguardando a liberação do administrador.</p>`;
+ }
+ $('authdlg').innerHTML = `<div class="reg-box">
+  <div class="reg-head"><h2>${m == 'conta' ? 'Minha conta' : 'Entrar'}</h2><button class="btn alt" data-authfechar aria-label="Fechar">✕</button></div>
+  <div class="reg-body" style="white-space:normal">${msg}${corpo}</div>
+  <div class="reg-foot mem-foot">${esq}<span class="mem-esp"></span><button class="btn alt" data-authfechar>Fechar</button></div>
+ </div>`;
+}
+function abrirAuth(modo, msg) {
+ if (!db) return;
+ authModo = modo || 'entrar'; authMsg = msg || null;
+ desenharAuth();
+ const dlg = $('authdlg'); if (!dlg.open) dlg.showModal();
+ (dlg.querySelector('[data-google]') || dlg.querySelector('[data-authfechar]')).focus();
+}
+
+function erroAuth(e) {
+ const c = String(e && (e.code || '') || ''), m = String(e && e.message || e || ''), s = e && e.status;
+ if (/provider is not enabled|unsupported provider|validation_failed/i.test(c + ' ' + m)) return 'O login com Google ainda não foi ativado no Supabase.';
+ if (s == 429 || /rate limit|too many/i.test(c + m)) return 'Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente de novo.';
+ if (/failed to fetch|network/i.test(m)) return 'Sem conexão com o servidor. Verifique a internet e tente de novo.';
+ return 'Não foi possível entrar: ' + m;
+}
+
+async function entrarGoogle(btn) {
+ btn.disabled = true; btn.querySelector('span').textContent = 'Abrindo o Google…';
+ try { sessionStorage.setItem(VOLTA_KEY, location.hash || '#/'); } catch (e) {}
+ try {
+  const { error } = await db.auth.signInWithOAuth({provider: 'google', options: {redirectTo: urlSite(), queryParams: {prompt: 'select_account'}}});
+  if (error) throw error;
+  /* sem erro, o navegador segue para a tela do Google */
+ } catch (e) {
+  console.error(e);
+  authMsg = {tipo: 'erro', txt: erroAuth(e)}; desenharAuth();
+ }
+}
+
+document.addEventListener('click', async e => {
+ const t = e.target.closest('button'); if (!t) return;
+ const d = t.dataset;
+ if (d.entrar !== undefined) abrirAuth('entrar');
+ else if (d.minhaconta !== undefined) abrirAuth('conta');
+ else if (d.google !== undefined) entrarGoogle(t);
+ else if (d.authfechar !== undefined) $('authdlg').close();
+ else if (d.sair !== undefined) {
+  t.disabled = true;
+  try { await db.auth.signOut(); } catch (er) { console.error(er); }
+  AUTH.user = null; AUTH.papel = null; AUTH.nome = '';
+  $('authdlg').close(); aplicarAcesso(); render();
+ }
+});
+
+/* ---------- Contas (só administrador): liberar, promover e bloquear ---------- */
+let contasLista = null, contasCarregando = false, contasQ = '';
+const PAPEIS = [['pendente', 'Sem acesso (pendente)'], ['editor', 'Editor'], ['admin', 'Administrador']];
+async function carregarContas() {
+ if (contasCarregando || !db) return;
+ contasCarregando = true;
+ const { data, error } = await db.from('perfis').select('id,email,nome,papel,criado_em').order('criado_em', {ascending: false}).limit(2000);
+ contasCarregando = false;
+ if (error) { contasLista = []; fail(error); } else contasLista = data || [];
+ const l = $('contaslista'); if (l) l.innerHTML = contasHTML();
+ const r = $('contasresumo'); if (r) r.innerHTML = contasResumo();
+}
+const contasResumo = () => contasLista ? ['pendente', 'editor', 'admin'].map(p => `<span>${{pendente: 'Pendentes', editor: 'Editores', admin: 'Administradores'}[p]}: <strong>${contasLista.filter(x => x.papel === p).length}</strong></span>`).join('') : '';
+function contasHTML() {
+ if (!contasLista) return '<p class="muted">Carregando contas…</p>';
+ const q = slug(contasQ), ordem = {pendente: 0, admin: 1, editor: 2};
+ const l = contasLista.filter(x => !q || slug((x.nome || '') + ' ' + x.email).includes(q))
+  .sort((a, b) => (ordem[a.papel] ?? 3) - (ordem[b.papel] ?? 3) || String(b.criado_em).localeCompare(String(a.criado_em)));
+ if (!contasLista.length) return '<p class="muted">Nenhuma conta criada ainda.</p>';
+ if (!l.length) return '<p class="muted">Nenhuma conta encontrada.</p>';
+ return l.map(x => {
+  const principal = String(x.email).toLowerCase() === ADMIN_PRINCIPAL, desde = x.criado_em ? new Date(x.criado_em).toLocaleDateString('pt-BR') : '';
+  return `<div class="ct-row"><span class="ct-info"><strong>${esc(x.nome || x.email)}${x.papel === 'pendente' ? '<span class="ct-pend">aguardando</span>' : ''}</strong><small>${esc(x.email)}${desde ? ' · desde ' + desde : ''}</small></span>${principal ? '<span class="ct-tag">Administrador principal</span>' : `<select data-papel="${esc(x.id)}" aria-label="Acesso de ${esc(x.email)}">${PAPEIS.map(([v, n]) => `<option value="${v}" ${x.papel === v ? 'selected' : ''}>${n}</option>`).join('')}</select>`}</div>`;
+ }).join('');
+}
+Views.contas = () => {
+ const volta = '<div class="page-head"><a class="back" href="#/configuracoes">← Voltar às configurações</a></div>';
+ if (!db) return volta + '<section class="panel"><h2>Contas</h2><p class="muted">As contas só funcionam com o site conectado ao servidor.</p></section>';
+ if (contasLista == null) setTimeout(carregarContas, 0);
+ return volta + `<section class="panel"><h2>Contas de acesso</h2>
+  <p class="muted">Conta nova entra como pendente: vê tudo, mas não altera nada. Editor lança resultados e mexe nas configurações. Administrador também libera contas e pode zerar o sistema.</p>
+  <div class="row ct-resumo" id="contasresumo">${contasResumo()}</div>
+  <div class="row"><input id="contasbusca" type="search" placeholder="Buscar por nome ou email" value="${esc(contasQ)}" autocomplete="off"><button class="btn alt" data-contasrecarregar>Atualizar lista</button></div>
+  <div id="contaslista">${contasHTML()}</div></section>`;
+};
+addEventListener('hashchange', () => { if (location.hash !== '#/configuracoes/contas') contasLista = null; });
+document.addEventListener('input', e => { if (e.target.id === 'contasbusca') { contasQ = e.target.value; const l = $('contaslista'); if (l) l.innerHTML = contasHTML(); } });
+document.addEventListener('click', e => {
+ const t = e.target.closest('[data-contasrecarregar]'); if (!t) return;
+ contasLista = null; const l = $('contaslista'); if (l) l.innerHTML = contasHTML(); carregarContas();
+});
+document.addEventListener('change', async e => {
+ const el = e.target; if (!el.dataset || !el.dataset.papel || !contasLista) return;
+ const id = el.dataset.papel, novo = el.value, x = contasLista.find(y => y.id === id); if (!x) return;
+ const ant = x.papel, eu = AUTH.user && AUTH.user.id === id;
+ if (novo === 'admin' && !await confirmar(`Tornar ${x.email} administrador?\nEle também poderá liberar e bloquear contas e zerar o sistema.`)) { el.value = ant; return; }
+ if (eu && novo !== 'admin' && !await confirmar('Você vai tirar o seu próprio acesso de administrador. Continuar?')) { el.value = ant; return; }
+ el.disabled = true;
+ const { error } = await db.rpc('definir_papel', {alvo: id, novo});
+ el.disabled = false;
+ if (error) { el.value = ant; fail(error); return; }
+ x.papel = novo;
+ const r = $('contasresumo'); if (r) r.innerHTML = contasResumo();
+ const l = $('contaslista'); if (l) l.innerHTML = contasHTML();
+ if (eu) { await carregarPerfil(); aplicarAcesso(); render(); }
+});
+
+/* Atalho "Contas" nas Configurações (só aparece para o administrador) */
+TILES_CFG.push({titulo: 'Contas', sub: 'Quem pode alterar o site', ico: 'cadeado', abre: 'href="#/configuracoes/contas" data-soadmin'});
+
+/* Inicialização: primeiro descobre quem está conectado, depois abre a página */
+iniciarAuth().finally(route);
 </script>
 </body>
 </html>
