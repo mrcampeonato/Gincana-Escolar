@@ -215,7 +215,8 @@ button:disabled,input:disabled,select:disabled,.csel:disabled{opacity:.45;cursor
 @media (max-width:380px){.vst input{width:50px}.vst .sb{width:40px}}
 .fim-campos{border-left:3px solid #1f9d55;padding-left:10px}
 .fim-campos input:disabled,.fim-campos select:disabled,.fim-campos .csel:disabled{opacity:1;color:var(--ink);-webkit-text-fill-color:var(--ink);background:var(--card);border-color:var(--line);cursor:default}
-.fim-campos button:disabled{visibility:hidden}
+.fim-campos button:disabled:not(.csel){visibility:hidden}
+.fim-campos .filters{display:none}
 
 /* Janela do regulamento */
 .reg-dlg{border:1px solid var(--line);border-radius:14px;padding:0;width:min(680px,calc(100vw - 24px));max-height:calc(100vh - 48px);background:var(--card);color:var(--ink);overflow:hidden}
@@ -434,6 +435,10 @@ select[data-csel]{position:absolute!important;width:1px!important;height:1px!imp
 .cand-todos:hover{color:var(--ink)}
 .insc-row.cand:has(input:checked){background:rgba(31,157,85,.07)}
 .insc-row.cand:has(input:checked) .mem-nome{color:#1f9d55}
+/* Confirmação digitada (Zerar tudo) */
+.cx-dig{display:grid;gap:6px;margin-top:14px;white-space:normal;font-size:13px;font-weight:600;color:var(--mute);text-align:left}
+.cx-dig strong{color:var(--ink)}
+
 /* ==========================================================================
    CAMADA MODERNA: visual renovado e animações (não altera nenhuma função)
    ========================================================================== */
@@ -752,7 +757,8 @@ const ROUTES = {
  '#/configuracoes/inscricoes': 'insc',
  '#/configuracoes/cronograma': 'cronoed',     // montagem do cronograma (Configurações)       // inscrições nas modalidades (pela página de integrantes)
  '#/instagram': 'insta',                     // modalidade extra (acesso por Modalidades)
- '#/torcida': 'torc'                         // modalidade extra (acesso por Modalidades)
+ '#/torcida': 'torc',                        // modalidade extra (acesso por Modalidades)
+ '#/configuracoes/dados': 'dados'            // planilha de resultados e zerar tudo (Configurações)
 };
 
 /* Colunas da tabela cfg que cada página precisa ler (requisição focada) */
@@ -764,6 +770,7 @@ const COLS = {
  torc:    'teams,fan,fans,colors,mods',
  membros: 'teams,colors,cats',
  memver:  'teams,colors,cats',
+ dados:   'teams',
  insc:    'teams,colors,cats,mods',
  crono:   'teams,mods,cats,locais,arbitros,periodo',
  cronoed: 'teams,mods,cats,locais,arbitros,periodo',
@@ -794,7 +801,7 @@ function setPath(o, path, val) { const k = path.split('.'); for (let n=0; n<k.le
    ========================================================================== */
 const SUPABASE_URL = 'https://eeqahersokenqsmfwpfb.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVlcWFoZXJzb2tlbnFzbWZ3cGZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MjgyNjksImV4cCI6MjEwNjUwNDI2OX0.5oErD8Un5o15G3Vow6YMfgb1d6pJhXdudkKjG4sHxZs';
-const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+const db = null; // PRÉVIA: conexão com o Supabase desativada (o artefato bloqueia acesso a servidores externos)
 
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)) } catch (e) {} };
 const fail = e => avisar('Não foi possível salvar no servidor: ' + (e && (e.message || e.code) || JSON.stringify(e)));
@@ -1036,8 +1043,7 @@ const Views = {
  cfg() {
   return`<section class="panel"><h2>Equipes</h2><p class="muted">Escolha a cor de cada equipe. Ela aparece como fundo do nome nos placares das partidas, por isso as cores são claras para o texto preto ficar sempre legível.</p><div class="row">${T.map(i => `<div class="cfg-eq"><input data-cfg="teams.${i}" value="${esc(S.teams[i])}" aria-label="Equipe ${i+1}"><div class="sws" role="group" aria-label="Cor da equipe ${i+1}">${PALETA.map(([c, n]) => `<button class="sw" data-sw="${i},${c}" style="background:${c}" aria-pressed="${corEquipe(i)==c}" title="${n}" aria-label="${n}"></button>`).join('')}</div></div>`).join('')}</div></section>
   <section class="panel"><h2>Pontos por posição</h2><div class="row" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${T.map(i => `<label style="font-size:12px">${i+1}º lugar <input type="number" min="0" data-cfg="pts.${i}" value="${S.pts[i]}"></label>`).join('')}</div>
-  <div class="row" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><label style="font-size:12px">Pts torcedor <input type="number" min="0" data-cfg="fan" value="${S.fan}"></label><label style="font-size:12px">Pts dia post <input type="number" min="0" data-cfg="ig" value="${S.ig}"></label></div></section>
-  <section class="panel"><h2>Dados</h2><p class="muted">Exporte um backup para guardar os resultados confirmados.</p><div class="row"><button class="btn" data-export>Exportar backup</button><button class="btn warn" data-reset>Zerar tudo</button></div></section>`;
+  <div class="row" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><label style="font-size:12px">Pts torcedor <input type="number" min="0" data-cfg="fan" value="${S.fan}"></label><label style="font-size:12px">Pts dia post <input type="number" min="0" data-cfg="ig" value="${S.ig}"></label></div></section>`;
  }
 };
 
@@ -1132,7 +1138,7 @@ function pvHTML(t, d, final) {
 function sec(ci) { const el = $('sec'+ci); if (el) el.innerHTML = secHTML(ci); }
 
 function renderNav() {
- const ativa = pg == 'modedit' || pg == 'membros' || pg == 'insc' || pg == 'cronoed' ? 'cfg' : pg == 'insta' || pg == 'torc' ? 'mod' : pg;
+ const ativa = pg == 'modedit' || pg == 'membros' || pg == 'insc' || pg == 'cronoed' || pg == 'dados' ? 'cfg' : pg == 'insta' || pg == 'torc' ? 'mod' : pg;
  $('tabs').innerHTML = TABS.map(([k, n, h]) => `<a href="${h}" ${ativa==k?'aria-current="page"':''} ${k=='cfg'?'aria-label="Configurações" title="Configurações"':''}>${k=='cfg' ? icone('eng') : k=='placar' ? 'Placar<span class="nav-x">geral</span>' : n}</a>`).join('');
 }
 
@@ -1253,13 +1259,141 @@ function reopen(ci, x) {
  sec(ci);
 }
 
-/* Backup: busca tudo do servidor antes de exportar, já que cada página carrega só o que usa */
-async function exportar() {
- try { await DB.fetchCfg('*'); await DB.fetchAllRes(); save(); } catch (e) { console.error(e); }
- const a = document.createElement('a');
- a.href = URL.createObjectURL(new Blob([JSON.stringify(S)], {type:'application/json'}));
- a.download = 'olimpiadas-backup.json';
- a.click();
+/* Planilha de resultados: placar geral numa aba e cada modalidade em outra.
+   Busca tudo do servidor antes, já que cada página carrega só o que usa.
+   O gerador de planilhas (SheetJS) só é baixado na hora de exportar. */
+let xlsxProm = null;
+function carregarXLSX() {
+ if (window.XLSX) return Promise.resolve(window.XLSX);
+ if (!xlsxProm) xlsxProm = new Promise((ok, erro) => {
+  const s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+  s.onload = () => window.XLSX ? ok(window.XLSX) : erro(new Error('gerador de planilhas indisponível'));
+  s.onerror = () => { xlsxProm = null; erro(new Error('não foi possível carregar o gerador de planilhas')); };
+  document.head.appendChild(s);
+ });
+ return xlsxProm;
+}
+
+const eqNome = i => i === '' || i == null || S.teams[+i] == null ? '' : S.teams[+i];
+
+/* Linhas de uma categoria de uma modalidade */
+function planCategoria(a, c) {
+ const d = S.res[rk(a, c.id)] || {}, L = [], p = place(a.t, d, a);
+ const cls = d.modo === 'class';
+ L.push([c.n]);
+ if (a.t == 'chav') {
+  const x = chavM(d), feitas = ['s1', 's2', 't3', 'f'].filter(k => x[k] && x[k].ok && win(x[k])).length;
+  L.push(['Situação', feitas == 4 ? 'Confirmado' : feitas ? `${feitas} de 4 partidas confirmadas` : 'Sem resultado confirmado']);
+  L.push([]);
+  L.push(['Partida', 'Equipe A', 'Placar A', 'Placar B', 'Equipe B', 'Desempate A', 'Desempate B', 'Vencedor']);
+  [['s1', 'Semifinal 1'], ['s2', 'Semifinal 2'], ['t3', 'Disputa de 3º lugar'], ['f', 'Final']].forEach(([k, n]) => {
+   const m = x[k] || {}, w = win(m), ok = !!(m.ok && w);
+   const tie = ok && num(m.sa) === num(m.sb);
+   L.push([n, eqNome(m.a) || 'A definir', ok ? num(m.sa) : '', ok ? num(m.sb) : '', eqNome(m.b) || 'A definir', tie ? num(m.da) : '', tie ? num(m.db) : '', ok ? eqNome(w[0]) : 'Pendente']);
+  });
+ } else {
+  L.push(['Situação', d.ok ? 'Confirmado' : 'Sem resultado confirmado']);
+  if (d.ok && !cls) {
+   L.push([]);
+   if (a.t == 'marca') {
+    L.push(['Atleta', 'Equipe', a.u == 'dist' ? 'Distância' : 'Tempo']);
+    (d.e || []).filter(e => e && (e.t || e.n || (e.team !== '' && e.team != null))).forEach(e => L.push([e.n || '', eqNome(e.team), e.t || '']));
+   } else if (a.t == 'crit') {
+    const nomes = critNomes(a, c.id);
+    L.push(['Equipe', ...nomes, 'Total']);
+    T.forEach(t => { const v = d.c?.[t] || []; L.push([eqNome(t), ...nomes.map((_, k) => num(v[k]) ?? ''), v.some(x => x !== '' && x != null) ? Math.round(v.reduce((s, b) => s + (+b || 0), 0) * 100) / 100 : '']); });
+   } else if (a.t == 'pontos') {
+    L.push(['Equipe', 'Pontuação']);
+    T.forEach(t => L.push([eqNome(t), num(d.v?.[t]) ?? '']));
+   }
+  }
+ }
+ L.push([]);
+ L.push(['Classificação']);
+ if (p) {
+  const vf = a.t == 'chav' ? null : valorFinal(a.t, d, a);
+  L.push(vf ? ['Posição', 'Equipe', 'Resultado', 'Pontos ganhos'] : ['Posição', 'Equipe', 'Pontos ganhos']);
+  T.filter(i => p[i]).sort((x, y) => p[x] - p[y]).forEach(i => L.push(vf ? [`${p[i]}º`, eqNome(i), vf[i] || '', S.pts[p[i] - 1] || 0] : [`${p[i]}º`, eqNome(i), S.pts[p[i] - 1] || 0]));
+ } else L.push(['Sem resultado confirmado']);
+ L.push([], []);
+ return L;
+}
+
+function planModalidade(a) {
+ const L = [[a.n], ['Tipo', descTipo(a)]];
+ if (a.t == 'extra') {
+  const e = extraLanc(a), soma = extraSoma(a);
+  L.push([], ['Descrição', 'Equipe', 'Pontos']);
+  e.length ? e.forEach(x => L.push([x.desc || '', eqNome(x.team), +x.pts || 0])) : L.push(['Nenhum lançamento']);
+  L.push([], ['Total por equipe'], ['Equipe', 'Pontos']);
+  T.forEach(i => L.push([eqNome(i), soma[i]]));
+  return L;
+ }
+ L.push([]);
+ catsDe(a).forEach(c => planCategoria(a, c).forEach(l => L.push(l)));
+ return L;
+}
+
+function planInstagram() {
+ const L = [['Instagram'], ['Pontos por dia de post', S.ig], [], ['Dia', ...T.map(eqNome)]];
+ for (let d = 0; d < 20; d++) L.push([`Dia ${d + 1}`, ...T.map(i => S.insta[i]?.[d] ? 'Postou' : '')]);
+ L.push([], ['Dias com post', ...T.map(i => (S.insta[i] || []).filter(Boolean).length)], ['Pontos', ...T.map(i => (S.insta[i] || []).filter(Boolean).length * S.ig)]);
+ return L;
+}
+
+function planTorcida() {
+ const f = S.fans || [], L = [['Torcida famosa'], ['Pontos por torcedor', S.fan], [], ['Torcedor(a)', 'Equipe']];
+ f.length ? f.forEach(x => L.push([x.name || '', eqNome(x.team)])) : L.push(['Nenhum torcedor cadastrado']);
+ L.push([], ['Equipe', 'Torcedores', 'Pontos']);
+ T.forEach(i => { const n = f.filter(x => +x.team === i).length; L.push([eqNome(i), n, n * S.fan]); });
+ return L;
+}
+
+function planPlacar() {
+ const o = totals(), ordem = T.slice().sort((a, b) => o.tot[b] - o.tot[a]);
+ const L = [[nomeJogos()], ['Exportado em', new Date().toLocaleString('pt-BR')], [], ['Classificação geral'], ['Posição', 'Equipe', 'Pontos']];
+ ordem.forEach((i, k) => L.push([`${k + 1}º`, eqNome(i), o.tot[i]]));
+ L.push([], ['Pontos por categoria'], ['Categoria', ...T.map(eqNome)]);
+ CATS.forEach(c => L.push([c.n, ...o.cat[c.id]]));
+ L.push(['Instagram', ...o.ig], ['Torcida famosa', ...o.fn]);
+ o.ex.forEach(x => L.push([x.n, ...x.v]));
+ L.push(['Total geral', ...o.tot]);
+ return L;
+}
+
+/* Nome de aba válido no Excel: até 31 caracteres, sem : \ / ? * [ ] e sem repetir */
+function nomeAba(n, usados) {
+ let base = String(n || 'Aba').replace(/[:\\\/?*\[\]]/g, '-').trim().slice(0, 31) || 'Aba', nome = base, k = 2;
+ while (usados.has(nome.toLowerCase())) { const suf = ` (${k++})`; nome = base.slice(0, 31 - suf.length) + suf; }
+ usados.add(nome.toLowerCase());
+ return nome;
+}
+
+async function exportar(btn) {
+ const txt = btn ? btn.textContent : '';
+ if (btn) { btn.disabled = true; btn.textContent = 'Gerando planilha…'; }
+ try {
+  try { await DB.fetchCfg('*'); await DB.fetchAllRes(); save(); } catch (e) { console.error(e); }
+  const X = await carregarXLSX(), wb = X.utils.book_new(), usados = new Set();
+  const aba = (nome, linhas) => {
+   const ws = X.utils.aoa_to_sheet(linhas), larg = [];
+   linhas.forEach(l => l.forEach((v, i) => { larg[i] = Math.min(40, Math.max(larg[i] || 8, String(v ?? '').length + 2)); }));
+   ws['!cols'] = larg.map(w => ({wch: w}));
+   X.utils.book_append_sheet(wb, ws, nomeAba(nome, usados));
+  };
+  aba('Placar geral', planPlacar());
+  [...ACTS.map(a => ({n: a.n, f: () => planModalidade(a)})), {n: 'Instagram', f: planInstagram}, {n: 'Torcida famosa', f: planTorcida}]
+   .sort((x, y) => x.n.localeCompare(y.n, 'pt-BR', {sensitivity: 'base'}))
+   .forEach(x => aba(x.n, x.f()));
+  const hoje = new Date(), dt = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+  X.writeFile(wb, `${slug(nomeJogos()) || 'olimpiadas'}-resultados-${dt}.xlsx`);
+ } catch (e) {
+  console.error(e);
+  avisar('Não foi possível gerar a planilha: ' + (e && e.message || e));
+ } finally {
+  if (btn && document.contains(btn)) { btn.disabled = false; btn.textContent = txt; }
+ }
 }
 
 /* ==========================================================================
@@ -1302,14 +1436,16 @@ document.addEventListener('click', async e => {
    if (k > -1) S.fans.splice(k, 1);
   }).then(render);
  }
- else if (g('export')!==undefined) exportar();
+ else if (g('export')!==undefined) exportar(t);
  else if (g('reset')!==undefined) {
-  if (await confirmar('Apagar os resultados e configurações deste aparelho e do servidor?')) {
+  if (await confirmarDigitando('Apagar os resultados de todas as modalidades, os posts do Instagram e a torcida famosa, e voltar nomes, cores e pontos das equipes ao padrão, neste aparelho e no servidor?\nEssa ação não pode ser desfeita.', 'Zerar tudo')) {
    S = fresh(); Object.keys(D).forEach(k => delete D[k]);
+   t.disabled = true;
    (async () => {
     await DB.saveAllCfg();
     if (db) { const { error } = await db.from('res').delete().neq('id', ''); if (error) fail(error); }
     render();
+    avisar('Tudo zerado.');
    })();
   }
  }
@@ -1642,6 +1778,23 @@ function caixa(msg, ok, cancelar) {
 }
 const confirmar = msg => caixa(msg, 'Confirmar', 'Cancelar');
 const avisar = msg => caixa(msg, 'OK');
+
+/* Confirmação que só libera o botão depois de digitar a palavra exata (ex.: "Zerar tudo") */
+function confirmarDigitando(msg, palavra) {
+ return new Promise(res => {
+  const dlg = $('cxdlg'), norm = s => String(s || '').trim().replace(/\s+/g, ' ').toLowerCase();
+  dlg.innerHTML = `<div class="reg-box"><div class="reg-body cx-body">${esc(msg)}<label class="cx-dig"><span>Para confirmar, digite <strong>${esc(palavra)}</strong></span><input id="cxtxt" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="${esc(palavra)}"></label></div><div class="reg-foot"><button class="btn alt" data-cx="0">Cancelar</button><button class="btn warn" data-cx="1" disabled>${esc(palavra)}</button></div></div>`;
+  const inp = $('cxtxt'), ok = dlg.querySelector('[data-cx="1"]');
+  const valido = () => norm(inp.value) === norm(palavra);
+  const fim = v => { dlg.onclick = null; dlg.oncancel = null; if (dlg.open) dlg.close(); res(v); };
+  inp.oninput = () => { ok.disabled = !valido(); };
+  inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); if (valido()) fim(true); } };
+  dlg.onclick = e => { const b = e.target.closest('[data-cx]'); if (b && !b.disabled) fim(b.dataset.cx === '1'); };
+  dlg.oncancel = e => { e.preventDefault(); fim(false); };
+  if (!dlg.open) dlg.showModal();
+  inp.focus();
+ });
+}
 
 /* ==========================================================================
    11. CATEGORIAS (editáveis nas Configurações)
@@ -4058,6 +4211,20 @@ crConflitosHTML = function () {
  if (base) return base.replace('</section>', bloco + '</section>');
  return `<section class="panel cr-conf"><h2>Ajustes necessários <span class="cr-n">${fora.length}</span></h2><p class="muted">Atividades fora das datas ou dos turnos definidos no período dos jogos. Toque para reagendar.</p>${bloco}</section>`;
 };
+
+/* ==========================================================================
+   33. DADOS (atalho nas Configurações): planilha de resultados e zerar tudo
+   ========================================================================== */
+Views.dados = () => `<div class="page-head"><a class="back" href="#/configuracoes">← Voltar às configurações</a></div>
+ <section class="panel"><h2>Planilha de resultados</h2><p class="muted">Baixa uma planilha do Excel com o placar geral numa aba e cada modalidade em outra, com os resultados de todas as categorias.</p><div class="row"><button class="btn" data-export>Baixar planilha</button></div></section>
+ <section class="panel"><h2>Zerar tudo</h2><p class="muted">Apaga os resultados de todas as modalidades, os posts do Instagram e a torcida famosa, e volta nomes, cores e pontos das equipes ao padrão. Modalidades, categorias, integrantes, inscrições e regulamentos são mantidos. Para confirmar, será preciso digitar “Zerar tudo”.</p><div class="row"><button class="btn warn" data-reset>Zerar tudo</button></div></section>`;
+
+/* Atalho "Dados" junto dos outros blocos das Configurações */
+const iconeAntesDados = icone;
+icone = n => n === 'planilha'
+ ? '<svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>'
+ : iconeAntesDados(n);
+TILES_CFG.push({titulo: 'Dados', sub: 'Planilha de resultados e zerar tudo', ico: 'planilha', abre: 'href="#/configuracoes/dados"'});
 
 /* Inicialização */
 route();
