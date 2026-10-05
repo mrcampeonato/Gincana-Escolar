@@ -668,6 +668,12 @@ input[type=checkbox]:focus{box-shadow:none}
  .cr-dias{justify-content:flex-start}
 }
 
+/* Período dos jogos */
+.per-dias{display:grid;gap:6px}
+.per-dia{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line)}
+.per-dia>span{font-weight:600;font-size:14px;text-transform:capitalize;color:var(--ink)}
+.per-almoco{text-align:left!important;margin:-4px 0 0}
+
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -759,9 +765,9 @@ const COLS = {
  membros: 'teams,colors,cats',
  memver:  'teams,colors,cats',
  insc:    'teams,colors,cats,mods',
- crono:   'teams,mods,cats,locais,arbitros',
- cronoed: 'teams,mods,cats,locais,arbitros',
- cfg:     'teams,pts,fan,ig,mods,colors,cats,locais,arbitros',
+ crono:   'teams,mods,cats,locais,arbitros,periodo',
+ cronoed: 'teams,mods,cats,locais,arbitros,periodo',
+ cfg:     'teams,pts,fan,ig,mods,colors,cats,locais,arbitros,periodo',
  modedit: 'mods,cats,ig,fan,locais,arbitros'
 };
 
@@ -804,7 +810,7 @@ function removeRes(id) { const k = parseId(id); if (k) delete S.res[k]; }
 
 function applyCfg(d) {
  if (!d) return;
- ['teams', 'pts', 'fan', 'ig', 'insta', 'fans', 'mods', 'colors', 'cats', 'nome', 'locais', 'arbitros'].forEach(k => { if (d[k] != null) S[k] = d[k]; });
+ ['teams', 'pts', 'fan', 'ig', 'insta', 'fans', 'mods', 'colors', 'cats', 'nome', 'locais', 'arbitros', 'periodo'].forEach(k => { if (d[k] != null) S[k] = d[k]; });
  if (d.nome != null) aplicarNome();
  if (d.cats != null) { buildCats(); syncCat(); }
  if (d.colors != null) aplicarCores();
@@ -3614,7 +3620,7 @@ Views.cronoed = () => {
 };
 
 /* Lista de conflitos já existentes (local ou árbitro com duas atividades ao mesmo tempo) */
-function crConflitosHTML() {
+let crConflitosHTML = function () {
  const l = [], vistos = new Set();
  itensAgenda().filter(x => x.ok).forEach(x => {
   const k = conflitos(x);
@@ -3629,7 +3635,7 @@ function crConflitosHTML() {
   <p class="muted">Duas atividades no mesmo local ou com o mesmo árbitro ao mesmo tempo. Toque para reagendar.</p>
   ${l.map(c => `<div class="cr-crow"><span class="cr-ctit">${c.rot}: <strong>${esc(c.nome)}</strong> · ${fmtDia(c.a.dt)}</span><span class="cr-pcats">${[c.a, c.b].map(x => `<button class="cr-pchip" data-cragendar="${x.mod},${x.cat}">${esc(x.n)} · ${esc(catNome(x.cat))} · ${faixa(x)}</button>`).join('')}</span></div>`).join('')}
  </section>`;
-}
+};
 
 /* ---------- Janela de agendamento com checagem de disponibilidade ---------- */
 document.body.insertAdjacentHTML('beforeend', '<dialog id="crdlg" class="reg-dlg" aria-label="Agendar atividade"></dialog>');
@@ -3847,6 +3853,210 @@ salvarAgenda = async function (id, limpar) {
   await DB.patchCfg(['mods'], () => { S.mods = listaMods(); const x = S.mods.find(y => y.id === id); if (x) { if (sem) x.sc = 1; else delete x.sc; } buildActs(); });
  }
  return salvarAntesSemCrono(id, limpar);
+};
+
+/* ==========================================================================
+   32. PERÍODO DOS JOGOS (datas e turnos de cada dia)
+   Define os dias e horários em que pode haver atividade. O cronograma só oferece
+   esses dias e horários, respeitando a pausa do almoço entre manhã e tarde.
+   ========================================================================== */
+const TURNOS = [['integral', 'Dia todo'], ['manha', 'Só manhã'], ['tarde', 'Só tarde'], ['folga', 'Sem jogos']];
+const PER_PADRAO = {manha: {ini: '07:30', fim: '12:00'}, tarde: {ini: '13:30', fim: '17:30'}};
+const PASSO = 10;   // intervalo entre os horários oferecidos
+const per = () => (S.periodo && S.periodo.ini && S.periodo.fim) ? S.periodo : null;
+const fimDeSemana = dt => { const d = new Date(dt + 'T12:00:00').getDay(); return d === 0 || d === 6; };
+function datasEntre(ini, fim) { const l = []; let d = new Date(ini + 'T12:00:00'); const f = new Date(fim + 'T12:00:00'); while (d <= f && l.length < 120) { l.push(d.toISOString().slice(0, 10)); d.setDate(d.getDate() + 1); } return l; }
+const turnoDe = (p, dt) => (p.dias || {})[dt] || 'integral';
+const turnoNome = t => ({integral: 'dia todo', manha: 'manhã', tarde: 'tarde', folga: 'sem jogos'})[t] || t;
+/* dias com jogos dentro do período */
+function diasPeriodo() {
+ const p = per(); if (!p) return [];
+ return datasEntre(p.ini, p.fim).filter(dt => (p.fds || !fimDeSemana(dt)) && turnoDe(p, dt) !== 'folga').map(dt => ({dt, turno: turnoDe(p, dt)}));
+}
+/* faixas (em minutos) em que pode haver atividade no dia */
+function janelas(dt) {
+ const p = per(); if (!p) return [[DIA_INI, DIA_FIM]];
+ if (!diasPeriodo().some(x => x.dt === dt)) return [];
+ const m = [toMin(p.manha.ini), toMin(p.manha.fim)], t = [toMin(p.tarde.ini), toMin(p.tarde.fim)], tu = turnoDe(p, dt);
+ return tu === 'manha' ? [m] : tu === 'tarde' ? [t] : [m, t];
+}
+const cabe = (dt, hr, dur) => janelas(dt).some(([a, b]) => toMin(hr) >= a && toMin(hr) + (dur || DUR_PADRAO) <= b);
+const janelasTxt = dt => janelas(dt).map(([a, b]) => `${fmtMin(a)}–${fmtMin(b)}`).join(' e ');
+
+/* ---------- Janela de configuração ---------- */
+document.body.insertAdjacentHTML('beforeend', '<dialog id="perdlg" class="reg-dlg" aria-label="Período dos jogos"></dialog>');
+let perTmp = null;
+function perDiasHTML() {
+ const ini = $('perini').value, fim = $('perfim').value, fds = $('perfds').checked;
+ if (!ini || !fim || fim < ini) return '<p class="muted">Informe o início e o término para ver os dias.</p>';
+ const l = datasEntre(ini, fim).filter(dt => fds || !fimDeSemana(dt));
+ if (!l.length) return '<p class="muted">Nenhum dia no período.</p>';
+ return l.map(dt => `<div class="per-dia"><span>${fmtDia(dt)}</span><select data-perdia="${dt}" aria-label="Turno de ${fmtDia(dt)}">${TURNOS.map(([v, n]) => `<option value="${v}" ${(perTmp.dias[dt] || 'integral') === v ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`).join('');
+}
+function abrirPeriodo() {
+ const p = S.periodo || {};
+ perTmp = {dias: {...(p.dias || {})}};
+ const m = p.manha || PER_PADRAO.manha, t = p.tarde || PER_PADRAO.tarde;
+ $('perdlg').innerHTML = `<div class="reg-box">
+  <div class="reg-head"><h2>Período dos jogos</h2><button class="btn alt" data-perfechar aria-label="Fechar">✕</button></div>
+  <div class="reg-body" style="white-space:normal"><div class="mem-form">
+   <div class="ag-grid"><label>Início<input id="perini" type="date" value="${esc(p.ini || '')}"></label><label>Término<input id="perfim" type="date" value="${esc(p.fim || '')}"></label></div>
+   <span class="nv-tit">Manhã</span>
+   <div class="ag-grid"><label>Começa<input id="permi" type="time" step="300" value="${esc(m.ini)}"></label><label>Termina<input id="permf" type="time" step="300" value="${esc(m.fim)}"></label></div>
+   <span class="nv-tit">Tarde</span>
+   <div class="ag-grid"><label>Começa<input id="perti" type="time" step="300" value="${esc(t.ini)}"></label><label>Termina<input id="pertf" type="time" step="300" value="${esc(t.fim)}"></label></div>
+   <p class="muted per-almoco" id="peralmoco"></p>
+   <label class="ag-por"><input type="checkbox" id="perfds" ${p.fds ? 'checked' : ''}> Incluir sábados e domingos</label>
+   <span class="nv-tit">Turno de cada dia</span>
+   <div id="perdias" class="per-dias"></div>
+  </div></div>
+  <div class="reg-foot mem-foot">${per() ? '<button class="btn warn" data-perlimpar>Remover período</button>' : ''}<span class="mem-esp"></span><button class="btn alt" data-perfechar>Cancelar</button><button class="btn" data-persalvar>Salvar</button></div>
+ </div>`;
+ if (!$('perdlg').open) $('perdlg').showModal();
+ perAtualiza();
+}
+function perAtualiza() {
+ $('perdias').innerHTML = perDiasHTML();
+ const mf = $('permf').value, ti = $('perti').value;
+ $('peralmoco').textContent = mf && ti && toMin(ti) > toMin(mf) ? `Almoço: ${mf} às ${ti} (sem atividades nesse intervalo)` : '';
+}
+async function perSalvar(btn) {
+ const ini = $('perini').value, fim = $('perfim').value;
+ const m = {ini: $('permi').value, fim: $('permf').value}, t = {ini: $('perti').value, fim: $('pertf').value};
+ if (!ini || !fim) { avisar('Informe a data de início e de término dos jogos.'); return; }
+ if (fim < ini) { avisar('A data de término deve ser igual ou depois da data de início.'); return; }
+ if (datasEntre(ini, fim).length > 90) { avisar('O período pode ter no máximo 90 dias.'); return; }
+ const v = [m.ini, m.fim, t.ini, t.fim].map(toMin);
+ if (v.some(x => x == null)) { avisar('Preencha os horários da manhã e da tarde.'); return; }
+ if (!(v[0] < v[1] && v[1] <= v[2] && v[2] < v[3])) { avisar('Confira os horários: a manhã termina antes de a tarde começar, e cada turno termina depois de começar.'); return; }
+ const fds = $('perfds').checked, dias = {};
+ datasEntre(ini, fim).forEach(dt => { const x = perTmp.dias[dt]; if (x && x !== 'integral') dias[dt] = x; });
+ btn.disabled = true;
+ await DB.patchCfg(['periodo'], () => { S.periodo = {ini, fim, manha: m, tarde: t, fds, dias}; });
+ $('perdlg').close();
+ render();
+}
+document.addEventListener('click', async e => {
+ const b = e.target.closest('button'); if (!b) return;
+ const d = b.dataset;
+ if (d.perabrir !== undefined) abrirPeriodo();
+ else if (d.perfechar !== undefined) $('perdlg').close();
+ else if (d.persalvar !== undefined) perSalvar(b);
+ else if (d.perlimpar !== undefined) {
+  if (!await confirmar('Remover o período dos jogos? O cronograma volta a aceitar qualquer dia e horário.')) return;
+  await DB.patchCfg(['periodo'], () => { S.periodo = {}; });
+  $('perdlg').close(); render();
+ }
+});
+document.addEventListener('change', e => {
+ const id = e.target.id;
+ if (['perini', 'perfim', 'perfds', 'permf', 'perti'].includes(id)) perAtualiza();
+ else if (e.target.dataset && e.target.dataset.perdia) perTmp.dias[e.target.dataset.perdia] = e.target.value;
+});
+/* atalho nas Configurações, antes do Cronograma */
+TILES_CFG.splice(TILES_CFG.findIndex(t => t.titulo === 'Cronograma'), 0, {titulo: 'Período dos jogos', sub: 'Datas, turnos e pausa do almoço', ico: 'rel', abre: 'data-perabrir=""'});
+
+/* ---------- Cronograma: só dias e horários disponíveis ---------- */
+/* Dia vira lista com os dias do período; Início vira lista com os horários que cabem nos turnos */
+function crDiasOpcoes(atual) {
+ const l = diasPeriodo().map(x => [x.dt, `${fmtDia(x.dt)} · ${turnoNome(x.turno)}`]);
+ if (atual && !l.some(x => x[0] === atual)) l.unshift([atual, `${fmtDia(atual)} · fora do período`]);
+ return [['', '— escolha o dia —'], ...l].map(([v, n]) => `<option value="${v}" ${v === atual ? 'selected' : ''}>${esc(n)}</option>`).join('');
+}
+function crHorasOpcoes(c) {
+ const ops = [['', c.dt ? '— escolha o horário —' : 'Escolha o dia primeiro']];
+ if (c.dt) janelas(c.dt).forEach(([a, b]) => {
+  for (let t = Math.ceil(a / PASSO) * PASSO; t + c.dur <= b; t += PASSO) {
+   const k = c.mod && c.cat !== '' ? conflitos({...c, hr: fmtMin(t)}) : {loc: [], arb: [], cat: []};
+   const obs = [k.loc.length && 'local ocupado', k.arb.length && 'árbitro ocupado', k.cat.length && 'categoria com outra atividade'].filter(Boolean).join(', ');
+   ops.push([fmtMin(t), `${fmtMin(t)}–${fmtMin(t + c.dur)}${obs ? ' · ' + obs : ''}`]);
+  }
+ });
+ if (c.hr && !ops.some(o => o[0] === c.hr)) ops.push([c.hr, `${c.hr} · fora do horário dos jogos`]);
+ return ops.map(([v, n]) => `<option value="${v}" ${v === c.hr ? 'selected' : ''}>${esc(n)}</option>`).join('');
+}
+function crTrocarCampos() {
+ if (!per()) return;
+ const dt = $('crdt'), hr = $('crhr');
+ if (dt && dt.tagName === 'INPUT') { const v = dt.value; dt.outerHTML = `<select id="crdt">${crDiasOpcoes(v)}</select>`; }
+ if (hr && hr.tagName === 'INPUT') { const v = hr.value; hr.outerHTML = `<select id="crhr"><option value="${esc(v)}" selected>${esc(v)}</option></select>`; }
+ crHoras();
+}
+function crHoras() {
+ const sel = $('crhr'); if (!sel || sel.tagName !== 'SELECT') return;
+ const c = crLer(); sel.innerHTML = crHorasOpcoes(c); sel.value = c.hr;
+}
+const abrirCronoAntesPer = abrirCrono;
+abrirCrono = function (mod, cat) {
+ abrirCronoAntesPer(mod, cat);
+ crTrocarCampos(); crStatus();
+ if (per()) { const ds = diasPeriodo(); if (!ds.length) avisar('Não há dias com jogos no período configurado. Ajuste o período nas Configurações.'); }
+};
+const crPreencherAntesPer = crPreencher;
+crPreencher = function (a, cat) {
+ const e = crPadrao(a, cat);
+ if (per() && $('crdt').tagName === 'SELECT') { $('crdt').innerHTML = crDiasOpcoes(e.dt || $('crdt').value); }
+ crPreencherAntesPer(a, cat);
+ if (per() && $('crhr').tagName === 'SELECT') { const sel = $('crhr'); sel.innerHTML = crHorasOpcoes({...crLer(), hr: e.hr || ''}); sel.value = e.hr || ''; }
+ crStatus();
+};
+const crAtualizaAntesPer = crAtualiza;
+crAtualiza = function () { crHoras(); crAtualizaAntesPer(); };
+/* Disponibilidade também mostra se o horário está dentro do período e dos turnos */
+const crStatusAntesPer = crStatus;
+crStatus = function () {
+ crStatusAntesPer();
+ const c = crLer(), box = $('crstatus'); if (!box || !per() || !c.dt) return;
+ const ul = box.querySelector('.cr-status'); if (!ul) return;
+ const dentro = c.hr && cabe(c.dt, c.hr, c.dur);
+ ul.insertAdjacentHTML('afterbegin', dentro
+  ? `<li class="bom"><strong>Dentro do horário dos jogos</strong> (${esc(janelasTxt(c.dt))})</li>`
+  : `<li class="ruim"><strong>Fora do horário dos jogos</strong>. Neste dia: ${esc(janelasTxt(c.dt) || 'sem jogos')}</li>`);
+};
+/* Sugestão: primeiro horário livre dentro dos turnos, no dia escolhido e, se preciso, nos dias seguintes */
+const crSugerirAntesPer = crSugerir;
+crSugerir = function () {
+ if (!per()) return crSugerirAntesPer();
+ const c = crLer();
+ if (!c.mod || c.cat === '') { avisar('Escolha a modalidade e a categoria para receber uma sugestão.'); return; }
+ const dias = diasPeriodo().map(x => x.dt), i0 = Math.max(0, dias.indexOf(c.dt));
+ for (const dt of dias.slice(i0)) {
+  for (const [a, b] of janelas(dt)) {
+   const ini = dt === c.dt && c.hr ? Math.max(a, toMin(c.hr)) : a;
+   for (let t = Math.ceil(ini / PASSO) * PASSO; t + c.dur <= b; t += PASSO) {
+    const k = conflitos({...c, dt, hr: fmtMin(t)});
+    if (!k.loc.length && !k.arb.length && !k.cat.length) {
+     $('crdt').value = dt; crHoras(); $('crhr').value = fmtMin(t); crAtualiza();
+     if (dt !== c.dt) avisar(`Sem horário livre no dia escolhido. Sugestão: ${fmtDia(dt)} às ${fmtMin(t)}.`);
+     return;
+    }
+   }
+  }
+ }
+ avisar('Não há horário livre no período para esse local, árbitro e categoria. Tente outro local ou árbitro, ou mude a duração.');
+};
+/* Salvar: não aceita horário fora do período ou atravessando o almoço */
+const crSalvarAntesPer = crSalvar;
+crSalvar = async function (btn, limpar) {
+ const c = crLer();
+ if (!limpar && per() && c.dt && c.hr && !cabe(c.dt, c.hr, c.dur)) {
+  avisar(`Esse horário está fora do horário dos jogos.\nEm ${fmtDia(c.dt)}: ${janelasTxt(c.dt) || 'sem jogos'}.\nEscolha um horário da lista ou toque em “Sugerir horário livre”.`);
+  return;
+ }
+ return crSalvarAntesPer(btn, limpar);
+};
+document.addEventListener('change', e => { if (e.target.id === 'crdt' && e.target.tagName === 'SELECT') crAtualiza(); });
+
+/* Atividades já agendadas fora do período entram no quadro de conflitos */
+const crConflitosAntesPer = crConflitosHTML;
+crConflitosHTML = function () {
+ const base = crConflitosAntesPer();
+ if (!per()) return base;
+ const fora = itensAgenda().filter(x => x.ok && !cabe(x.dt, x.hr, x.dur));
+ if (!fora.length) return base;
+ const bloco = `<div class="cr-crow"><span class="cr-ctit"><strong>Fora do período ou dos turnos</strong> (${fora.length})</span><span class="cr-pcats">${fora.map(x => `<button class="cr-pchip" data-cragendar="${x.mod},${x.cat}">${esc(x.n)} · ${esc(catNome(x.cat))} · ${fmtDia(x.dt)} ${faixa(x)}</button>`).join('')}</span></div>`;
+ if (base) return base.replace('</section>', bloco + '</section>');
+ return `<section class="panel cr-conf"><h2>Ajustes necessários <span class="cr-n">${fora.length}</span></h2><p class="muted">Atividades fora das datas ou dos turnos definidos no período dos jogos. Toque para reagendar.</p>${bloco}</section>`;
 };
 
 /* Inicialização */
