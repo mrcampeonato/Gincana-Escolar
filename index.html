@@ -1488,7 +1488,7 @@ document.addEventListener('click', async e => {
  }
  else if (g('export')!==undefined) exportar(t);
  else if (g('reset')!==undefined) {
-  if (await confirmarDigitando('Apagar os resultados de todas as modalidades, os posts do Instagram e a torcida famosa, e voltar nomes, cores e pontos das equipes ao padrão, neste aparelho e no servidor?\nEssa ação não pode ser desfeita.', 'Zerar tudo')) {
+  if (await confirmarDigitando('Apagar os resultados de todas as modalidades, e voltar nomes, cores e pontos das equipes ao padrão, neste aparelho e no servidor?\nEssa ação não pode ser desfeita.', 'Zerar tudo')) {
    S = fresh(); Object.keys(D).forEach(k => delete D[k]);
    t.disabled = true;
    (async () => {
