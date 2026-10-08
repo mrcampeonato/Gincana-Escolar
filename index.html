@@ -455,7 +455,7 @@ select[data-csel]{position:absolute!important;width:1px!important;height:1px!imp
 .auth-info{display:grid;gap:4px;margin-bottom:14px;text-align:left}
 .auth-info strong{font-size:16px}
 .auth-info span{font-size:13px;color:var(--mute)}
-.ct-row{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.ct-row{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .ct-row:last-child{border-bottom:0}
 .ct-info{min-width:0;display:flex;flex-direction:column;text-align:left}
 .ct-info strong{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -471,6 +471,30 @@ body.ro #main :is(input[data-k],input[data-ig],[id^=sec] .csel){pointer-events:n
 body.ro #main input[data-k]{background:var(--card)}
 body:not(.adm) [data-soadmin]{display:none!important}
 body:not(.adm) .panel:has([data-reset]){display:none}
+
+/* Árbitros, visibilidade e minhas partidas */
+.arb-pick .nv-chips{margin-top:2px}
+.nv-chip.ocup{border-color:#c8283a;color:#c8283a}
+.ct-sel{display:grid;gap:6px}
+.vis-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);text-align:left}
+.vis-row:last-child{border-bottom:0}
+.vis-row strong{display:block}
+.vis-row small{display:block;color:var(--mute);font-size:12px}
+.sw-tog{position:relative;flex:none;width:52px;height:30px}
+.sw-tog input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:1}
+.sw-tog span{position:absolute;inset:0;border-radius:999px;background:var(--line);transition:background-color .2s}
+.sw-tog span::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s var(--ease,ease)}
+.sw-tog input:checked+span{background:#1f9d55}
+.sw-tog input:checked+span::after{transform:translateX(22px)}
+.sw-tog input:focus-visible+span{outline:3px solid #3d9ad8;outline-offset:2px}
+.tab-oculta{display:inline-flex;align-items:center;gap:4px}
+.tab-oculta .ico{width:13px;height:13px;opacity:.7}
+.vis-aviso{display:flex;align-items:center;justify-content:center;gap:6px;margin:0 auto 14px;padding:6px 12px;width:fit-content;border-radius:999px;background:rgba(183,121,31,.13);color:#b7791f;font-size:12px;font-weight:600}
+.vis-aviso .ico{width:14px;height:14px}
+.mp-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--line);text-align:left}
+.mp-item:last-child{border-bottom:0}
+.mp-item small{display:block;color:var(--mute);font-size:12px}
+body:not(.ed) [data-inscdel]{display:none!important}
 
 /* Confirmação digitada (Zerar tudo) */
 .cx-dig{display:grid;gap:6px;margin-top:14px;white-space:normal;font-size:13px;font-weight:600;color:var(--mute);text-align:left}
@@ -796,7 +820,9 @@ const ROUTES = {
  '#/instagram': 'insta',                     // modalidade extra (acesso por Modalidades)
  '#/torcida': 'torc',                        // modalidade extra (acesso por Modalidades)
  '#/configuracoes/dados': 'dados',           // planilha de resultados e zerar tudo (Configurações)
- '#/configuracoes/contas': 'contas'          // contas de acesso (só administrador)
+ '#/configuracoes/contas': 'contas',         // contas de acesso (só administrador)
+ '#/configuracoes/visibilidade': 'visib',    // o que o público pode ver (só administrador)
+ '#/minhas': 'minhas'                        // modalidades do árbitro conectado
 };
 
 /* Colunas da tabela cfg que cada página precisa ler (requisição focada) */
@@ -809,7 +835,9 @@ const COLS = {
  membros: 'teams,colors,cats',
  memver:  'teams,colors,cats',
  dados:   'teams',
- contas:  'teams',
+ contas:  'teams,arbitros',
+ visib:   'teams',
+ minhas:  'teams,mods,cats,locais,arbitros,colors',
  insc:    'teams,colors,cats,mods',
  crono:   'teams,mods,cats,locais,arbitros,periodo',
  cronoed: 'teams,mods,cats,locais,arbitros,periodo',
@@ -861,7 +889,7 @@ function removeRes(id) { const k = parseId(id); if (k) delete S.res[k]; }
 
 function applyCfg(d) {
  if (!d) return;
- ['teams', 'pts', 'fan', 'ig', 'insta', 'fans', 'mods', 'colors', 'cats', 'nome', 'locais', 'arbitros', 'periodo'].forEach(k => { if (d[k] != null) S[k] = d[k]; });
+ ['teams', 'pts', 'fan', 'ig', 'insta', 'fans', 'mods', 'colors', 'cats', 'nome', 'locais', 'arbitros', 'periodo', 'vis'].forEach(k => { if (d[k] != null) S[k] = d[k]; });
  if (d.nome != null) aplicarNome();
  if (d.cats != null) { buildCats(); syncCat(); }
  if (d.colors != null) aplicarCores();
@@ -1260,7 +1288,7 @@ async function route() {
   else if (pg == 'mod') tarefas.push(DB.fetchAllRes(), AG.listar());
   else if (pg == 'membros' || pg == 'memver') tarefas.push(MEM.listar());
   else if (pg == 'insc') tarefas.push(MEM.listar(), inscSel ? carregarInsc() : null);
-  else if (pg == 'crono' || pg == 'cronoed') tarefas.push(AG.listar());
+  else if (pg == 'crono' || pg == 'cronoed' || pg == 'minhas') tarefas.push(AG.listar());
   await Promise.all(tarefas);
   save();
  } catch (e) { console.error(e); }
@@ -3178,7 +3206,19 @@ const CAD = {locais: {titulo: 'Locais das partidas', ph: 'Ex.: Quadra coberta', 
 const cadLista = k => (Array.isArray(S[k]) ? S[k] : []).slice().sort((a, b) => a.n.localeCompare(b.n, 'pt-BR'));
 /* Local: id cadastrado → nome; texto antigo digitado → o próprio texto; id excluído → vazio */
 const nomeLocal = v => { if (!v) return ''; const x = cadLista('locais').find(y => y.id === v); return x ? x.n : (String(v).startsWith('loc_') ? '' : v); };
-const nomeArb = v => { if (!v) return ''; const x = cadLista('arbitros').find(y => y.id === v); return x ? x.n : ''; };
+const arbIds = v => String(v || '').split(',').map(s => s.trim()).filter(Boolean);
+const nomeArb = v => arbIds(v).map(id => { const x = cadLista('arbitros').find(y => y.id === id); return x ? x.n : ''; }).filter(Boolean).join(', ');
+/* Seletor de vários árbitros: um campo oculto guarda os escolhidos separados por vírgula */
+function arbPickHTML(attrs, valor, ocupado) {
+ const sel = new Set(arbIds(valor)), l = cadLista('arbitros');
+ return `<div class="arb-pick"><input type="hidden" ${attrs} value="${esc(arbIds(valor).join(','))}"><div class="nv-chips">${l.length ? l.map(x => { const oc = ocupado ? ocupado(x.id) : ''; return `<label class="nv-chip ${oc ? 'ocup' : ''}"><input type="checkbox" data-arbck="${esc(x.id)}" ${sel.has(x.id) ? 'checked' : ''}><span>${esc(x.n)}${oc ? ` · ocupado ${esc(oc)}` : ''}</span></label>`; }).join('') : '<span class="muted" style="text-align:left">Nenhum árbitro cadastrado (Configurações → Árbitros).</span>'}</div></div>`;
+}
+document.addEventListener('change', e => {
+ const ck = e.target.closest && e.target.closest('[data-arbck]'); if (!ck) return;
+ const box = ck.closest('.arb-pick'), oculto = box.querySelector('input[type=hidden]');
+ oculto.value = [...box.querySelectorAll('[data-arbck]:checked')].map(x => x.dataset.arbck).join(',');
+ oculto.dispatchEvent(new Event('change', {bubbles: true}));
+});
 
 function cadastroHTML(k) {
  const c = CAD[k], l = cadLista(k);
@@ -3264,10 +3304,10 @@ function agCampos(pre, v, a) {
  const vz = pre == 'g' ? '—' : 'Usar o geral';
  return `<div class="ag-grid">
   <label>Local<select data-agf="${pre},loc">${opcoes('locais', v.loc, vz)}</select></label>
-  <label>Árbitro<select data-agf="${pre},arb">${opcoes('arbitros', v.arb, vz)}</select></label>
   <label>Data<input type="date" data-agf="${pre},dt" value="${esc(v.dt || '')}"></label>
   <label>Horário<input type="time" data-agf="${pre},hr" value="${esc(v.hr || '')}"></label>
- </div>`;
+ </div>
+ <div class="nv-cats" style="margin:-4px 0 12px"><span class="nv-tit">Árbitros${pre == 'g' ? '' : ' (vazio usa os do geral)'}</span>${arbPickHTML(`data-agf="${pre},arb"`, v.arb)}</div>`;
 }
 function abrirAgenda(a) {
  const dlg = $('agdlg');
@@ -3766,7 +3806,7 @@ function conflitos(c) {
  const outros = itensAgenda().filter(x => x.ok && !(x.mod === c.mod && +x.cat === +c.cat) && x.dt === c.dt && sobrepoe(x, c));
  return {
   loc: c.loc ? outros.filter(x => x.loc === c.loc) : [],
-  arb: c.arb ? outros.filter(x => x.arb === c.arb) : [],
+  arb: arbIds(c.arb).length ? outros.filter(x => arbIds(x.arb).some(id => arbIds(c.arb).includes(id))) : [],
   cat: outros.filter(x => +x.cat === +c.cat)
  };
 }
@@ -3824,7 +3864,7 @@ let crConflitosHTML = function () {
   [['loc', 'Local'], ['arb', 'Árbitro']].forEach(([f, rot]) => k[f].forEach(y => {
    const chave = [f, ...[x.mod + x.cat, y.mod + y.cat].sort()].join('|');
    if (vistos.has(chave)) return; vistos.add(chave);
-   l.push({rot, nome: f == 'loc' ? nomeLocal(x.loc) : nomeArb(x.arb), a: x, b: y});
+   l.push({rot, nome: f == 'loc' ? nomeLocal(x.loc) : nomeArb(arbIds(x.arb).filter(id => arbIds(y.arb).includes(id)).join(',')), a: x, b: y});
   }));
  });
  if (!l.length) return '';
@@ -3859,14 +3899,18 @@ function crStatus() {
  const k = conflitos(c), l = [];
  const item = (cls, txt) => `<li class="${cls}">${txt}</li>`;
  l.push(c.loc ? (k.loc.length ? item('ruim', `<strong>Local ocupado:</strong> ${esc(k.loc.map(quem).join('; '))}`) : item('bom', `<strong>Local livre</strong> das ${faixa(c)}`)) : item('neutro', 'Sem local definido'));
- l.push(c.arb ? (k.arb.length ? item('ruim', `<strong>Árbitro ocupado:</strong> ${esc(k.arb.map(quem).join('; '))}`) : item('bom', '<strong>Árbitro livre</strong> no horário')) : item('neutro', 'Sem árbitro definido'));
+ l.push(c.arb ? (k.arb.length ? item('ruim', `<strong>Árbitro ocupado:</strong> ${esc(k.arb.map(quem).join('; '))}`) : item('bom', `<strong>${arbIds(c.arb).length > 1 ? 'Árbitros livres' : 'Árbitro livre'}</strong> no horário`)) : item('neutro', 'Sem árbitro definido'));
  l.push(k.cat.length ? item('aviso', `<strong>${esc(catNome(c.cat))} tem outra atividade no horário:</strong> ${esc(k.cat.map(x => `${x.n} (${faixa(x)})`).join('; '))}`) : item('bom', `<strong>${esc(catNome(c.cat))}</strong> sem outra atividade no horário`));
  box.innerHTML = `<ul class="cr-status">${l.join('')}</ul>`;
 }
 /* Recalcula as listas de local e árbitro (marcando os ocupados) e o quadro de disponibilidade */
+function crArbHTML(c) {
+ return arbPickHTML('id="crarb"', c.arb, id => { if (!c.dt || !c.hr) return ''; const o = conflitos({...c, arb: id}).arb; return o.length ? faixa(o[0]) : ''; });
+}
 function crAtualiza() {
  const c = crLer();
- ['locais', 'arbitros'].forEach(k => { const sel = $(k == 'locais' ? 'crloc' : 'crarb'), v = sel.value; sel.innerHTML = crOpcoesCad(k, c); sel.value = v; });
+ const sel = $('crloc'), v = sel.value; sel.innerHTML = crOpcoesCad('locais', c); sel.value = v;
+ $('crarbbox').innerHTML = crArbHTML(c);
  crStatus();
 }
 function abrirCrono(mod, cat) {
@@ -3887,15 +3931,15 @@ function abrirCrono(mod, cat) {
     <label>Duração<select id="crdur">${DURS.map(d => `<option value="${d}" ${d === (e.dur || DUR_PADRAO) ? 'selected' : ''}>${d < 60 ? d + ' min' : (d % 60 ? Math.floor(d / 60) + 'h' + (d % 60) : d / 60 + 'h')}</option>`).join('')}</select></label>
     <label>&nbsp;<button class="btn alt" type="button" data-crsugerir>Sugerir horário livre</button></label>
     <label>Local<select id="crloc"></select></label>
-    <label>Árbitro<select id="crarb"></select></label>
    </div>
+   <div class="nv-cats"><span class="nv-tit">Árbitros</span><div id="crarbbox"></div></div>
    <div id="crstatus"></div>
   </div></div>
   <div class="reg-foot mem-foot">${crEd.orig && crEd.orig.tinha ? '<button class="btn warn" data-crlimpar>Tirar do cronograma</button>' : ''}<span class="mem-esp"></span><button class="btn alt" data-crfechar>Cancelar</button><button class="btn" data-crsalvar>Salvar</button></div>
  </div>`;
  const cand = {mod, cat: c0, dt: e.dt, hr: e.hr, dur: e.dur, loc: e.loc, arb: e.arb};
  $('crloc').innerHTML = crOpcoesCad('locais', cand);
- $('crarb').innerHTML = crOpcoesCad('arbitros', cand);
+ $('crarbbox').innerHTML = crArbHTML(cand);
  if (!dlg.open) dlg.showModal();
  crStatus();
 }
@@ -3911,7 +3955,7 @@ function crPreencher(a, cat) {
  $('crdur').value = String(e.dur || DUR_PADRAO);
  const c = {...crLer(), loc: e.loc, arb: e.arb};
  $('crloc').innerHTML = crOpcoesCad('locais', c); $('crloc').value = e.loc;
- $('crarb').innerHTML = crOpcoesCad('arbitros', c); $('crarb').value = e.arb;
+ $('crarbbox').innerHTML = crArbHTML(c);
  crStatus();
 }
 
@@ -4282,7 +4326,7 @@ TILES_CFG.push({titulo: 'Dados', sub: 'Planilha de resultados e zerar tudo', ico
    ========================================================================== */
 const ADMIN_PRINCIPAL = 'mrcampeonato@gmail.com';
 const AUTH = {user: null, papel: null, nome: ''};
-const PAPEL_NOME = {pendente: 'Aguardando liberação', editor: 'Editor', admin: 'Administrador'};
+const PAPEL_NOME = {pendente: 'Aguardando liberação', arbitro: 'Árbitro', editor: 'Editor', admin: 'Administrador'};
 const podeEditar = () => !db || AUTH.papel === 'editor' || AUTH.papel === 'admin';
 const ehAdmin = () => !db || AUTH.papel === 'admin';
 const PAG_RESTRITAS = {cfg: 'editor', modedit: 'editor', membros: 'editor', insc: 'editor', cronoed: 'editor', dados: 'editor', contas: 'admin'};
@@ -4297,9 +4341,10 @@ icone = n => n === 'cadeado'
 
 async function carregarPerfil() {
  if (!db || !AUTH.user) { AUTH.papel = null; AUTH.nome = ''; return; }
- const { data, error } = await db.from('perfis').select('papel,nome').eq('id', AUTH.user.id).maybeSingle();
+ const { data, error } = await db.from('perfis').select('papel,nome,arbitro_id').eq('id', AUTH.user.id).maybeSingle();
  if (error) { console.error(error); return; }   // mantém o que já sabia em caso de falha de rede
  AUTH.papel = data ? data.papel : 'pendente';
+ AUTH.arb = data && data.arbitro_id || '';
  const um = AUTH.user.user_metadata || {};
  AUTH.nome = data && data.nome || um.nome || um.full_name || '';
 }
@@ -4392,13 +4437,13 @@ function pedirLogin() {
 document.addEventListener('click', e => {
  const t = e.target.closest && e.target.closest('[data-reset]');
  if (t && !ehAdmin()) { e.preventDefault(); e.stopImmediatePropagation(); avisar('Só o administrador pode zerar o sistema.'); return; }
- if (podeEditar()) return;
+ if (podeAqui()) return;
  const a = e.target.closest && e.target.closest(ACOES_EDICAO);
  if (!a || !$('main').contains(a)) return;
  e.preventDefault(); e.stopImmediatePropagation(); pedirLogin();
 }, true);
 ['change', 'input'].forEach(tipo => document.addEventListener(tipo, e => {
- if (podeEditar()) return;
+ if (podeAqui()) return;
  const a = e.target.closest && e.target.closest('[data-k],[data-ig],[data-cfg]');
  if (a && $('main').contains(a)) e.stopImmediatePropagation();
 }, true));
@@ -4428,7 +4473,7 @@ function desenharAuth() {
   corpo = campo('authsenha', 'Nova senha (mínimo 8 caracteres)', 'password', 'autocomplete="new-password" minlength="8"') + campo('authsenha2', 'Repita a nova senha', 'password', 'autocomplete="new-password" minlength="8"');
   botao = 'Salvar senha';
  } else if (m == 'conta') {
-  const desc = {pendente: 'Sua conta ainda não foi liberada. Você pode ver tudo, mas só altera dados depois que o administrador liberar.', editor: 'Você pode lançar resultados e mexer nas configurações.', admin: 'Você pode lançar resultados, mexer nas configurações, liberar contas e zerar o sistema.'}[AUTH.papel] || '';
+  const desc = {arbitro: AUTH.arb && nomeArb(AUTH.arb) ? `Árbitro ${nomeArb(AUTH.arb)}. Você vê o site como o público e lança os resultados das modalidades em que está escalado (Minhas partidas).` : 'Árbitro ainda sem vínculo com um árbitro cadastrado. Peça ao administrador para vincular.', pendente: 'Sua conta ainda não foi liberada. Você pode ver o que está liberado ao público, mas só altera dados depois que o administrador liberar.', editor: 'Você pode lançar resultados e mexer nas configurações.', admin: 'Você pode lançar resultados, mexer nas configurações, liberar contas e zerar o sistema.'}[AUTH.papel] || '';
   corpo = `<div class="auth-info"><strong>${esc(AUTH.nome || 'Sem nome')}</strong><span>${esc(AUTH.user ? AUTH.user.email : '')}</span><span>${esc(PAPEL_NOME[AUTH.papel] || '')}. ${desc}</span></div><button type="button" class="auth-link" data-authmodo="trocar">Trocar senha</button>`;
   esq = '<button class="btn warn" data-sair>Sair</button>';
  }
@@ -4533,7 +4578,7 @@ const PAPEIS = [['pendente', 'Sem acesso (pendente)'], ['editor', 'Editor'], ['a
 async function carregarContas() {
  if (contasCarregando || !db) return;
  contasCarregando = true;
- const { data, error } = await db.from('perfis').select('id,email,nome,papel,criado_em').order('criado_em', {ascending: false}).limit(2000);
+ const { data, error } = await db.from('perfis').select('id,email,nome,papel,arbitro_id,criado_em').order('criado_em', {ascending: false}).limit(2000);
  contasCarregando = false;
  if (error) { contasLista = []; fail(error); } else contasLista = data || [];
  const l = $('contaslista'); if (l) l.innerHTML = contasHTML();
@@ -4586,6 +4631,155 @@ document.addEventListener('change', async e => {
 
 /* Atalho "Contas" nas Configurações (só aparece para o administrador) */
 TILES_CFG.push({titulo: 'Contas', sub: 'Quem pode alterar o site', ico: 'cadeado', abre: 'href="#/configuracoes/contas" data-soadmin'});
+
+/* ==========================================================================
+   35. ÁRBITROS COM LOGIN, MINHAS PARTIDAS E VISIBILIDADE DAS PÁGINAS
+   - Árbitro: vê o site como o público e só lança resultados das modalidades
+     e categorias em que está escalado (cronograma, ou agenda da modalidade).
+   - Visibilidade: o administrador escolhe quais páginas o público vê.
+     Equipe (editor/admin) vê tudo. O banco também respeita essa escolha.
+   ========================================================================== */
+const VIS_PAGS = [
+ ['placar', 'Placar geral', 'Classificação geral e pontos por categoria'],
+ ['mod', 'Modalidades', 'Lista de modalidades, páginas e resultados'],
+ ['memver', 'Integrantes', 'Integrantes de cada equipe'],
+ ['crono', 'Cronograma', 'Dias, horários e locais']
+];
+const ehEquipe = () => podeEditar();
+const visivel = p => ehEquipe() || !S.vis || S.vis[p] !== false;
+const ocultaPublico = p => !!(S.vis && S.vis[p] === false);
+const ehArbitro = () => !!db && AUTH.papel === 'arbitro' && !!AUTH.arb;
+/* Árbitros escalados numa modalidade/categoria: os do cronograma; se vazio, os da modalidade */
+function arbsDe(a, ci) {
+ if (a.t != 'extra') { const r = agRow(a.s, ci), l = arbIds(r && r.arb); if (l.length) return l; }
+ return arbIds(agDeLegado(a, a.t == 'extra' ? null : ci).arb);
+}
+const arbitroPode = (a, ci) => ehArbitro() && !!a && arbsDe(a, ci).includes(AUTH.arb);
+const podeAqui = () => cur ? (podeEditar() || arbitroPode(cur, curC)) : podeEditar();
+
+const aplicarAcessoAntesArb = aplicarAcesso;
+aplicarAcesso = function () {
+ aplicarAcessoAntesArb();
+ document.body.classList.toggle('ro', !podeAqui());
+ document.body.classList.toggle('ed', podeEditar());
+};
+
+/* Abas: some o que o público não pode ver; árbitro ganha "Minhas partidas" */
+const renderNavAntesVis = renderNav;
+renderNav = function () {
+ renderNavAntesVis();
+ const nav = $('tabs');
+ VIS_PAGS.forEach(([k]) => {
+  const h = (TABS.find(t => t[0] === k) || [])[2], a = h && nav.querySelector(`a[href="${h}"]`);
+  if (!a) return;
+  if (!visivel(k)) a.remove();
+  else if (ocultaPublico(k)) { a.classList.add('tab-oculta'); a.title = 'Oculta para o público'; a.insertAdjacentHTML('beforeend', icone('olhoX')); }
+ });
+ if (ehArbitro() || (db && AUTH.papel === 'arbitro')) {
+  const cfg = nav.querySelector('a[href="#/configuracoes"]');
+  const html = `<a href="#/minhas" ${pg == 'minhas' ? 'aria-current="page"' : ''}>Minhas partidas</a>`;
+  if (cfg) cfg.insertAdjacentHTML('beforebegin', html); else nav.insertAdjacentHTML('beforeend', html);
+ }
+};
+
+function naoLiberadaHTML() {
+ return `<section class="panel acesso">${icone('olhoX')}<h2>Ainda não liberada</h2><p class="muted">Esta página ainda não está disponível para o público. Volte mais tarde.</p><div class="row">${AUTH.user || !db ? '' : '<button class="btn alt" data-entrar>Entrar</button>'}</div></section>`;
+}
+const primeiraVisivel = () => { const k = VIS_PAGS.find(([p]) => visivel(p)); return k ? (TABS.find(t => t[0] === k[0]) || [])[2] : null; };
+
+const renderAntesVis = render;
+render = function () {
+ document.body.classList.toggle('ro', !podeAqui());
+ document.body.classList.toggle('ed', podeEditar());
+ const pag = cur ? 'mod' : pg;
+ const bloqueada = VIS_PAGS.some(([k]) => k === pag) && !visivel(pag) && !(cur && arbitroPode(cur, curC));
+ if (bloqueada) {
+  /* página inicial oculta: abre a primeira página liberada */
+  const alt = !cur && pg == 'placar' ? primeiraVisivel() : null;
+  if (alt && alt !== '#/' && location.hash !== alt) { location.replace(alt); return; }
+  pendente = false;
+  if (cur) $('tabs').innerHTML = ''; else renderNav();
+  $('main').classList.remove('entrar');
+  $('main').innerHTML = naoLiberadaHTML();
+  return;
+ }
+ renderAntesVis();
+ if (!cur && ehEquipe() && db && ocultaPublico(pg) && !PAG_RESTRITAS[pg]) $('main').insertAdjacentHTML('afterbegin', `<p class="vis-aviso">${icone('olhoX')}Oculta para o público · só a equipe vê</p>`);
+};
+
+/* ---------- Minhas partidas (árbitro) ---------- */
+Views.minhas = () => {
+ if (!ehArbitro()) return `<section class="panel acesso">${icone('bandeira')}<h2>Minhas partidas</h2><p class="muted">${AUTH.papel === 'arbitro' ? 'Sua conta de árbitro ainda não foi vinculada a um árbitro cadastrado. Peça ao administrador.' : 'Esta página é para os árbitros.'}</p></section>`;
+ const l = [];
+ ACTS.filter(a => !a.oc || true).forEach(a => (a.t == 'extra' ? [{id: EXTRA_CI, n: 'Lançamentos'}] : catsDe(a)).forEach(c => {
+  if (!arbitroPode(a, c.id)) return;
+  const e = a.t == 'extra' ? {} : efetivo(a, c.id);
+  l.push({a, c, e, ok: !!(e.dt && e.hr && !e.pre)});
+ }));
+ l.sort((x, y) => (x.ok ? 0 : 1) - (y.ok ? 0 : 1) || String(x.e.dt + x.e.hr).localeCompare(String(y.e.dt + y.e.hr)) || x.a.n.localeCompare(y.a.n, 'pt-BR'));
+ const nome = nomeArb(AUTH.arb);
+ return `<section class="panel"><h2>Minhas partidas</h2><p class="muted">${esc(nome)}: você lança os resultados só das modalidades abaixo. As outras ficam apenas para visualização.</p>
+  ${l.length ? l.map(x => `<div class="mp-item"><span><strong>${esc(x.a.n)}</strong><small>${esc(x.a.t == 'extra' ? 'Extra' : catNome(x.c.id))}${x.ok ? ` · ${esc(fmtDia(x.e.dt))} · ${esc(faixa(x.e))}${x.e.loc && nomeLocal(x.e.loc) ? ' · ' + esc(nomeLocal(x.e.loc)) : ''}` : ''}</small></span><a class="btn" href="#/m/${x.a.s}${x.a.t == 'extra' ? '' : '/' + x.c.id}" style="text-decoration:none;display:inline-flex;align-items:center">Abrir</a></div>`).join('') : '<p class="muted">Você ainda não foi escalado em nenhuma modalidade.</p>'}</section>`;
+};
+
+/* ---------- Visibilidade das páginas (administrador) ---------- */
+PAG_RESTRITAS.visib = 'admin';
+Views.visib = () => `<div class="page-head"><a class="back" href="#/configuracoes">← Voltar às configurações</a></div>
+ <section class="panel"><h2>O que o público vê</h2>
+  <p class="muted">Desligue para esconder a página de quem não é da equipe: visitantes, contas pendentes e árbitros. Editores e administradores continuam vendo tudo. A mudança vale na hora, para todos.</p>
+  ${VIS_PAGS.map(([k, n, s]) => `<div class="vis-row"><span><strong>${n}</strong><small>${s}</small></span><label class="sw-tog"><input type="checkbox" data-vis="${k}" ${ocultaPublico(k) ? '' : 'checked'} aria-label="${n} visível para o público"><span></span></label></div>`).join('')}
+  <p class="muted" style="margin-top:12px">Árbitros sempre conseguem abrir as modalidades em que estão escalados, para lançar os resultados.</p>
+ </section>`;
+document.addEventListener('change', async e => {
+ const el = e.target; if (!el.dataset || !el.dataset.vis || pg !== 'visib') return;
+ const k = el.dataset.vis, mostrar = el.checked;
+ el.disabled = true;
+ await DB.patchCfg(['vis'], () => { S.vis = {...(S.vis || {}), [k]: mostrar}; });
+ el.disabled = false;
+ renderNav();
+});
+TILES_CFG.push({titulo: 'Visibilidade', sub: 'Páginas liberadas ao público', ico: 'olho', abre: 'href="#/configuracoes/visibilidade" data-soadmin'});
+
+/* Leitura de cfg: se a coluna "vis" ainda não existir no banco, lê sem ela */
+const fetchCfgAntesVis = DB.fetchCfg;
+DB.fetchCfg = async function (cols) {
+ if (!db || !cols || cols === '*') return fetchCfgAntesVis.call(DB, cols);
+ const { data, error } = await db.from('cfg').select(cols + ',nome,vis').eq('id', 'geral');
+ if (!error) { if (data && data.length) applyCfg(data[0]); return; }
+ return fetchCfgAntesVis.call(DB, cols);
+};
+
+/* ---------- Contas: papel de árbitro e vínculo com o árbitro cadastrado ---------- */
+PAPEIS.splice(1, 0, ['arbitro', 'Árbitro']);
+const contasHTMLAntesArb = contasHTML;
+contasHTML = function () {
+ const h = contasHTMLAntesArb();
+ if (!contasLista) return h;
+ /* acrescenta, nas contas de árbitro, a escolha de qual árbitro cadastrado ela é */
+ return h.replace(/<select data-papel="([^"]+)"([\s\S]*?)<\/select>/g, (m, id) => {
+  const x = contasLista.find(y => y.id === id); if (!x || x.papel !== 'arbitro') return m;
+  const l = cadLista('arbitros');
+  return `<span class="ct-sel">${m}<select data-arbvinc="${esc(id)}" aria-label="Árbitro vinculado a ${esc(x.email)}"><option value="">Qual árbitro? —</option>${l.map(a => `<option value="${esc(a.id)}" ${x.arbitro_id === a.id ? 'selected' : ''}>${esc(a.n)}</option>`).join('')}</select></span>`;
+ });
+};
+document.addEventListener('change', async e => {
+ const el = e.target; if (!el.dataset || !el.dataset.arbvinc || !contasLista) return;
+ const id = el.dataset.arbvinc, x = contasLista.find(y => y.id === id); if (!x) return;
+ if (el.value && contasLista.some(y => y.id !== id && y.papel === 'arbitro' && y.arbitro_id === el.value)) {
+  if (!await confirmar(`${nomeArb(el.value)} já está vinculado a outra conta. Vincular também a ${x.email}?`)) { el.value = x.arbitro_id || ''; return; }
+ }
+ el.disabled = true;
+ const { error } = await db.rpc('definir_papel', {alvo: id, novo: 'arbitro', arb: el.value || null});
+ el.disabled = false;
+ if (error) { el.value = x.arbitro_id || ''; fail(error); return; }
+ x.arbitro_id = el.value || null;
+ if (AUTH.user && AUTH.user.id === id) { await carregarPerfil(); aplicarAcesso(); }
+});
+/* ao mudar o papel, a lista é redesenhada para mostrar (ou esconder) a escolha do árbitro */
+document.addEventListener('change', e => {
+ if (!e.target.dataset || !e.target.dataset.papel) return;
+ setTimeout(() => { const l = $('contaslista'); if (l && contasLista) l.innerHTML = contasHTML(); }, 600);
+});
 
 /* Inicialização: primeiro descobre quem está conectado, depois abre a página */
 iniciarAuth().finally(route);
