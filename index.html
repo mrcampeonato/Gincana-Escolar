@@ -962,7 +962,7 @@ const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE
 
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)) } catch (e) {} };
 const fail = e => {
- const m = e && (e.message || e.code) || JSON.stringify(e);
+ const m = String(e && (e.message || e.code) || JSON.stringify(e)).replace(/^(?:\w*Error:\s*)+/, '');
  avisar(/row-level security|permission denied|42501|sem permiss/i.test(m + ' ' + (e && e.code || ''))
   ? 'Sua conta não tem permissão para alterar os dados. Entre com uma conta liberada pelo administrador.'
   : 'Não foi possível salvar no servidor: ' + m);
@@ -1023,12 +1023,13 @@ const DB = {
    }
    mutate();
    save();
-   if (!db) return;
+   if (!db) return true;
    const payload = { id: 'geral' };
    cols.forEach(c => payload[c] = S[c]);
    const { error } = await db.from('cfg').upsert(payload);
-   if (error) fail(error);
-  } catch (e) { fail(e); }
+   if (error) { fail(error); return false; }
+   return true;
+  } catch (e) { fail(e); return false; }
  },
 
  /* Gravação completa: usada apenas ao zerar o sistema */
@@ -5787,15 +5788,22 @@ abrirAgenda = function (a) {
    ========================================================================== */
 const espera = ms => new Promise(r => setTimeout(r, ms));
 async function fetchResiliente(url, opts) {
- const pausas = [400, 1200, 3000];
+ opts = opts || {};
+ const pausas = [500, 1500], LIMITE = 10000, ext = opts.signal;
  for (let i = 0; ; i++) {
+  const ctl = new AbortController(), lim = setTimeout(() => ctl.abort(), LIMITE);
+  const repassa = () => ctl.abort();
+  if (ext) { if (ext.aborted) ctl.abort(); else ext.addEventListener('abort', repassa, {once: true}); }
   try {
-   const r = await fetch(url, opts);
+   const r = await fetch(url, {...opts, signal: ctl.signal});
    if ((r.status === 429 || r.status === 502 || r.status === 503 || r.status === 504) && i < pausas.length) { await espera(pausas[i] * (r.status === 429 ? 2 : 1) + Math.random() * 300); continue; }
    return r;
   } catch (e) {
-   if ((e && e.name === 'AbortError') || i >= pausas.length) throw e;
-   await espera(pausas[i] + Math.random() * 300);
+   if ((ext && ext.aborted) || i >= pausas.length) throw (ctl.signal.aborted && !(ext && ext.aborted) ? new Error('O servidor demorou demais para responder. Verifique a internet e tente de novo.') : e);
+   await espera(pausas[i] + Math.random() * 300);   // sem resposta em 12 s ou rede caiu: tenta de novo
+  } finally {
+   clearTimeout(lim);
+   if (ext) ext.removeEventListener('abort', repassa);
   }
  }
 }
@@ -5880,6 +5888,53 @@ function resumoPeriodo() {
 const cronoedAntesPer = Views.cronoed;
 Views.cronoed = () => cronoedAntesPer().replace(/(<div class="row nv-topo">[\s\S]*?)(<\/div>)/, (m, ini, fim) =>
  `${ini}<button class="btn alt" data-perabrir style="display:inline-flex;align-items:center;gap:6px">${icone('cal')}Período dos jogos</button>${fim}<p class="muted cr-per-res">${esc(resumoPeriodo())}</p>`);
+
+/* ==========================================================================
+   43. JANELA DE CONFIGURAÇÃO DA MODALIDADE: SALVAR EM UMA ÚNICA GRAVAÇÃO
+   Antes eram três gravações seguidas (local/árbitro, categorias/inscrição e
+   cronograma), cada uma relendo o servidor. Agora tudo vai junto, uma vez,
+   com o botão mostrando "Salvando…" e voltando ao normal em qualquer caso.
+   ========================================================================== */
+salvarAgenda = async function (id, limpar, btn) {
+ const dlg = $('agdlg');
+ if (!dlg.open) return false;
+ const g = {}, agc = {}, porCat = $('agporcat') && $('agporcat').checked && !$('agporcat').closest('.ag-por').hidden;
+ if (!limpar) dlg.querySelectorAll('[data-agf]').forEach(el => {
+  const [pre, f] = el.dataset.agf.split(','), v = el.value;
+  if (!v) return;
+  if (pre == 'g') g[f] = v; else if (porCat) (agc[pre] = agc[pre] || {})[f] = v;
+ });
+ const sel = [...dlg.querySelectorAll('[data-agcatsel]')];
+ const cats = sel.length ? sel.filter(x => x.checked).map(x => +x.dataset.agcatsel) : null;
+ if (cats && !cats.length) { avisar('Escolha pelo menos uma categoria.'); return false; }
+ const insc = $('aginsc'), cron = $('agcronochk');
+ const txt = btn ? btn.textContent : '';
+ if (btn) { btn.disabled = true; btn.textContent = 'Salvando…'; }
+ const ok = await DB.patchCfg(['mods'], () => {
+  S.mods = listaMods();
+  const x = S.mods.find(y => y.id === id);
+  if (x) {
+   ['loc', 'arb', 'dt', 'hr'].forEach(f => { if (g[f]) x[f] = g[f]; else delete x[f]; });
+   if (Object.keys(agc).length) x.agc = agc; else if (!porCat && x.agc) { /* ajustes antigos por categoria ficam como estão */ } else delete x.agc;
+   if (cats) { if (cats.length < CATS.length) x.cats = cats; else delete x.cats; }
+   if (insc) { if (insc.checked) delete x.si; else x.si = 1; }
+   if (cron) { if (cron.checked) delete x.sc; else x.sc = 1; }
+  }
+  buildActs();
+ });
+ if (btn && document.contains(btn)) { btn.disabled = false; btn.textContent = txt; }
+ if (!ok) return false;
+ if (dlg.open) dlg.close();
+ render();
+ return true;
+};
+/* o botão Salvar da janela usa a nova versão (antes do clique antigo) */
+document.addEventListener('click', e => {
+ const t = e.target.closest('[data-agsalvar]'); if (!t || !$('agdlg').contains(t)) return;
+ e.stopImmediatePropagation();
+ if (t.disabled) return;
+ salvarAgenda(t.dataset.agsalvar, false, t);
+}, true);
 
 /* Inicialização: primeiro descobre quem está conectado, depois abre a página */
 iniciarAuth().finally(route);
