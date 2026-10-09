@@ -314,8 +314,7 @@ select[data-csel]{position:absolute!important;width:1px!important;height:1px!imp
 .ex-form{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 84px auto;gap:6px;align-items:center;margin:8px 0 12px}
 @media (max-width:620px){.ex-form{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.ex-form #exdesc{grid-column:1/-1}.ex-form .btn{grid-column:1/-1}}
 .ex-cfg{display:grid;grid-template-columns:1fr 100px;gap:8px;align-items:center;font-size:13px;color:var(--mute);font-weight:600}
-.mem-card.ro{cursor:default}
-.mem-card.ro:hover{border-color:var(--line)}
+.mem-card.ro{cursor:pointer}
 #tabs a[aria-label="Configurações"]{font-size:18px;padding:8px 12px}
 @media (max-width:620px){#tabs{gap:4px;flex-wrap:nowrap}#tabs a{padding:8px 10px;font-size:13px;white-space:nowrap}#tabs a[aria-label="Configurações"]{font-size:16px;padding:8px 9px}}
 @media (max-width:380px){#tabs a{padding:7px 8px;font-size:12px;min-height:36px}#tabs a[aria-label="Configurações"]{font-size:15px;padding:7px 8px}}
@@ -539,6 +538,23 @@ body:not(.ed) [data-inscdel]{display:none!important}
 .ch-bt:disabled{opacity:.5}
 .ch-row.falta .mem-nome{color:#c8283a}
 .ch-leg{font-size:12px;color:var(--mute);text-align:center;margin:4px 0 0}
+
+/* Choque de horário e janela do integrante */
+.insc-choque{display:grid;gap:4px;margin:12px 0 0;padding:10px 12px;border-radius:12px;background:rgba(200,40,58,.08);border:1px solid rgba(200,40,58,.35);color:#c8283a;font-size:13px;line-height:1.45;text-align:left}
+.insc-choque strong{font-size:14px}
+.insc-choque span{color:var(--ink)}
+.insc-mod.choque{border-color:#c8283a;background:rgba(200,40,58,.06)}
+.mv-cab{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;margin-bottom:6px}
+.mv-cab .mem-foto{width:104px;height:104px;font-size:36px}
+.mv-cab strong{font-size:18px}
+.mv-cab .tm{font-size:14px}
+.mv-cab small{color:var(--mute);font-size:13px}
+.mv-mods{display:grid;gap:8px}
+.mv-mod{display:block;padding:10px 12px;border:1px solid var(--line);border-radius:12px;text-align:left;color:var(--ink);text-decoration:none}
+a.mv-mod:hover{border-color:var(--ink)}
+.mv-mod.choque{border-color:#c8283a}
+.mv-mod strong{display:block}
+.mv-mod small{color:var(--mute);font-size:12px}
 
 /* Confirmação digitada (Zerar tudo) */
 .cx-dig{display:grid;gap:6px;margin-top:14px;white-space:normal;font-size:13px;font-weight:600;color:var(--mute);text-align:left}
@@ -882,7 +898,7 @@ const COLS = {
  contas:  'teams,arbitros',
  visib:   'teams',
  minhas:  'teams,mods,cats,locais,arbitros,colors',
- insc:    'teams,colors,cats,mods',
+ insc:    'teams,colors,cats,mods,locais,arbitros,periodo',
  crono:   'teams,mods,cats,locais,arbitros,periodo',
  cronoed: 'teams,mods,cats,locais,arbitros,periodo',
  cfg:     'teams,pts,fan,ig,mods,colors,cats,locais,arbitros,periodo',
@@ -1332,7 +1348,7 @@ async function route() {
   else if (pg == 'placar') tarefas.push(DB.fetchAllRes());
   else if (pg == 'mod') tarefas.push(DB.fetchAllRes(), AG.listar());
   else if (pg == 'membros' || pg == 'memver') tarefas.push(MEM.listar());
-  else if (pg == 'insc') tarefas.push(MEM.listar(), inscSel ? carregarInsc() : null);
+  else if (pg == 'insc') tarefas.push(MEM.listar(), AG.listar(), inscSel ? carregarInsc() : null);
   else if (pg == 'crono' || pg == 'cronoed' || pg == 'minhas') tarefas.push(AG.listar());
   await Promise.all(tarefas);
   save();
@@ -2266,7 +2282,7 @@ function memListaHTML(ro = pg === 'memver') {
  if (!l.length) return '<p class="muted">Nenhum integrante encontrado com esses filtros.</p>';
  const grupos = [...T.map(String), ''].map(t => [t, l.filter(m => String(m.team) === t)]).filter(([, g]) => g.length);
  return grupos.map(([t, g]) => `<div class="mem-grupo"><h3>${esc(teamNome(t))}</h3><span>${g.length} ${g.length == 1 ? 'integrante' : 'integrantes'}</span></div>
- <div class="mem-grid">${g.map(m => `<${ro ? 'div' : 'button'} class="mem-card${ro ? ' ro' : ''}" ${ro ? '' : `data-memed="${esc(m.id)}"`}>${fotoHTML(m)}<span class="mem-info"><span class="mem-nome">${esc(m.nome)}</span><span class="mem-sub">${esc(memSub(m))}</span></span></${ro ? 'div' : 'button'}>`).join('')}</div>`).join('');
+ <div class="mem-grid">${g.map(m => `<button class="mem-card${ro ? ' ro' : ''}" ${ro ? `data-memver="${esc(m.id)}"` : `data-memed="${esc(m.id)}"`}>${fotoHTML(m)}<span class="mem-info"><span class="mem-nome">${esc(m.nome)}</span><span class="mem-sub">${esc(memSub(m))}</span></span></button>`).join('')}</div>`).join('');
 }
 
 Views.membros = () => `<div class="page-head"><a class="back" href="#/configuracoes">← Voltar às configurações</a></div><section class="panel"><h2>Integrantes das equipes</h2>
@@ -2882,7 +2898,7 @@ async function carregarInsc() {
  const l = await INSC.doMembro(id);
  if (inscSel !== id) return;
  inscSet = new Set((l || []).map(x => x.mod));
- const box = $('inscmods'); if (box) { box.innerHTML = inscModsHTML(); $('insccont').textContent = inscContTxt(); }
+ const box = $('inscmods'); if (box) { box.innerHTML = inscModsHTML(); $('insccont').textContent = inscContTxt(); atualizaChoque(); }
 }
 const inscContTxt = () => inscSet ? `${inscSet.size} ${inscSet.size == 1 ? 'modalidade marcada' : 'modalidades marcadas'}` : '';
 
@@ -2917,8 +2933,9 @@ Views.insc = () => {
    <select id="inscfcat" aria-label="Filtrar por categoria"><option value="">Todas as categorias</option>${CATS.map(c => `<option value="${c.id}" ${inscF.cat === String(c.id) ? 'selected' : ''}>${esc(c.n)}</option>`).join('')}</select>
   </div>
   <div id="insclista" class="mem-grid">${inscListaHTML()}</div></section>`;
- return head + `<section class="panel">
+ return head + `<section class="panel"><h2>Modalidades inscritas</h2>
   <div class="insc-topo">${fotoHTML(m)}<span class="mem-info"><span class="mem-nome">${esc(m.nome)}</span><span class="mem-sub">${esc(teamNome(m.team))} · ${esc(memSub(m))}</span></span><button class="btn alt" data-inscoutro title="Fechar e escolher outro integrante" aria-label="Fechar e escolher outro integrante">✕</button></div>
+  <div id="inscchoque">${inscSet ? choqueHTML(m, [...inscSet]) : ''}</div>
   <p class="muted" id="insccont" style="margin:10px 0 0">${inscContTxt()}</p>
   <div id="inscmods">${inscModsHTML()}</div></section>`;
 };
@@ -3022,6 +3039,7 @@ document.addEventListener('change', async e => {
   if (!ok) { el.checked = !on; return; }
   if (on) inscSet.add(mod); else inscSet.delete(mod);
   const c = $('insccont'); if (c) c.textContent = inscContTxt();
+  atualizaChoque();
  }
  else if (el.dataset && el.dataset.pres && inscD) {
   const id = el.dataset.pres, v = el.checked;
@@ -5337,6 +5355,80 @@ async function exportarChamada(btn) {
   if (document.contains(btn)) { btn.disabled = false; btn.textContent = txt; }
  }
 }
+
+/* ==========================================================================
+   39. CHOQUE DE HORÁRIO NAS INSCRIÇÕES + JANELA DO INTEGRANTE (página pública)
+   ========================================================================== */
+/* Pares de modalidades inscritas que acontecem ao mesmo tempo na categoria do integrante */
+function choquesDe(m, mods) {
+ if (!m) return [];
+ const l = mods.map(id => BY[id]).filter(a => a && a.t != 'extra' && temCat(a, m.cat))
+  .map(a => ({a, e: efetivo(a, m.cat)})).filter(x => x.e.dt && x.e.hr && !x.e.pre);
+ const r = [];
+ for (let i = 0; i < l.length; i++) for (let j = i + 1; j < l.length; j++)
+  if (l[i].e.dt === l[j].e.dt && sobrepoe(l[i].e, l[j].e)) r.push([l[i], l[j]]);
+ return r;
+}
+function choqueHTML(m, mods) {
+ const c = choquesDe(m, mods); if (!c.length) return '';
+ return `<div class="insc-choque" role="alert"><strong>⚠ Choque de horário${c.length > 1 ? ` (${c.length})` : ''}</strong>${c.map(([x, y]) => `<span>${esc(x.a.n)} (${esc(fmtDia(x.e.dt))}, ${faixa(x.e)}) e ${esc(y.a.n)} (${faixa(y.e)})</span>`).join('')}</div>`;
+}
+/* Atualiza o aviso e destaca as modalidades em choque (página de inscrições) */
+function atualizaChoque() {
+ const box = $('inscchoque'), m = membros().find(x => x.id === inscSel);
+ if (!box || !m || !inscSet) return;
+ box.innerHTML = choqueHTML(m, [...inscSet]);
+ const ids = new Set(choquesDe(m, [...inscSet]).flatMap(([x, y]) => [x.a.s, y.a.s]));
+ document.querySelectorAll('[data-inscmod]').forEach(i => { const l = i.closest('.insc-mod'); if (l) l.classList.toggle('choque', ids.has(i.dataset.inscmod)); });
+}
+
+const renderAntesChoque = render;
+render = function () { renderAntesChoque(); if (!cur && pg == 'insc') atualizaChoque(); };
+
+/* ---------- Janela do integrante na página pública de Integrantes ---------- */
+document.body.insertAdjacentHTML('beforeend', '<dialog id="memverdlg" class="reg-dlg" aria-label="Integrante"></dialog>');
+let mvTok = 0, agLidaEm = 0;
+async function abrirMemVer(id) {
+ const m = membros().find(x => x.id === id); if (!m) return;
+ const tok = ++mvTok, dlg = $('memverdlg');
+ dlg.innerHTML = `<div class="reg-box">
+  <div class="reg-head"><h2>Integrante</h2><button class="btn alt" data-mvfechar aria-label="Fechar">✕</button></div>
+  <div class="reg-body" style="white-space:normal">
+   <div class="mv-cab">${fotoHTML(m)}<strong>${esc(m.nome)}</strong>${m.team === '' ? '<small>Sem equipe</small>' : TM(m.team)}<small>${esc(memSub(m))}</small></div>
+   <h3 class="me-grupo">Modalidades inscritas</h3>
+   <div id="mvmods"><p class="muted">Carregando…</p></div>
+  </div>
+  <div class="reg-foot"><button class="btn" data-mvfechar>Fechar</button></div>
+ </div>`;
+ if (!dlg.open) dlg.showModal();
+ try {
+  const tarefas = [INSC.doMembro(id)];
+  if (Date.now() - agLidaEm > 60000) { tarefas.push(AG.listar()); agLidaEm = Date.now(); }   // horários: no máximo uma leitura por minuto
+  const [rows] = await Promise.all(tarefas);
+  if (tok !== mvTok || !dlg.open) return;
+  const equipe = podeEditar();
+  const ids = (rows || []).map(r => r.mod).filter(s => BY[s] && (equipe || !BY[s].oc));
+  const choque = new Set(choquesDe(m, ids).flatMap(([x, y]) => [x.a.s, y.a.s]));
+  const abre = s => podeAbrirMod(s, m.cat);
+  const l = ids.map(s => BY[s]).sort((a, b) => {
+   const ea = efetivo(a, m.cat), eb = efetivo(b, m.cat), ka = ea.dt && ea.hr && !ea.pre ? ea.dt + ea.hr : 'z', kb = eb.dt && eb.hr && !eb.pre ? eb.dt + eb.hr : 'z';
+   return ka.localeCompare(kb) || a.n.localeCompare(b.n, 'pt-BR');
+  });
+  $('mvmods').innerHTML = !l.length ? '<p class="muted">Ainda não está inscrito em nenhuma modalidade.</p>' :
+   choqueHTML(m, ids) + `<div class="mv-mods" style="margin-top:${choque.size ? 10 : 0}px">${l.map(a => {
+    const tag = abre(a.s) ? 'a' : 'div', href = tag == 'a' ? ` href="#/m/${a.s}/${temCat(a, m.cat) ? m.cat : catsDe(a)[0].id}" data-mvfechar` : '';
+    return `<${tag} class="mv-mod ${choque.has(a.s) ? 'choque' : ''}"${href}><strong>${esc(a.n)}</strong><small>${esc(descTipo(a))}</small>${agHTML(a, m.cat) || '<small style="display:block">Sem horário definido</small>'}</${tag}>`;
+   }).join('')}</div>`;
+ } catch (e) {
+  console.error(e);
+  if (tok === mvTok) $('mvmods').innerHTML = '<p class="muted">Não foi possível carregar as modalidades. Tente novamente.</p>';
+ }
+}
+document.addEventListener('click', e => {
+ const t = e.target.closest('[data-memver],[data-mvfechar]'); if (!t) return;
+ if (t.dataset.memver) abrirMemVer(t.dataset.memver);
+ else { if (t.tagName !== 'A') e.preventDefault(); $('memverdlg').close(); }
+});
 
 /* Inicialização: primeiro descobre quem está conectado, depois abre a página */
 iniciarAuth().finally(route);
