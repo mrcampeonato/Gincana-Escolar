@@ -455,7 +455,7 @@ select[data-csel]{position:absolute!important;width:1px!important;height:1px!imp
 .auth-info{display:grid;gap:4px;margin-bottom:14px;text-align:left}
 .auth-info strong{font-size:16px}
 .auth-info span{font-size:13px;color:var(--mute)}
-.ct-row{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.ct-row{display:grid;grid-template-columns:minmax(0,1fr) 210px 30px;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .ct-row:last-child{border-bottom:0}
 .ct-info{min-width:0;display:flex;flex-direction:column;text-align:left}
 .ct-info strong{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -495,6 +495,19 @@ body:not(.adm) .panel:has([data-reset]){display:none}
 .mp-item:last-child{border-bottom:0}
 .mp-item small{display:block;color:var(--mute);font-size:12px}
 body:not(.ed) [data-inscdel]{display:none!important}
+
+/* Página pública das modalidades */
+.pub-st{display:block;width:fit-content;margin:0 auto 14px;padding:5px 14px;border-radius:999px;font-size:13px;font-weight:600;background:var(--soft);color:var(--mute);text-align:center}
+.pub-st.fim{background:rgba(31,157,85,.12);color:#1f9d55}
+.pub-st.and{background:rgba(183,121,31,.14);color:#b7791f}
+.match.pub:not(.fim) .fim-nums{color:var(--line)}
+.pub-aguarda{margin:10px 0 0;text-align:center;font-size:12px;color:var(--mute)}
+.pub-tab{margin-top:12px}
+.pub-tab td:nth-child(2){text-align:left}
+.mod-cfg-ok{animation:modCfgOk 2.4s ease}
+@keyframes modCfgOk{0%,40%{box-shadow:0 0 0 3px #3d9ad8}100%{box-shadow:0 1px 3px rgba(20,33,61,.08)}}
+.ct-row .btn-del{justify-self:end}
+@media (max-width:480px){.ct-row{grid-template-columns:minmax(0,1fr) 30px}.ct-row .ct-sel,.ct-row .ct-tag{grid-column:1/-1;grid-row:2}}
 
 /* Confirmação digitada (Zerar tudo) */
 .cx-dig{display:grid;gap:6px;margin-top:14px;white-space:normal;font-size:13px;font-weight:600;color:var(--mute);text-align:left}
@@ -3827,8 +3840,9 @@ function gradeHTML(edita) {
   const loc = nomeLocal(x.loc), arb = nomeArb(x.arb);
   const conf = edita && (conflitos(x).loc.length || conflitos(x).arb.length);
   const meta = [loc && `<span>${icone('pin')}${esc(loc)}</span>`, arb && `<span>${icone('pessoa')}${esc(arb)}</span>`].filter(Boolean).join('');
-  const attrs = edita ? `type="button" data-cragendar="${x.mod},${x.cat}"` : `href="#/m/${x.mod}/${x.cat}"`;
-  const tag = edita ? 'button' : 'a';
+  const abre = !edita && podeAbrirMod(x.mod, x.cat);
+  const attrs = edita ? `type="button" data-cragendar="${x.mod},${x.cat}"` : abre ? `href="#/m/${x.mod}/${x.cat}"` : '';
+  const tag = edita ? 'button' : abre ? 'a' : 'div';
   return `<${tag} class="cr-card ${conf ? 'conf' : ''}" ${attrs}><span class="cr-nome">${esc(x.n)}</span><span class="cr-hora">${icone('rel')}${faixa(x)}</span>${meta ? `<span class="cr-meta">${meta}</span>` : ''}${conf ? '<span class="cr-alerta">Conflito de local ou árbitro</span>' : ''}</${tag}>`;
  };
  const diasHTML = dias.length < 2 ? '' : `<div class="cr-dias" role="tablist" aria-label="Dias">${dias.map(d => `<button class="chipbtn" data-crdia="${d}" aria-pressed="${d === crDia}">${fmtDia(d)}</button>`).join('')}</div>`;
@@ -4683,7 +4697,7 @@ renderNav = function () {
 };
 
 function naoLiberadaHTML() {
- return `<section class="panel acesso">${icone('olhoX')}<h2>Ainda não liberada</h2><p class="muted">Esta página ainda não está disponível para o público. Volte mais tarde.</p><div class="row">${AUTH.user || !db ? '' : '<button class="btn alt" data-entrar>Entrar</button>'}</div></section>`;
+ return `<section class="panel acesso">${icone('olhoX')}<h2>Ainda não liberada</h2><p class="muted">Esta página ainda não está disponível para o público. Volte mais tarde.</p><div class="row"><button class="btn" data-voltar>← Voltar</button>${AUTH.user || !db ? '' : '<button class="btn alt" data-entrar>Entrar</button>'}</div></section>`;
 }
 const primeiraVisivel = () => { const k = VIS_PAGS.find(([p]) => visivel(p)); return k ? (TABS.find(t => t[0] === k[0]) || [])[2] : null; };
 
@@ -4698,7 +4712,7 @@ render = function () {
   const alt = !cur && pg == 'placar' ? primeiraVisivel() : null;
   if (alt && alt !== '#/' && location.hash !== alt) { location.replace(alt); return; }
   pendente = false;
-  if (cur) $('tabs').innerHTML = ''; else renderNav();
+  renderNav();
   $('main').classList.remove('entrar');
   $('main').innerHTML = naoLiberadaHTML();
   return;
@@ -4757,9 +4771,11 @@ contasHTML = function () {
  if (!contasLista) return h;
  /* acrescenta, nas contas de árbitro, a escolha de qual árbitro cadastrado ela é */
  return h.replace(/<select data-papel="([^"]+)"([\s\S]*?)<\/select>/g, (m, id) => {
-  const x = contasLista.find(y => y.id === id); if (!x || x.papel !== 'arbitro') return m;
+  const x = contasLista.find(y => y.id === id); if (!x) return m;
+  const del = AUTH.user && AUTH.user.id === id ? '<span></span>' : `<button class="btn warn btn-del" data-ctdel="${esc(id)}" title="Excluir conta" aria-label="Excluir a conta de ${esc(x.email)}">×</button>`;
+  if (x.papel !== 'arbitro') return `<span class="ct-sel">${m}</span>${del}`;
   const l = cadLista('arbitros');
-  return `<span class="ct-sel">${m}<select data-arbvinc="${esc(id)}" aria-label="Árbitro vinculado a ${esc(x.email)}"><option value="">Qual árbitro? —</option>${l.map(a => `<option value="${esc(a.id)}" ${x.arbitro_id === a.id ? 'selected' : ''}>${esc(a.n)}</option>`).join('')}</select></span>`;
+  return `<span class="ct-sel">${m}<select data-arbvinc="${esc(id)}" aria-label="Árbitro vinculado a ${esc(x.email)}"><option value="">Qual árbitro? —</option>${l.map(a => `<option value="${esc(a.id)}" ${x.arbitro_id === a.id ? 'selected' : ''}>${esc(a.n)}</option>`).join('')}</select></span>${del}`;
  });
 };
 document.addEventListener('change', async e => {
@@ -4779,6 +4795,126 @@ document.addEventListener('change', async e => {
 document.addEventListener('change', e => {
  if (!e.target.dataset || !e.target.dataset.papel) return;
  setTimeout(() => { const l = $('contaslista'); if (l && contasLista) l.innerHTML = contasHTML(); }, 600);
+});
+
+/* ==========================================================================
+   36. PÁGINA PÚBLICA DAS MODALIDADES, VOLTAR, EXCLUIR CONTA E ATALHO DE CONFIGURAÇÃO
+   - Quem não pode lançar resultado naquela modalidade (público, contas pendentes
+     e árbitros de outras modalidades) vê uma página só de informação: situação,
+     partidas e resultados confirmados. Nenhum campo de edição.
+   ========================================================================== */
+function podeAbrirMod(mod, cat) { const a = BY[mod]; return visivel('mod') || (!!a && arbitroPode(a, cat)); }
+
+/* Voltar: para a página anterior do próprio site, ou para a primeira liberada */
+let navegouNoSite = 0;
+addEventListener('hashchange', () => { navegouNoSite++; });
+document.addEventListener('click', e => {
+ if (!e.target.closest('[data-voltar]')) return;
+ if (navegouNoSite > 0) history.back();
+ else location.hash = primeiraVisivel() || '#/';
+});
+
+/* Situação da modalidade numa categoria */
+function situacaoPub(a, ci, d) {
+ if (a.t == 'chav') {
+  const x = chavM(d), ok = k => !!(x[k] && x[k].ok && win(x[k]));
+  if (ok('f') && ok('t3')) return {cls: 'fim', txt: 'Finalizada'};
+  if (['s1', 's2', 't3', 'f'].some(ok) || d.sorteio) return {cls: 'and', txt: 'Em andamento'};
+ } else if (d.ok) return {cls: 'fim', txt: 'Finalizada'};
+ const e = efetivo(a, ci);
+ if (e.dt && e.hr && !e.pre) {
+  const ini = new Date(`${e.dt}T${e.hr}:00`);
+  if (!isNaN(ini) && Date.now() >= ini.getTime()) return {cls: 'and', txt: 'Em andamento'};
+  return {cls: '', txt: `Não iniciada · ${fmtDia(e.dt)} às ${e.hr}`};
+ }
+ return {cls: '', txt: 'Não iniciada'};
+}
+
+/* Partida do chaveamento só para leitura */
+function jogoPub(label, m) {
+ const vazio = t => t === '' || t == null, has = !vazio(m.a) && !vazio(m.b), w = m.ok && win(m);
+ const ga = !!w && w[0] === +m.a, gb = !!w && w[0] === +m.b;
+ const lado = (t, g) => `<div class="fim-lado ${g ? 'win' : ''}">${vazio(t) ? '<span class="fim-vazio">A definir</span>' : TM(t)}</div>`;
+ if (w) {
+  const tie = num(m.sa) === num(m.sb);
+  return `<div class="match fim pub"><h3>${label}</h3><div class="fim-placar">${lado(m.a, ga)}<div class="fim-nums"><span class="${ga ? 'win' : ''}">${num(m.sa)}</span><span class="fim-x">×</span><span class="${gb ? 'win' : ''}">${num(m.sb)}</span></div>${lado(m.b, gb)}</div>
+  ${tie ? `<div class="fim-desemp"><span>Desempate</span><div class="fim-desemp-nums"><span class="${ga ? 'win' : ''}">${num(m.da)}</span><span class="fim-x">×</span><span class="${gb ? 'win' : ''}">${num(m.db)}</span></div></div>` : ''}</div>`;
+ }
+ return `<div class="match pub"><h3>${label}</h3><div class="fim-placar">${lado(m.a)}<div class="fim-nums"><span>–</span><span class="fim-x">×</span><span>–</span></div>${lado(m.b)}</div><p class="pub-aguarda">${has ? 'Aguardando resultado' : 'Aguardando a definição das equipes'}</p></div>`;
+}
+
+function classPub(a, d) {
+ const p = a.t == 'chav' ? place(a.t, d, a) : (d.ok ? place(a.t, d, a) : null);
+ if (!p) return '';
+ const vf = a.t == 'chav' ? null : valorFinal(a.t, d, a);
+ return `<div class="pv"><strong>Classificação</strong>${T.filter(i => p[i]).sort((x, y) => p[x] - p[y]).map(i => `<div class="pv3"><span>${p[i]}º · ${tn(i)}</span><span class="pv-val">${vf ? esc(vf[i] || '') : ''}</span><span></span></div>`).join('')}</div>`;
+}
+
+function marcasPub(a, d) {
+ const ler = a.u === 'dist' ? pdist : ptime, menor = a.u === 'dist' ? !!a.inv : !a.inv;
+ const l = (d.e || []).filter(e => e && ler(e.t) != null && e.team !== '' && e.team != null).sort((x, y) => (ler(x.t) - ler(y.t)) * (menor ? 1 : -1));
+ if (!l.length) return '';
+ return `<div class="scroll pub-tab"><table><thead><tr><th>Atleta</th><th>Equipe</th><th>${a.u === 'dist' ? 'Distância' : 'Tempo'}</th></tr></thead><tbody>${l.map(e => `<tr><td>${esc(e.n || '—')}</td><td>${tn(+e.team)}</td><td>${esc(e.t)}</td></tr>`).join('')}</tbody></table></div>`;
+}
+
+function publicoHTML(ci) {
+ const a = cur, d = S.res[rk(a, ci)] || {}, st = situacaoPub(a, ci, d);
+ let h = `<span class="pub-st ${st.cls}">${esc(st.txt)}</span>`;
+ if (a.t == 'chav') {
+  const x = chavM(d);
+  h += [['s1', 'Semifinal 1'], ['s2', 'Semifinal 2'], ['t3', 'Disputa de 3º lugar'], ['f', 'Final']].map(([k, l]) => jogoPub(l, x[k] || {})).join('') + classPub(a, d);
+ } else if (d.ok) {
+  h += classPub(a, d) + (a.t == 'marca' && d.modo !== 'class' ? marcasPub(a, d) : '');
+ } else h += '<p class="muted">O resultado aparece aqui assim que for confirmado pela arbitragem.</p>';
+ return h;
+}
+
+const secHTMLAntesPub = secHTML;
+secHTML = function (ci) {
+ if (cur && cur.t != 'extra' && !podeAqui()) return publicoHTML(ci);
+ return secHTMLAntesPub(ci);
+};
+
+/* Atalho para a configuração da modalidade (equipe) */
+let modCfgAlvo = null;
+const renderAntesModCfg = render;
+render = function () {
+ renderAntesModCfg();
+ if (cur && podeEditar() && !$('main').querySelector('[data-modcfg]')) {
+  const head = $('main').querySelector('.page-head'); if (!head) return;
+  let row = head.querySelector('.row');
+  if (!row) { head.insertAdjacentHTML('beforeend', '<div class="row" style="margin-top:8px"></div>'); row = head.querySelector('.row'); }
+  row.insertAdjacentHTML('beforeend', `<button class="btn alt" data-modcfg="${esc(cur.s)}" style="display:inline-flex;align-items:center;gap:6px">${icone('eng')}Configurar modalidade</button>`);
+ }
+ if (!cur && pg == 'modedit' && modCfgAlvo) {
+  const el = $('main').querySelector(`[data-mn="${CSS.escape(modCfgAlvo)}"]`);
+  if (el) {
+   modCfgAlvo = null;
+   const item = el.closest('.me-item') || el.closest('.me-row');
+   setTimeout(() => { item.scrollIntoView({behavior: 'smooth', block: 'center'}); item.classList.add('mod-cfg-ok'); }, 50);
+  }
+ }
+};
+document.addEventListener('click', e => {
+ const t = e.target.closest('[data-modcfg]'); if (!t) return;
+ modCfgAlvo = t.dataset.modcfg;
+ if (typeof fltEd !== 'undefined') fltEd = 'todas';
+ location.hash = '#/configuracoes/modalidades';
+});
+
+/* Excluir conta (administrador). Se for árbitro, ele também sai da lista de árbitros */
+document.addEventListener('click', async e => {
+ const t = e.target.closest('[data-ctdel]'); if (!t || !contasLista) return;
+ const id = t.dataset.ctdel, x = contasLista.find(y => y.id === id); if (!x) return;
+ const arb = x.arbitro_id && nomeArb(x.arbitro_id);
+ if (!await confirmar(`Excluir a conta de ${x.nome || x.email} (${x.email})?${arb ? `\nO árbitro "${arb}" também será removido da lista de árbitros.` : ''}\nEssa ação não pode ser desfeita.`)) return;
+ t.disabled = true;
+ const { error } = await db.rpc('excluir_conta', {alvo: id});
+ if (error) { t.disabled = false; fail(error); return; }
+ contasLista = contasLista.filter(y => y.id !== id);
+ if (x.arbitro_id) { S.arbitros = (S.arbitros || []).filter(a => a.id !== x.arbitro_id); save(); }
+ const l = $('contaslista'); if (l) l.innerHTML = contasHTML();
+ const r = $('contasresumo'); if (r) r.innerHTML = contasResumo();
 });
 
 /* Inicialização: primeiro descobre quem está conectado, depois abre a página */
