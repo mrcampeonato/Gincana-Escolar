@@ -584,6 +584,14 @@ a.mv-mod:hover{border-color:var(--ink)}
 
 .cr-per-res{margin:-8px 0 14px;font-size:12px}
 
+/* Categorias agrupadas no cronograma */
+.cr-grp{grid-column:1/-1}
+.cr-plano{margin:8px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);font-size:13px;text-align:left}
+.cr-plano strong{display:block;margin-bottom:4px}
+.cr-plano div{display:flex;justify-content:space-between;gap:8px;padding:2px 0}
+.cr-plano .ruim{color:#c8283a}
+.cr-plano .aviso{color:#b7791f}
+
 /* Confirmação digitada (Zerar tudo) */
 .cx-dig{display:grid;gap:6px;margin-top:14px;white-space:normal;font-size:13px;font-weight:600;color:var(--mute);text-align:left}
 .cx-dig strong{color:var(--ink)}
@@ -877,7 +885,7 @@ S = Object.assign(fresh(), S || {});
 /* Monta ACTS e BY a partir da lista de modalidades salva */
 function buildActs() {
  const lista = Array.isArray(S.mods) ? S.mods : MODS_PADRAO;
- ACTS = lista.filter(m => m && m.id && m.n && TN[m.t]).map(m => ({n: m.n, t: m.t, s: m.id, r: !!m.r, oc: !!m.oc, u: m.u === 'dist' ? 'dist' : 'tempo', inv: !!m.inv, cn: m.cn || null, xv: m.xv == null ? 100 : +m.xv, sp: Array.isArray(m.sp) && m.sp.length === 3 ? m.sp.map(Number) : null, loc: m.loc || '', dt: m.dt || '', hr: m.hr || '', arb: m.arb || '', agc: m.agc || {}, cats: Array.isArray(m.cats) ? m.cats.map(Number) : null, semIns: !!m.si, semCrono: !!m.sc}));
+ ACTS = lista.filter(m => m && m.id && m.n && TN[m.t]).map(m => ({n: m.n, t: m.t, s: m.id, r: !!m.r, oc: !!m.oc, u: m.u === 'dist' ? 'dist' : 'tempo', inv: !!m.inv, cn: m.cn || null, xv: m.xv == null ? 100 : +m.xv, sp: Array.isArray(m.sp) && m.sp.length === 3 ? m.sp.map(Number) : null, grp: ['junto', 'dia', 'periodo'].includes(m.grp) ? m.grp : '', loc: m.loc || '', dt: m.dt || '', hr: m.hr || '', arb: m.arb || '', agc: m.agc || {}, cats: Array.isArray(m.cats) ? m.cats.map(Number) : null, semIns: !!m.si, semCrono: !!m.sc}));
  BY = Object.fromEntries(ACTS.map(a => [a.s, a]));
 }
 buildActs();
@@ -3952,7 +3960,7 @@ const sobrepoe = (a, b) => { const i1 = toMin(a.hr), f1 = i1 + (a.dur || DUR_PAD
 /* Conflitos de um horário candidato com tudo o que já está agendado */
 function conflitos(c) {
  if (!c.dt || !c.hr) return {loc: [], arb: [], cat: []};
- const outros = itensAgenda().filter(x => x.ok && !(x.mod === c.mod && +x.cat === +c.cat) && x.dt === c.dt && sobrepoe(x, c));
+ const outros = itensAgenda().filter(x => x.ok && !(x.mod === c.mod && +x.cat === +c.cat) && x.dt === c.dt && sobrepoe(x, c) && !(x.mod === c.mod && x.hr === c.hr && +(x.dur || DUR_PADRAO) === +(c.dur || DUR_PADRAO)));
  return {
   loc: c.loc ? outros.filter(x => x.loc === c.loc) : [],
   arb: arbIds(c.arb).length ? outros.filter(x => arbIds(x.arb).some(id => arbIds(c.arb).includes(id))) : [],
@@ -5935,6 +5943,173 @@ document.addEventListener('click', e => {
  if (t.disabled) return;
  salvarAgenda(t.dataset.agsalvar, false, t);
 }, true);
+
+/* ==========================================================================
+   44. CATEGORIAS DA MODALIDADE AGRUPADAS NO CRONOGRAMA
+   - sep:     cada categoria tem o seu horário (como antes)
+   - junto:   todas as categorias juntas, no mesmo dia e horário
+   - dia:     todas no mesmo dia, uma depois da outra
+   - periodo: todas no mesmo dia e no mesmo período (manhã ou tarde)
+   A escolha fica gravada na modalidade e também é seguida pelo gerador automático.
+   ========================================================================== */
+const GRUPOS = [['', 'Cada categoria no seu horário'], ['junto', 'Todas juntas, no mesmo horário'], ['dia', 'Todas no mesmo dia'], ['periodo', 'Todas no mesmo dia e período']];
+const crGrp = () => { const s = $('crgrp'); return s ? s.value : ''; };
+const ordCat = id => { const i = CATS.findIndex(c => c.id === +id); return i < 0 ? 99 : i; };
+
+const abrirCronoAntesGrp = abrirCrono;
+abrirCrono = function (mod, cat) {
+ abrirCronoAntesGrp(mod, cat);
+ const a = BY[mod], lab = $('crcat') && $('crcat').closest('label'); if (!lab) return;
+ lab.insertAdjacentHTML('afterend', `<label class="cr-grp">Categorias desta modalidade<select id="crgrp">${GRUPOS.map(([v, n]) => `<option value="${v}" ${(a && a.grp || '') === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>`);
+ crStatus();
+};
+document.addEventListener('change', e => {
+ if (e.target.id === 'crmod') { const a = BY[e.target.value], s = $('crgrp'); if (s) { s.value = a && a.grp || ''; } setTimeout(crStatus, 0); }
+ else if (e.target.id === 'crgrp') crStatus();
+});
+
+/* Monta os horários de todas as categorias a partir do dia/horário escolhidos */
+function planoGrupo(a, base, grp) {
+ const cats = catsDe(a).map(c => c.id).sort((x, y) => ordCat(x) - ordCat(y)), dur = +base.dur || DUR_PADRAO;
+ const conf = c => { const k = conflitos(c), f = l => l.filter(y => y.mod !== a.s); return {loc: f(k.loc), arb: f(k.arb), cat: f(k.cat)}; };
+ if (grp === 'junto') return {itens: cats.map(cat => { const c = {...base, mod: a.s, n: a.n, cat, dur, ok: true}; return {...c, k: conf(c)}; })};
+ const hr0 = toMin(base.hr), todas = janelas(base.dt);
+ const wins = grp === 'periodo' ? todas.filter(([i, f]) => hr0 >= i && hr0 < f) : todas;
+ if (!wins.length) return {erro: grp === 'periodo' ? 'O horário escolhido não está dentro de um período (manhã ou tarde) com jogos nesse dia.' : 'Esse dia não tem horário de jogos.'};
+ const itens = []; let t = hr0;
+ for (const cat of cats) {
+  let achou = null;
+  for (let s = Math.ceil(t / 5) * 5; ;) {
+   const w = wins.find(([i, f]) => s >= i && s + dur <= f);
+   if (!w) { const nx = wins.find(([i]) => i > s); if (!nx) break; s = nx[0]; continue; }
+   const c = {...base, mod: a.s, n: a.n, cat, dur, hr: fmtMin(s), ok: true}, k = conf(c);
+   if (!k.loc.length && !k.arb.length && !k.cat.length) { achou = {...c, k}; break; }
+   s += 5;
+  }
+  if (!achou) return {erro: `Não coube ${catNome(cat)} ${grp === 'periodo' ? 'nesse período' : 'nesse dia'} a partir das ${base.hr} sem chocar com outra atividade. Tente um horário mais cedo ou outro dia.`, itens};
+  itens.push(achou); t = toMin(achou.hr) + dur;
+ }
+ return {itens};
+}
+
+/* Quadro com o horário de cada categoria, dentro da janela */
+const crStatusAntesGrp = crStatus;
+crStatus = function () {
+ crStatusAntesGrp();
+ const g = crGrp(), box = $('crstatus'); if (!g || !box) return;
+ const c = crLer(), a = BY[c.mod]; if (!a || !c.dt || !c.hr) return;
+ const p = planoGrupo(a, c, g);
+ const linha = x => { const r = x.k.loc.length ? 'ruim' : x.k.arb.length ? 'ruim' : x.k.cat.length ? 'aviso' : ''; const obs = x.k.loc.length ? ' · local ocupado' : x.k.arb.length ? ' · árbitro ocupado' : x.k.cat.length ? ' · categoria com outra atividade' : ''; return `<div class="${r}"><span>${esc(catNome(x.cat))}</span><span>${esc(fmtDia(x.dt))} · ${faixa(x)}${obs}</span></div>`; };
+ box.insertAdjacentHTML('beforeend', `<div class="cr-plano"><strong>Todas as categorias</strong>${(p.itens || []).map(linha).join('')}${p.erro ? `<div class="ruim">${esc(p.erro)}</div>` : ''}</div>`);
+};
+
+/* Grava todas as categorias de uma vez (uma transação no servidor) */
+async function gravarLinhas(linhas) {
+ if (!db) { const ids = new Set(linhas.map(r => r.id)); S.agenda = (S.agenda || []).filter(r => !ids.has(r.id)).concat(linhas); save(); return true; }
+ let { error } = await db.rpc('salvar_agenda', {linhas});
+ if (error && /salvar_agenda|PGRST202|Could not find the function/i.test(String(error.message || error.code))) ({ error } = await db.from('agenda').upsert(linhas.map(({permite_cat, ...r}) => r)));
+ if (error) { const m = msgConflitoAgenda(error); if (m) { await AG.listar(); avisar(m); render(); } else fail(error); return false; }
+ const ids = new Set(linhas.map(r => r.id)); S.agenda = (S.agenda || []).filter(r => !ids.has(r.id)).concat(linhas); save();
+ return true;
+}
+
+const crSalvarAntesGrp = crSalvar;
+crSalvar = async function (btn, limpar) {
+ const g = crGrp(), c = crLer(), a = BY[c.mod];
+ /* guarda a escolha na modalidade, se mudou */
+ if (a && (a.grp || '') !== g) await DB.patchCfg(['mods'], () => { S.mods = listaMods(); const x = S.mods.find(y => y.id === a.s); if (x) { if (g) x.grp = g; else delete x.grp; } buildActs(); });
+ if (!g || !a) return crSalvarAntesGrp(btn, limpar);
+ const agora = new Date().toISOString(), linha = x => ({id: agId(a.s, x.cat), mod: a.s, cat: +x.cat, dt: x.dt || null, hr: x.hr || null, dur: x.dt ? +x.dur || DUR_PADRAO : null, loc: x.dt ? x.loc || null : null, arb: x.dt ? x.arb || null : null, permite_cat: !!x.junta, updated_at: agora});
+ if (limpar) {
+  btn.disabled = true;
+  const ok = await gravarLinhas(catsDe(a).map(cc => linha({cat: cc.id})));
+  btn.disabled = false; if (!ok) return;
+  $('crdlg').close(); render(); avisar(`Todas as categorias de ${a.n} saíram do cronograma.`); return;
+ }
+ if (!c.dt || !c.hr) { avisar('Informe o dia e o horário de início.'); return; }
+ btn.disabled = true;
+ await AG.listar();
+ const p = planoGrupo(a, c, g);
+ if (p.erro) { avisar(p.erro); btn.disabled = false; crAtualiza(); return; }
+ const fora = p.itens.filter(x => !cabe(x.dt, x.hr, x.dur));
+ if (fora.length) { avisar(`Fora do horário dos jogos em ${fmtDia(c.dt)}: ${janelasTxt(c.dt) || 'sem jogos'}.\nCategorias: ${fora.map(x => `${catNome(x.cat)} (${faixa(x)})`).join(', ')}`); btn.disabled = false; return; }
+ const bloq = p.itens.filter(x => x.k.loc.length || x.k.arb.length);
+ if (bloq.length) { avisar(`Não foi possível salvar: há conflito neste horário.\n${bloq.map(x => `${catNome(x.cat)}: ${[x.k.loc.length && `local ocupado (${x.k.loc.map(quem).join('; ')})`, x.k.arb.length && `árbitro ocupado (${x.k.arb.map(quem).join('; ')})`].filter(Boolean).join(', ')}`).join('\n')}`); btn.disabled = false; crAtualiza(); return; }
+ const cat = p.itens.filter(x => x.k.cat.length);
+ if (cat.length) {
+  if (!await confirmar(`Atenção: algumas categorias já têm atividade nesse horário.\n${cat.map(x => `${catNome(x.cat)}: ${x.k.cat.map(quem).join('; ')}`).join('\n')}\nAs atividades vão acontecer ao mesmo tempo para a mesma categoria.\nIncluir mesmo assim?`)) { btn.disabled = false; crAtualiza(); return; }
+  cat.forEach(x => { x.junta = true; });
+ }
+ if (!await gravarLinhas(p.itens.map(linha))) { btn.disabled = false; return; }
+ try { localStorage.setItem('olimp-dur', c.dur); } catch (e) {}
+ crDia = c.dt;
+ $('crdlg').close(); render();
+};
+
+/* ---------- Gerador automático respeitando o agrupamento ---------- */
+gerarProposta = function (embaralhar_) {
+ const cfg = auCfg(), dias = diasPeriodo().map(x => x.dt), base = itensAgendaReal().map(x => ({...x}));
+ const refazer = cfg.modo === 'todo', gap = +cfg.gap || 0;
+ const fixos = refazer ? [] : base.filter(x => x.ok);
+ const pend = (refazer ? base : base.filter(x => !x.ok)).map(x => {
+  const a = BY[x.mod], r = regraDe(cfg, x);
+  return {...x, ok: false, auto: true, dt: '', hr: '', regra: r, dur: (r && +r.dur) || +cfg.dur || DUR_PADRAO,
+   loc: x.loc || (cfg.padroes && a ? a.loc || '' : ''), arb: x.arb || (cfg.padroes && a ? a.arb || '' : '')};
+ });
+ /* unidades: uma atividade, ou todas as categorias de uma modalidade agrupada */
+ const porMod = {}; pend.forEach(x => (porMod[x.mod] = porMod[x.mod] || []).push(x));
+ let un = [];
+ Object.values(porMod).forEach(l => {
+  const a = BY[l[0].mod], g = a && a.grp;
+  if (g && l.length > 1 && !fixos.some(f => f.mod === l[0].mod)) {
+   l.sort((p, q) => ordCat(p.cat) - ordCat(q.cat));
+   const dur = Math.max(...l.map(x => x.dur)); if (g === 'junto') l.forEach(x => { x.dur = dur; });
+   un.push({g, itens: l});
+  } else l.forEach(x => un.push({g: '', itens: [x]}));
+ });
+ un = embaralhar_ ? embaralhar(un) : un.sort((p, q) => p.itens[0].n.localeCompare(q.itens[0].n, 'pt-BR') || p.itens[0].cat - q.itens[0].cat);
+ const peso = u => { const r = u.itens[0].regra; return r ? (r.dia ? 0 : r.turno ? 1 : 2) : u.g ? 2.5 : 3; };
+ un = un.map((u, i) => [u, i]).sort((a, b) => peso(a[0]) - peso(b[0]) || b[0].itens.length - a[0].itens.length || a[1] - b[1]).map(z => z[0]);
+ const colocados = fixos.slice();
+ const choca = c => colocados.some(y => y.dt === c.dt && !(y.mod === c.mod && y.hr === c.hr) && (() => { const i1 = toMin(c.hr), f1 = i1 + c.dur, i2 = toMin(y.hr), f2 = i2 + (y.dur || DUR_PADRAO); return i1 < f2 + gap && i2 < f1 + gap; })()
+  && (+y.cat === +c.cat || (c.loc && y.loc === c.loc) || arbIds(c.arb).some(id => arbIds(y.arb).includes(id))));
+ const carga = (d, cats) => colocados.reduce((s, y) => s + (y.dt === d ? (y.dur || DUR_PADRAO) * (cats.includes(+y.cat) ? 10 : 1) : 0), 0);
+ /* coloca os itens em sequência dentro das janelas (ou todos no mesmo horário, se "junto") */
+ function encaixa(itens, d, wins, junto) {
+  if (junto) {
+   for (const [ini, fim] of wins) for (let t = Math.ceil(ini / 5) * 5; t + itens[0].dur <= fim; t += 5) {
+    if (itens.every(x => !choca({...x, dt: d, hr: fmtMin(t)}))) { itens.forEach(x => { Object.assign(x, {dt: d, hr: fmtMin(t), ok: true}); colocados.push(x); }); return true; }
+   }
+   return false;
+  }
+  const feitos = []; let t = 0;
+  for (const x of itens) {
+   let ok = false;
+   for (const [ini, fim] of wins) {
+    for (let s = Math.ceil(Math.max(ini, t) / 5) * 5; s + x.dur <= fim; s += 5) {
+     if (!choca({...x, dt: d, hr: fmtMin(s)})) { Object.assign(x, {dt: d, hr: fmtMin(s), ok: true}); colocados.push(x); feitos.push(x); t = s + x.dur + gap; ok = true; break; }
+    }
+    if (ok) break;
+   }
+   if (!ok) { feitos.forEach(y => { colocados.splice(colocados.indexOf(y), 1); Object.assign(y, {dt: '', hr: '', ok: false}); }); return false; }
+  }
+  return true;
+ }
+ un.forEach(u => {
+  const r = u.itens[0].regra, dd = r && r.dia ? dias.filter(d => d === r.dia) : dias, cats = u.itens.map(x => +x.cat);
+  const ds = dd.slice().sort((a, b) => carga(a, cats) - carga(b, cats) || a.localeCompare(b));
+  let ok = false;
+  for (const d of ds) {
+   const wins = turnoJanelas(d, r && r.turno);
+   if (u.g === 'periodo') { for (const w of wins) { if (encaixa(u.itens, d, [w], false)) { ok = true; break; } } }
+   else ok = encaixa(u.itens, d, wins, u.g === 'junto');
+   if (ok) break;
+  }
+  if (!ok) u.itens.forEach(x => { x.falha = !dias.length ? 'O período dos jogos não tem dias com jogos.' : r && r.dia && !dd.length ? `O dia ${fmtDia(r.dia)} não está no período dos jogos.` : (u.g ? `Não coube com as categorias ${u.g === 'junto' ? 'juntas no mesmo horário' : u.g === 'dia' ? 'no mesmo dia' : 'no mesmo dia e período'}` : 'Não sobrou horário livre para a categoria, o local ou o árbitro') + (r ? ' dentro da consideração escolhida.' : '.'); });
+ });
+ auto.prop = fixos.map(x => ({...x})).concat(pend);
+ auto.assin = assinAgenda();
+};
 
 /* Inicialização: primeiro descobre quem está conectado, depois abre a página */
 iniciarAuth().finally(route);
