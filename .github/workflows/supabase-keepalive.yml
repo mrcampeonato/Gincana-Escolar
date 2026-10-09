@@ -1,0 +1,19 @@
+name: Supabase Keep Alive
+
+on:
+  schedule:
+    # Roda a cada 3 dias (às 00:00 UTC) para quebrar os 7 dias de limite do Supabase
+    - cron: '0 0 */3 * *'
+  workflow_dispatch: # Permite que você clique em um botão e teste manualmente quando quiser
+
+jobs:
+  ping_supabase:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Enviar requisição para o banco de dados
+        run: |
+          curl -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/" \
+          -H "apikey: ${{ secrets.SUPABASE_KEY }}" \
+          -H "Authorization: Bearer ${{ secrets.SUPABASE_KEY }}" \
+          -I
