@@ -556,6 +556,32 @@ a.mv-mod:hover{border-color:var(--ink)}
 .mv-mod strong{display:block}
 .mv-mod small{color:var(--mute);font-size:12px}
 
+/* Cronograma automático */
+.au-sec{text-align:left}
+.au-opc{display:grid;gap:8px;margin-bottom:12px}
+.au-opc label.ag-por{margin:0}
+.au-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:6px}
+.au-grid label{display:grid;gap:4px;font-size:12px;font-weight:600;color:var(--mute);text-align:left}
+.au-regra{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,.9fr) 30px;gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.au-regra:last-of-type{border-bottom:0}
+@media (max-width:620px){.au-regra{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 30px}.au-regra>:first-child{grid-column:1/-2}.au-regra>.btn-del{grid-column:3;grid-row:1}}
+.au-res{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:0 0 12px}
+.au-res span{padding:5px 12px;border-radius:999px;font-size:13px;font-weight:600;background:var(--soft)}
+.au-res .ok{background:rgba(31,157,85,.12);color:#1f9d55}
+.au-res .ruim{background:rgba(200,40,58,.1);color:#c8283a}
+.au-acoes{position:sticky;bottom:0;z-index:5;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;padding:12px;margin:0 -4px;background:color-mix(in srgb,var(--bg) 85%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-top:1px solid var(--line)}
+.au-falha{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 2px;border-bottom:1px solid var(--line);text-align:left}
+.au-falha small{display:block;color:var(--mute);font-size:12px}
+.mod-cr{margin:12px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);text-align:left;font-size:13px}
+.mod-cr strong{display:block;margin-bottom:4px}
+.mod-cr div{display:flex;justify-content:space-between;gap:8px;padding:2px 0}
+.mod-cr span:last-child{color:var(--mute);text-align:right}
+
+/* Conexão */
+.net-aviso{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:2000;display:flex;align-items:center;gap:8px;max-width:calc(100vw - 24px);padding:10px 16px;border-radius:999px;background:#0f1c36;color:#fff;font:600 13px Figtree,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.net-aviso.ok{background:#1f9d55}
+.net-aviso[hidden]{display:none}
+
 /* Confirmação digitada (Zerar tudo) */
 .cx-dig{display:grid;gap:6px;margin-top:14px;white-space:normal;font-size:13px;font-weight:600;color:var(--mute);text-align:left}
 .cx-dig strong{color:var(--ink)}
@@ -876,7 +902,8 @@ const ROUTES = {
  '#/configuracoes/modalidades': 'modedit',  // página vinculada às Configurações
  '#/configuracoes/integrantes': 'membros',   // gerenciar integrantes (Configurações)
  '#/configuracoes/inscricoes': 'insc',
- '#/configuracoes/cronograma': 'cronoed',     // montagem do cronograma (Configurações)       // inscrições nas modalidades (pela página de integrantes)
+ '#/configuracoes/cronograma': 'cronoed',
+ '#/configuracoes/cronograma/automatico': 'cronoauto',   // gerador automático do cronograma     // montagem do cronograma (Configurações)       // inscrições nas modalidades (pela página de integrantes)
  '#/instagram': 'insta',                     // modalidade extra (acesso por Modalidades)
  '#/torcida': 'torc',                        // modalidade extra (acesso por Modalidades)
  '#/configuracoes/dados': 'dados',           // planilha de resultados e zerar tudo (Configurações)
@@ -901,6 +928,7 @@ const COLS = {
  insc:    'teams,colors,cats,mods,locais,arbitros,periodo',
  crono:   'teams,mods,cats,locais,arbitros,periodo',
  cronoed: 'teams,mods,cats,locais,arbitros,periodo',
+ cronoauto: 'teams,mods,cats,locais,arbitros,periodo',
  cfg:     'teams,pts,fan,ig,mods,colors,cats,locais,arbitros,periodo',
  modedit: 'mods,cats,ig,fan,locais,arbitros'
 };
@@ -928,7 +956,7 @@ function setPath(o, path, val) { const k = path.split('.'); for (let n=0; n<k.le
    ========================================================================== */
 const SUPABASE_URL = 'https://eeqahersokenqsmfwpfb.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVlcWFoZXJzb2tlbnFzbWZ3cGZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MjgyNjksImV4cCI6MjEwNjUwNDI2OX0.5oErD8Un5o15G3Vow6YMfgb1d6pJhXdudkKjG4sHxZs';
-const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth: {persistSession: true, autoRefreshToken: true, detectSessionInUrl: true}}) : null;
+const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth: {persistSession: true, autoRefreshToken: true, detectSessionInUrl: true}, global: {fetch: fetchResiliente}, realtime: {params: {eventsPerSecond: 10}}}) : null;
 
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)) } catch (e) {} };
 const fail = e => {
@@ -1271,7 +1299,7 @@ function pvHTML(t, d, final) {
 function sec(ci) { const el = $('sec'+ci); if (el) el.innerHTML = secHTML(ci); }
 
 function renderNav() {
- const ativa = pg == 'modedit' || pg == 'membros' || pg == 'insc' || pg == 'cronoed' || pg == 'dados' ? 'cfg' : pg == 'insta' || pg == 'torc' ? 'mod' : pg;
+ const ativa = pg == 'modedit' || pg == 'membros' || pg == 'insc' || pg == 'cronoed' || pg == 'cronoauto' || pg == 'dados' ? 'cfg' : pg == 'insta' || pg == 'torc' ? 'mod' : pg;
  $('tabs').innerHTML = TABS.map(([k, n, h]) => `<a href="${h}" ${ativa==k?'aria-current="page"':''} ${k=='cfg'?'aria-label="Configurações" title="Configurações"':''}>${k=='cfg' ? icone('eng') : k=='placar' ? 'Placar<span class="nav-x">geral</span>' : n}</a>`).join('');
 }
 
@@ -1335,7 +1363,7 @@ async function route() {
  pendente = false;
 
  /* Páginas com edição só abrem depois de buscar a versão mais recente do servidor */
- const editavel = !!cur || pg == 'insta' || pg == 'torc' || pg == 'cfg' || pg == 'modedit' || pg == 'membros' || pg == 'insc' || pg == 'cronoed';
+ const editavel = !!cur || pg == 'insta' || pg == 'torc' || pg == 'cfg' || pg == 'modedit' || pg == 'membros' || pg == 'insc' || pg == 'cronoed' || pg == 'cronoauto';
  carregando = editavel && !!db;
  if (carregando) loadingView(); else render();
  scrollTo(0, 0);
@@ -1349,7 +1377,7 @@ async function route() {
   else if (pg == 'mod') tarefas.push(DB.fetchAllRes(), AG.listar());
   else if (pg == 'membros' || pg == 'memver') tarefas.push(MEM.listar());
   else if (pg == 'insc') tarefas.push(MEM.listar(), AG.listar(), inscSel ? carregarInsc() : null);
-  else if (pg == 'crono' || pg == 'cronoed' || pg == 'minhas') tarefas.push(AG.listar());
+  else if (pg == 'crono' || pg == 'cronoed' || pg == 'cronoauto' || pg == 'minhas' || pg == 'modedit') tarefas.push(AG.listar());
   await Promise.all(tarefas);
   save();
  } catch (e) { console.error(e); }
@@ -4019,7 +4047,7 @@ function crStatus() {
  const item = (cls, txt) => `<li class="${cls}">${txt}</li>`;
  l.push(c.loc ? (k.loc.length ? item('ruim', `<strong>Local ocupado:</strong> ${esc(k.loc.map(quem).join('; '))}`) : item('bom', `<strong>Local livre</strong> das ${faixa(c)}`)) : item('neutro', 'Sem local definido'));
  l.push(c.arb ? (k.arb.length ? item('ruim', `<strong>Árbitro ocupado:</strong> ${esc(k.arb.map(quem).join('; '))}`) : item('bom', `<strong>${arbIds(c.arb).length > 1 ? 'Árbitros livres' : 'Árbitro livre'}</strong> no horário`)) : item('neutro', 'Sem árbitro definido'));
- l.push(k.cat.length ? item('aviso', `<strong>${esc(catNome(c.cat))} tem outra atividade no horário:</strong> ${esc(k.cat.map(x => `${x.n} (${faixa(x)})`).join('; '))}`) : item('bom', `<strong>${esc(catNome(c.cat))}</strong> sem outra atividade no horário`));
+ l.push(k.cat.length ? item('ruim', `<strong>${esc(catNome(c.cat))} tem outra atividade no horário:</strong> ${esc(k.cat.map(x => `${x.n} (${faixa(x)})`).join('; '))}`) : item('bom', `<strong>${esc(catNome(c.cat))}</strong> sem outra atividade no horário`));
  box.innerHTML = `<ul class="cr-status">${l.join('')}</ul>`;
 }
 /* Recalcula as listas de local e árbitro (marcando os ocupados) e o quadro de disponibilidade */
@@ -4098,9 +4126,9 @@ async function crSalvar(btn, limpar) {
  if (!limpar && (!c.dt || !c.hr)) { avisar('Informe o dia e o horário de início.'); return; }
  btn.disabled = true;
  await AG.listar();   // confere com a versão mais recente antes de gravar
- const k = limpar ? {loc: [], arb: []} : conflitos(c);
- if (k.loc.length || k.arb.length) {
-  const txt = [k.loc.length && `Local ocupado: ${k.loc.map(quem).join('; ')}`, k.arb.length && `Árbitro ocupado: ${k.arb.map(quem).join('; ')}`].filter(Boolean).join('\n');
+ const k = limpar ? {loc: [], arb: [], cat: []} : conflitos(c);
+ if (k.loc.length || k.arb.length || k.cat.length) {
+  const txt = [k.cat.length && `${catNome(c.cat)} já tem atividade: ${k.cat.map(quem).join('; ')}`, k.loc.length && `Local ocupado: ${k.loc.map(quem).join('; ')}`, k.arb.length && `Árbitro ocupado: ${k.arb.map(quem).join('; ')}`].filter(Boolean).join('\n');
   avisar(`Não foi possível salvar: há conflito neste horário.\n${txt}\nEscolha outro horário, local ou árbitro, ou toque em “Sugerir horário livre”.`);
   btn.disabled = false; crAtualiza(); return;
  }
@@ -4292,7 +4320,7 @@ async function perSalvar(btn) {
  const fds = $('perfds').checked, dias = {};
  datasEntre(ini, fim).forEach(dt => { const x = perTmp.dias[dt]; if (x && x !== 'integral') dias[dt] = x; });
  btn.disabled = true;
- await DB.patchCfg(['periodo'], () => { S.periodo = {ini, fim, manha: m, tarde: t, fds, dias}; });
+ await DB.patchCfg(['periodo'], () => { S.periodo = {...(S.periodo && S.periodo.auto ? {auto: S.periodo.auto} : {}), ini, fim, manha: m, tarde: t, fds, dias}; });
  $('perdlg').close();
  render();
 }
@@ -4304,7 +4332,7 @@ document.addEventListener('click', async e => {
  else if (d.persalvar !== undefined) perSalvar(b);
  else if (d.perlimpar !== undefined) {
   if (!await confirmar('Remover o período dos jogos? O cronograma volta a aceitar qualquer dia e horário.')) return;
-  await DB.patchCfg(['periodo'], () => { S.periodo = {}; });
+  await DB.patchCfg(['periodo'], () => { S.periodo = S.periodo && S.periodo.auto ? {auto: S.periodo.auto} : {}; });
   $('perdlg').close(); render();
  }
 });
@@ -5490,6 +5518,345 @@ document.addEventListener('click', e => {
  if (t.dataset.memver) abrirMemVer(t.dataset.memver);
  else { if (t.tagName !== 'A') e.preventDefault(); $('memverdlg').close(); }
 });
+
+/* ==========================================================================
+   40. CRONOGRAMA AUTOMÁTICO
+   - O administrador define o que agendar, duração padrão, intervalo e
+     considerações (modalidade/categoria num dia e/ou período específico).
+   - O gerador monta uma prévia respeitando o período dos jogos, sem colocar
+     ao mesmo tempo duas atividades da mesma categoria, do mesmo local ou
+     com o mesmo árbitro. Na prévia dá para ajustar cada atividade.
+   - Salvar grava tudo de uma vez na tabela do cronograma (os mesmos dados que
+     aparecem nas páginas das modalidades e na configuração de cada uma).
+   ========================================================================== */
+const AU_PADRAO = {modo: 'pend', dur: 60, gap: 10, padroes: true, regras: []};
+let auto = {cfg: null, prop: null, assin: '', aberto: null};
+const auCfg = () => { if (!auto.cfg) auto.cfg = {...AU_PADRAO, ...clone((S.periodo && S.periodo.auto) || {})}; auto.cfg.regras = auto.cfg.regras || []; return auto.cfg; };
+const assinAgenda = () => (S.agenda || []).map(r => `${r.id}|${r.dt}|${r.hr}|${r.dur}|${r.loc}|${r.arb}`).sort().join(';');
+
+/* Enquanto a prévia estiver aberta, a grade, os conflitos e as listas de local e árbitro usam a prévia */
+const itensAgendaReal = itensAgenda;
+itensAgenda = function () { return pg == 'cronoauto' && auto.prop ? auto.prop : itensAgendaReal(); };
+
+const durTxt = d => d < 60 ? d + ' min' : (d % 60 ? Math.floor(d / 60) + 'h' + (d % 60) : d / 60 + 'h');
+function turnoJanelas(dt, turno) {
+ const p = per(), j = janelas(dt); if (!p || !turno) return j;
+ const alvo = turno === 'manha' ? p.manha : p.tarde, a = toMin(alvo.ini), b = toMin(alvo.fim);
+ return j.filter(([x, y]) => x === a && y === b);
+}
+function regraDe(cfg, x) { return (cfg.regras || []).find(r => r.mod === x.mod && (r.cat === '' || r.cat == null || +r.cat === +x.cat)) || null; }
+
+function gerarProposta(embaralhar_) {
+ const cfg = auCfg(), dias = diasPeriodo().map(x => x.dt), base = itensAgendaReal().map(x => ({...x}));
+ const refazer = cfg.modo === 'todo', gap = +cfg.gap || 0;
+ const fixos = refazer ? [] : base.filter(x => x.ok);
+ const pend = (refazer ? base : base.filter(x => !x.ok)).map(x => {
+  const a = BY[x.mod], r = regraDe(cfg, x);
+  return {...x, ok: false, auto: true, dt: '', hr: '', regra: r,
+   dur: (r && +r.dur) || +cfg.dur || DUR_PADRAO,
+   loc: x.loc || (cfg.padroes && a ? a.loc || '' : ''), arb: x.arb || (cfg.padroes && a ? a.arb || '' : '')};
+ });
+ /* mais restritas primeiro; dentro de cada grupo, ordem por nome (ou embaralhada em "outra opção") */
+ let ordem = embaralhar_ ? embaralhar(pend) : pend.slice().sort((a, b) => a.n.localeCompare(b.n, 'pt-BR') || a.cat - b.cat);
+ const peso = x => x.regra ? (x.regra.dia ? 0 : x.regra.turno ? 1 : 2) : 3;
+ ordem = ordem.map((x, i) => [x, i]).sort((a, b) => peso(a[0]) - peso(b[0]) || a[1] - b[1]).map(z => z[0]);
+ const colocados = fixos.slice();
+ const choca = c => colocados.some(y => y.dt === c.dt && (() => { const i1 = toMin(c.hr), f1 = i1 + c.dur, i2 = toMin(y.hr), f2 = i2 + (y.dur || DUR_PADRAO); return i1 < f2 + gap && i2 < f1 + gap; })()
+  && (+y.cat === +c.cat || (c.loc && y.loc === c.loc) || arbIds(c.arb).some(id => arbIds(y.arb).includes(id))));
+ const carga = (d, cat) => colocados.reduce((s, y) => s + (y.dt === d ? (y.dur || DUR_PADRAO) * (+y.cat === +cat ? 10 : 1) : 0), 0);
+ ordem.forEach(x => {
+  const r = x.regra, dd = r && r.dia ? dias.filter(d => d === r.dia) : dias;
+  const ds = dd.slice().sort((a, b) => carga(a, x.cat) - carga(b, x.cat) || a.localeCompare(b));
+  for (const d of ds) {
+   for (const [ini, fim] of turnoJanelas(d, r && r.turno)) {
+    for (let t = Math.ceil(ini / 5) * 5; t + x.dur <= fim; t += 5) {
+     const c = {...x, dt: d, hr: fmtMin(t)};
+     if (!choca(c)) { Object.assign(x, {dt: d, hr: c.hr, ok: true}); colocados.push(x); break; }
+    }
+    if (x.ok) break;
+   }
+   if (x.ok) break;
+  }
+  if (!x.ok) x.falha = !dias.length ? 'O período dos jogos não tem dias com jogos.' : r && r.dia && !dd.length ? `O dia ${fmtDia(r.dia)} não está no período dos jogos.` : 'Não sobrou horário livre para a categoria, o local ou o árbitro' + (r ? ' dentro da consideração escolhida.' : '.');
+ });
+ auto.prop = fixos.map(x => ({...x})).concat(pend);
+ auto.assin = assinAgenda();
+}
+
+/* ---------- Página do gerador ---------- */
+PAG_RESTRITAS.cronoauto = 'editor';
+function regraHTML(r, i) {
+ const mods = crModsOrd(), a = BY[r.mod], dias = diasPeriodo();
+ return `<div class="au-regra">
+  <select data-aur="${i},mod" aria-label="Modalidade"><option value="">Modalidade…</option>${mods.map(m => `<option value="${m.s}" ${m.s === r.mod ? 'selected' : ''}>${esc(m.n)}</option>`).join('')}</select>
+  <select data-aur="${i},cat" aria-label="Categoria"><option value="">Todas as categorias</option>${(a ? catsDe(a) : []).map(c => `<option value="${c.id}" ${String(r.cat) === String(c.id) ? 'selected' : ''}>${esc(c.n)}</option>`).join('')}</select>
+  <select data-aur="${i},dia" aria-label="Dia"><option value="">Qualquer dia</option>${dias.map(d => `<option value="${d.dt}" ${r.dia === d.dt ? 'selected' : ''}>${esc(fmtDia(d.dt))}</option>`).join('')}</select>
+  <select data-aur="${i},turno" aria-label="Período"><option value="">Qualquer período</option><option value="manha" ${r.turno === 'manha' ? 'selected' : ''}>Manhã</option><option value="tarde" ${r.turno === 'tarde' ? 'selected' : ''}>Tarde</option></select>
+  <select data-aur="${i},dur" aria-label="Duração"><option value="">Duração padrão</option>${DURS.map(d => `<option value="${d}" ${+r.dur === d ? 'selected' : ''}>${durTxt(d)}</option>`).join('')}</select>
+  <button class="btn warn btn-del" data-aurdel="${i}" aria-label="Remover consideração">×</button>
+ </div>`;
+}
+Views.cronoauto = () => {
+ const head = `<div class="page-head"><a class="back" href="#/configuracoes/cronograma">← Voltar ao cronograma</a><h2 class="ptitle">Cronograma automático</h2></div>`;
+ if (!per() || !diasPeriodo().length) return head + `<section class="panel acesso">${icone('cal')}<h2>Defina o período dos jogos</h2><p class="muted">O gerador usa os dias e os turnos do período dos jogos para montar o cronograma.</p><div class="row"><button class="btn" data-perabrir>Definir período dos jogos</button></div></section>`;
+ const cfg = auCfg(), real = itensAgendaReal(), semHora = real.filter(x => !x.ok).length;
+ const cfgHTML = `<section class="panel au-sec"><h2>O que gerar</h2>
+  <div class="au-opc">
+   <label class="ag-por"><input type="radio" name="aumodo" value="pend" ${cfg.modo !== 'todo' ? 'checked' : ''}> Só as atividades sem horário (${semHora}). As já agendadas ficam como estão.</label>
+   <label class="ag-por"><input type="radio" name="aumodo" value="todo" ${cfg.modo === 'todo' ? 'checked' : ''}> Refazer o cronograma inteiro (${real.length} atividades)</label>
+   <label class="ag-por"><input type="checkbox" id="aupadroes" ${cfg.padroes ? 'checked' : ''}> Usar o local e os árbitros padrão de cada modalidade</label>
+  </div>
+  <div class="au-grid">
+   <label>Duração padrão<select id="audur">${DURS.map(d => `<option value="${d}" ${+cfg.dur === d ? 'selected' : ''}>${durTxt(d)}</option>`).join('')}</select></label>
+   <label>Intervalo entre atividades<select id="augap">${[0, 5, 10, 15, 20, 30].map(g => `<option value="${g}" ${+cfg.gap === g ? 'selected' : ''}>${g ? g + ' min' : 'Sem intervalo'}</option>`).join('')}</select></label>
+  </div>
+  <p class="muted" style="text-align:left;margin:6px 0 0">Período: ${esc(fmtDia(per().ini))} a ${esc(fmtDia(per().fim))} · ${diasPeriodo().length} dias com jogos. A mesma categoria, o mesmo local e o mesmo árbitro nunca ficam em duas atividades ao mesmo tempo.</p>
+ </section>
+ <section class="panel au-sec"><h2>Considerações</h2>
+  <p class="muted" style="text-align:left">Prenda uma modalidade (ou só uma categoria dela) a um dia e/ou período, e mude a duração se precisar. O resto é distribuído automaticamente.</p>
+  ${cfg.regras.map(regraHTML).join('') || '<p class="muted">Nenhuma consideração. Tudo será distribuído automaticamente.</p>'}
+  <div class="row" style="margin-top:10px"><button class="btn alt" data-auradd>+ Adicionar consideração</button></div>
+ </section>
+ <div class="row"><button class="btn" data-augerar>${auto.prop ? 'Gerar de novo' : 'Gerar cronograma'}</button>${auto.prop ? '<button class="btn alt" data-augerar="outra">Gerar outra opção</button>' : ''}</div>`;
+ if (!auto.prop) return head + cfgHTML;
+ const novos = auto.prop.filter(x => x.auto), ok = novos.filter(x => x.ok), falhas = novos.filter(x => !x.ok);
+ const prev = `<section class="panel" id="auprev"><h2>Prévia</h2>
+  <div class="au-res"><span class="ok">${ok.length} ${ok.length == 1 ? 'atividade agendada' : 'atividades agendadas'}</span>${falhas.length ? `<span class="ruim">${falhas.length} sem horário</span>` : ''}${auto.prop.length - novos.length ? `<span>${auto.prop.length - novos.length} já estavam agendadas</span>` : ''}</div>
+  <p class="muted">Toque numa atividade para mudar dia, horário, duração, local ou árbitros. Nada é salvo até você tocar em “Salvar cronograma”.</p>
+  <div id="crgrade">${gradeHTML(true)}</div></section>
+  ${falhas.length ? `<section class="panel au-sec"><h2>Sem horário <span class="cr-n">${falhas.length}</span></h2>${falhas.map(x => `<div class="au-falha"><span><strong>${esc(x.n)} · ${esc(catNome(x.cat))}</strong><small>${esc(x.falha || '')}</small></span><button class="btn alt" data-cragendar="${x.mod},${x.cat}">Agendar</button></div>`).join('')}</section>` : ''}
+  <div class="au-acoes"><button class="btn alt" data-audescartar>Descartar prévia</button><button class="btn" data-ausalvar>Salvar cronograma</button></div>`;
+ return head + cfgHTML + crConflitosHTML() + prev;
+};
+
+/* Considerações e opções */
+function auSalvarCfg() { const c = clone(auCfg()); return DB.patchCfg(['periodo'], () => { S.periodo = {...(S.periodo || {}), auto: c}; }); }
+document.addEventListener('change', e => {
+ if (cur || pg !== 'cronoauto') return;
+ const el = e.target, cfg = auCfg();
+ if (el.name === 'aumodo') cfg.modo = el.value;
+ else if (el.id === 'aupadroes') cfg.padroes = el.checked;
+ else if (el.id === 'audur') cfg.dur = +el.value;
+ else if (el.id === 'augap') cfg.gap = +el.value;
+ else if (el.dataset && el.dataset.aur) {
+  const [i, k] = el.dataset.aur.split(','), r = cfg.regras[+i]; if (!r) return;
+  r[k] = k === 'dur' ? (el.value ? +el.value : '') : el.value;
+  if (k === 'mod') { r.cat = ''; render(); }
+ }
+});
+document.addEventListener('click', async e => {
+ const t = e.target.closest('button'); if (!t || cur || pg !== 'cronoauto') return;
+ const d = t.dataset, cfg = auCfg();
+ if (d.auradd !== undefined) { cfg.regras.push({mod: '', cat: '', dia: '', turno: '', dur: ''}); render(); }
+ else if (d.aurdel !== undefined) { cfg.regras.splice(+d.aurdel, 1); render(); }
+ else if (d.augerar !== undefined) {
+  const inval = cfg.regras.filter(r => !r.mod);
+  if (inval.length) { avisar('Escolha a modalidade em todas as considerações, ou remova as que estão vazias.'); return; }
+  t.disabled = true; t.textContent = 'Gerando…';
+  await Promise.all([AG.listar(), auSalvarCfg()]);
+  if (cfg.modo === 'todo' && itensAgendaReal().some(x => x.ok) && !auto.prop && !await confirmar('Refazer o cronograma inteiro?\nTodas as atividades serão redistribuídas na prévia. Nada muda até você salvar.')) { render(); return; }
+  gerarProposta(d.augerar === 'outra');
+  const dias = diasAgenda(); if (!dias.includes(crDia)) crDia = dias[0] || null;
+  render();
+  setTimeout(() => { const p = $('auprev'); if (p) p.scrollIntoView({behavior: semMov() ? 'auto' : 'smooth', block: 'start'}); }, 50);
+ }
+ else if (d.audescartar !== undefined) { if (await confirmar('Descartar a prévia? O cronograma salvo continua como está.')) { auto.prop = null; render(); } }
+ else if (d.ausalvar !== undefined) auSalvar(t);
+});
+
+/* Grava a prévia: uma única gravação em lote, depois de conferir que ninguém mexeu no cronograma */
+async function auSalvar(btn) {
+ btn.disabled = true; btn.textContent = 'Salvando…';
+ const volta = () => { if (document.contains(btn)) { btn.disabled = false; btn.textContent = 'Salvar cronograma'; } };
+ await AG.listar();
+ if (assinAgenda() !== auto.assin && !await confirmar('O cronograma foi alterado por outra pessoa depois que a prévia foi gerada.\nSalvar mesmo assim? As atividades da prévia substituem as alterações dela.')) { volta(); return; }
+ const atual = Object.fromEntries(itensAgendaReal().map(x => [agId(x.mod, x.cat), x])), agora = new Date().toISOString();
+ const linhas = auto.prop.filter(x => {
+  const a = atual[agId(x.mod, x.cat)]; if (!a) return true;
+  return !!x.ok !== !!a.ok || (x.ok && (x.dt !== a.dt || x.hr !== a.hr || +x.dur !== +a.dur || (x.loc || '') !== (a.loc || '') || (x.arb || '') !== (a.arb || '')));
+ }).map(x => ({id: agId(x.mod, x.cat), mod: x.mod, cat: +x.cat, dt: x.ok ? x.dt : null, hr: x.ok ? x.hr : null, dur: x.ok ? +x.dur || DUR_PADRAO : null, loc: x.ok ? x.loc || null : null, arb: x.ok ? x.arb || null : null, updated_at: agora}));
+ if (!linhas.length) { auto.prop = null; location.hash = '#/configuracoes/cronograma'; avisar('Nada mudou no cronograma.'); return; }
+ if (db) { const { error } = await db.from('agenda').upsert(linhas); if (error) { fail(error); volta(); return; } }
+ const ids = new Set(linhas.map(r => r.id));
+ S.agenda = (S.agenda || []).filter(r => !ids.has(r.id)).concat(linhas); save();
+ const n = auto.prop.filter(x => x.ok).length;
+ auto.prop = null;
+ location.hash = '#/configuracoes/cronograma';
+ avisar(`Cronograma salvo: ${n} ${n == 1 ? 'atividade agendada' : 'atividades agendadas'}. Ele já aparece na página Cronograma e nas páginas das modalidades, e pode ser editado a qualquer momento.`);
+}
+
+/* ---------- Ajuste de uma atividade da prévia ---------- */
+document.body.insertAdjacentHTML('beforeend', '<dialog id="audlg" class="reg-dlg" aria-label="Ajustar atividade"></dialog>');
+function auLer() { const x = auto.aberto; return {...x, dt: $('audt').value, hr: $('auhr').value, dur: +$('audur2').value || DUR_PADRAO, loc: $('auloc').value, arb: $('aubox').querySelector('input[type=hidden]').value}; }
+function auStatus() {
+ const c = auLer(), l = [], item = (cls, t) => `<li class="${cls}">${t}</li>`;
+ if (!c.dt || !c.hr) { $('austatus').innerHTML = '<p class="muted">Escolha o dia e o horário.</p>'; return; }
+ const k = conflitos({...c, ok: true});
+ if (!cabe(c.dt, c.hr, c.dur)) l.push(item('aviso', `<strong>Fora do horário dos jogos.</strong> Em ${esc(fmtDia(c.dt))}: ${esc(janelasTxt(c.dt) || 'sem jogos')}`));
+ l.push(c.loc ? (k.loc.length ? item('ruim', `<strong>Local ocupado:</strong> ${esc(k.loc.map(quem).join('; '))}`) : item('bom', '<strong>Local livre</strong>')) : item('neutro', 'Sem local definido'));
+ l.push(arbIds(c.arb).length ? (k.arb.length ? item('ruim', `<strong>Árbitro ocupado:</strong> ${esc(k.arb.map(quem).join('; '))}`) : item('bom', '<strong>Árbitros livres</strong>')) : item('neutro', 'Sem árbitro definido'));
+ l.push(k.cat.length ? item('ruim', `<strong>${esc(catNome(c.cat))} já tem atividade:</strong> ${esc(k.cat.map(x => `${x.n} (${faixa(x)})`).join('; '))}`) : item('bom', `<strong>${esc(catNome(c.cat))}</strong> livre no horário`));
+ $('austatus').innerHTML = `<ul class="cr-status">${l.join('')}</ul>`;
+}
+function auOpcoes() {
+ const c = auLer(), v = $('auloc').value;
+ $('auloc').innerHTML = crOpcoesCad('locais', {...c, ok: true}); $('auloc').value = v;
+ $('aubox').innerHTML = arbPickHTML('id="auarb"', c.arb, id => { if (!c.dt || !c.hr) return ''; const o = conflitos({...c, ok: true, arb: id}).arb; return o.length ? faixa(o[0]) : ''; });
+ auStatus();
+}
+function abrirAuItem(mod, cat) {
+ const x = auto.prop.find(y => y.mod === mod && +y.cat === +cat); if (!x) return;
+ auto.aberto = x;
+ const dias = diasPeriodo().map(d => d.dt), dlg = $('audlg');
+ dlg.innerHTML = `<div class="reg-box">
+  <div class="reg-head"><h2>${esc(x.n)} · ${esc(catNome(x.cat))}</h2><button class="btn alt" data-aufechar aria-label="Fechar">✕</button></div>
+  <div class="reg-body" style="white-space:normal"><div class="mem-form">
+   <div class="ag-grid">
+    <label>Dia<select id="audt"><option value="">—</option>${[...new Set(dias.concat(x.dt ? [x.dt] : []))].sort().map(d => `<option value="${d}" ${d === x.dt ? 'selected' : ''}>${esc(fmtDia(d))}</option>`).join('')}</select></label>
+    <label>Início<input id="auhr" type="time" step="300" value="${esc(x.hr || '')}"></label>
+    <label>Duração<select id="audur2">${DURS.map(d => `<option value="${d}" ${d === +x.dur ? 'selected' : ''}>${durTxt(d)}</option>`).join('')}</select></label>
+    <label>Local<select id="auloc"><option value="${esc(x.loc || '')}" selected></option></select></label>
+   </div>
+   <div class="nv-cats"><span class="nv-tit">Árbitros</span><div id="aubox">${arbPickHTML('id="auarb"', x.arb)}</div></div>
+   <div id="austatus"></div>
+  </div></div>
+  <div class="reg-foot mem-foot">${x.ok ? '<button class="btn warn" data-autirar>Deixar sem horário</button>' : ''}<span class="mem-esp"></span><button class="btn alt" data-aufechar>Cancelar</button><button class="btn" data-auaplicar>Aplicar na prévia</button></div>
+ </div>`;
+ if (!dlg.open) dlg.showModal();
+ auOpcoes();
+}
+document.addEventListener('click', async e => {
+ if (cur || pg !== 'cronoauto') return;
+ const ag = e.target.closest('[data-cragendar]');
+ if (ag && auto.prop) { e.stopImmediatePropagation(); const [mod, cat] = ag.dataset.cragendar.split(','); if (mod) abrirAuItem(mod, cat); return; }
+ const t = e.target.closest('button'); if (!t) return;
+ if (t.dataset.aufechar !== undefined) $('audlg').close();
+ else if (t.dataset.autirar !== undefined) { Object.assign(auto.aberto, {ok: false, dt: '', hr: '', falha: 'Deixada sem horário na prévia.', auto: true}); $('audlg').close(); render(); }
+ else if (t.dataset.auaplicar !== undefined) {
+  const c = auLer();
+  if (!c.dt || !c.hr) { avisar('Escolha o dia e o horário.'); return; }
+  const k = conflitos({...c, ok: true});
+  if (k.loc.length || k.arb.length || k.cat.length) {
+   const txt = [k.cat.length && `${catNome(c.cat)} já tem atividade: ${k.cat.map(quem).join('; ')}`, k.loc.length && `Local ocupado: ${k.loc.map(quem).join('; ')}`, k.arb.length && `Árbitro ocupado: ${k.arb.map(quem).join('; ')}`].filter(Boolean).join('\n');
+   avisar(`Não dá para aplicar: há conflito neste horário.\n${txt}\nEscolha outro dia, horário, local ou árbitro.`); return;
+  }
+  if (!cabe(c.dt, c.hr, c.dur)) { avisar(`Esse horário está fora do horário dos jogos.\nEm ${fmtDia(c.dt)}: ${janelasTxt(c.dt) || 'sem jogos'}.`); return; }
+  Object.assign(auto.aberto, {dt: c.dt, hr: c.hr, dur: c.dur, loc: c.loc, arb: c.arb, ok: true, auto: true, falha: ''});
+  crDia = c.dt;
+  $('audlg').close(); render();
+ }
+}, true);
+document.addEventListener('change', e => { if ($('audlg').open && ['audt', 'auhr', 'audur2', 'auloc', 'auarb'].includes(e.target.id)) auOpcoes(); });
+document.addEventListener('input', e => { if ($('audlg').open && e.target.id === 'auhr') auStatus(); });
+
+/* Atalho no cronograma */
+const cronoedAntesAuto = Views.cronoed;
+Views.cronoed = () => cronoedAntesAuto().replace('data-cragendar="">Agendar atividade</button>', 'data-cragendar="">Agendar atividade</button><a class="btn alt" href="#/configuracoes/cronograma/automatico" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px">' + icone('rel') + 'Gerar automaticamente</a>');
+/* ao sair do gerador, a prévia não salva é descartada */
+addEventListener('hashchange', () => { if (location.hash !== '#/configuracoes/cronograma/automatico') { auto.prop = null; auto.cfg = null; } });
+
+/* Configuração da modalidade: mostra os horários que estão no cronograma */
+const agAntesResumoCr = abrirAgenda;
+abrirAgenda = function (a) {
+ agAntesResumoCr(a);
+ if (a.t == 'extra' || a.semCrono) return;
+ const linhas = catsDe(a).map(c => { const e = efetivo(a, c.id), ok = e.dt && e.hr && !e.pre; return `<div><span>${esc(c.n)}</span><span>${ok ? `${esc(fmtDia(e.dt))} · ${faixa(e)}${nomeLocal(e.loc) ? ' · ' + esc(nomeLocal(e.loc)) : ''}` : 'sem horário'}</span></div>`; }).join('');
+ const box = `<div class="mod-cr"><strong>No cronograma</strong>${linhas}</div>`;
+ const at = $('agdlg').querySelector('[data-agcrono]');
+ if (at) at.insertAdjacentHTML('beforebegin', box); else $('agdlg').querySelector('.reg-body').insertAdjacentHTML('beforeend', box);
+};
+
+/* ==========================================================================
+   41. ROBUSTEZ: REDE INSTÁVEL, MUITOS ACESSOS E CRONOGRAMA SEM CONFLITOS
+   - Toda chamada ao servidor tenta de novo sozinha quando a rede cai ou o
+     servidor está sobrecarregado (502/503/504/429), com espera crescente.
+   - Aviso de "sem conexão" e, ao voltar, a página relê os dados.
+   - Cronograma: o banco recusa qualquer gravação que coloque a mesma
+     categoria, o mesmo local ou um mesmo árbitro em duas atividades ao mesmo
+     tempo (trigger com trava), inclusive com duas pessoas salvando juntas.
+     O gerador salva tudo numa única transação: ou entra inteiro, ou nada muda.
+   ========================================================================== */
+const espera = ms => new Promise(r => setTimeout(r, ms));
+async function fetchResiliente(url, opts) {
+ const pausas = [400, 1200, 3000];
+ for (let i = 0; ; i++) {
+  try {
+   const r = await fetch(url, opts);
+   if ((r.status === 429 || r.status === 502 || r.status === 503 || r.status === 504) && i < pausas.length) { await espera(pausas[i] * (r.status === 429 ? 2 : 1) + Math.random() * 300); continue; }
+   return r;
+  } catch (e) {
+   if ((e && e.name === 'AbortError') || i >= pausas.length) throw e;
+   await espera(pausas[i] + Math.random() * 300);
+  }
+ }
+}
+
+/* Aviso de conexão */
+document.body.insertAdjacentHTML('beforeend', '<div id="netaviso" class="net-aviso" role="status" hidden></div>');
+let netTimer = null;
+function netAviso(txt, ok) {
+ const el = $('netaviso'); clearTimeout(netTimer);
+ el.textContent = txt; el.classList.toggle('ok', !!ok); el.hidden = false;
+ if (ok) netTimer = setTimeout(() => { el.hidden = true; }, 2500);
+}
+addEventListener('offline', () => netAviso('Sem conexão. O que você alterar agora pode não ser salvo.'));
+addEventListener('online', () => { netAviso('Conexão de volta. Atualizando os dados…', true); if (!hasDraft() && !typing()) route(); });
+if (navigator.onLine === false) netAviso('Sem conexão. O que você alterar agora pode não ser salvo.');
+
+/* Mensagem clara quando o banco recusa um horário em conflito */
+function msgConflitoAgenda(e) {
+ const m = String(e && (e.message || e.details) || '');
+ if (!/CONFLITO_AGENDA/.test(m)) return null;
+ return 'O cronograma mudou: outra pessoa acabou de ocupar esse horário com a mesma categoria, o mesmo local ou o mesmo árbitro.\n' + m.replace(/^.*CONFLITO_AGENDA:\s*/, '') + '\nA tela foi atualizada. Escolha outro horário.';
+}
+AG.salvar = async function (r) {
+ const row = {id: agId(r.mod, r.cat), mod: r.mod, cat: +r.cat, dt: r.dt || null, hr: r.hr || null, dur: r.dur || null, loc: r.loc || null, arb: r.arb || null, updated_at: new Date().toISOString()};
+ if (db) {
+  const { error } = await db.from('agenda').upsert(row);
+  if (error) { const m = msgConflitoAgenda(error); if (m) { await AG.listar(); avisar(m); render(); } else fail(error); return false; }
+ }
+ S.agenda = (S.agenda || []).filter(x => x.id !== row.id).concat([row]); save();
+ return true;
+};
+
+/* Gerador: confere a prévia inteira antes de salvar */
+function conflitosPrevia() {
+ const atual = Object.fromEntries(itensAgendaReal().map(x => [agId(x.mod, x.cat), x]));
+ const mudou = x => { const a = atual[agId(x.mod, x.cat)]; return !a || !!a.ok !== !!x.ok || (x.ok && (a.dt !== x.dt || a.hr !== x.hr || +a.dur !== +x.dur || (a.loc || '') !== (x.loc || '') || (a.arb || '') !== (x.arb || ''))); };
+ const l = [];
+ auto.prop.filter(x => x.ok && mudou(x)).forEach(x => {
+  const k = conflitos(x);
+  [['cat', 'Categoria'], ['loc', 'Local'], ['arb', 'Árbitro']].forEach(([f, rot]) => k[f].forEach(y => l.push(`${rot}: ${x.n} (${catNome(x.cat)}, ${fmtDia(x.dt)} ${faixa(x)}) × ${y.n} (${catNome(y.cat)}, ${faixa(y)})`)));
+  if (!cabe(x.dt, x.hr, x.dur)) l.push(`Fora do horário dos jogos: ${x.n} (${catNome(x.cat)}, ${fmtDia(x.dt)} ${faixa(x)})`);
+ });
+ return [...new Set(l)];
+}
+auSalvar = async function (btn) {
+ const l = conflitosPrevia();
+ if (l.length) { avisar(`Não dá para salvar: a prévia tem ${l.length} ${l.length == 1 ? 'conflito' : 'conflitos'}.\n${l.slice(0, 6).join('\n')}${l.length > 6 ? `\n… e mais ${l.length - 6}` : ''}\nToque na atividade para ajustar.`); return; }
+ btn.disabled = true; btn.textContent = 'Salvando…';
+ const volta = () => { if (document.contains(btn)) { btn.disabled = false; btn.textContent = 'Salvar cronograma'; } };
+ await AG.listar();
+ if (assinAgenda() !== auto.assin && !await confirmar('O cronograma foi alterado por outra pessoa depois que a prévia foi gerada.\nSalvar mesmo assim? As atividades da prévia substituem as alterações dela.')) { volta(); return; }
+ const atual = Object.fromEntries(itensAgendaReal().map(x => [agId(x.mod, x.cat), x])), agora = new Date().toISOString();
+ const linhas = auto.prop.filter(x => {
+  const a = atual[agId(x.mod, x.cat)]; if (!a) return true;
+  return !!x.ok !== !!a.ok || (x.ok && (x.dt !== a.dt || x.hr !== a.hr || +x.dur !== +a.dur || (x.loc || '') !== (a.loc || '') || (x.arb || '') !== (a.arb || '')));
+ }).map(x => ({id: agId(x.mod, x.cat), mod: x.mod, cat: +x.cat, dt: x.ok ? x.dt : null, hr: x.ok ? x.hr : null, dur: x.ok ? +x.dur || DUR_PADRAO : null, loc: x.ok ? x.loc || null : null, arb: x.ok ? x.arb || null : null, updated_at: agora}));
+ if (!linhas.length) { auto.prop = null; location.hash = '#/configuracoes/cronograma'; avisar('Nada mudou no cronograma.'); return; }
+ if (db) {
+  /* uma única transação no servidor: libera os horários antigos e grava os novos; se algo chocar, nada muda */
+  let { error } = await db.rpc('salvar_agenda', {linhas});
+  if (error && /salvar_agenda|PGRST202|Could not find the function/i.test(String(error.message || error.code))) ({ error } = await db.from('agenda').upsert(linhas));   // banco ainda sem a função
+  if (error) { const m = msgConflitoAgenda(error); if (m) { await AG.listar(); auto.assin = ''; avisar(m.replace('A tela foi atualizada. Escolha outro horário.', 'Nada foi salvo. Gere de novo ou ajuste a atividade.')); } else fail(error); volta(); return; }
+ }
+ const ids = new Set(linhas.map(r => r.id));
+ S.agenda = (S.agenda || []).filter(r => !ids.has(r.id)).concat(linhas); save();
+ const n = auto.prop.filter(x => x.ok).length;
+ auto.prop = null;
+ location.hash = '#/configuracoes/cronograma';
+ avisar(`Cronograma salvo: ${n} ${n == 1 ? 'atividade agendada' : 'atividades agendadas'}. Ele já aparece na página Cronograma e nas páginas das modalidades, e pode ser editado a qualquer momento.`);
+};
 
 /* Inicialização: primeiro descobre quem está conectado, depois abre a página */
 iniciarAuth().finally(route);
