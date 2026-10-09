@@ -509,6 +509,13 @@ body:not(.ed) [data-inscdel]{display:none!important}
 .ct-row .btn-del{justify-self:end}
 @media (max-width:480px){.ct-row{grid-template-columns:minmax(0,1fr) 30px}.ct-row .ct-sel,.ct-row .ct-tag{grid-column:1/-1;grid-row:2}}
 
+/* Suíço */
+.sui-rod{font-size:15px;margin:18px 0 8px;text-align:center;color:var(--mute)}
+.sui-rod:first-of-type{margin-top:4px}
+.sp-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.sp-grid label{display:grid;gap:4px;font-size:12px;font-weight:600;color:var(--mute);text-align:left}
+.sui-emp{margin:8px 0 0;text-align:center;font-size:12px;font-weight:600;color:var(--mute)}
+
 /* Confirmação digitada (Zerar tudo) */
 .cx-dig{display:grid;gap:6px;margin-top:14px;white-space:normal;font-size:13px;font-weight:600;color:var(--mute);text-align:left}
 .cx-dig strong{color:var(--ink)}
@@ -776,7 +783,7 @@ const L = {
  crit: ['Free Fire','Operações Matemáticas','Prova dos Sentidos','Soletrando','Ciências','Do Lixo ao Luxo','Master Chef'],
  pontos: ['Boliche Humano','Adedonha']
 };
-const TN = {chav:'Chaveamento',rank:'Ranking',marca:'Marca',crit:'Critérios',pontos:'Pontuação',extra:'Extra'};
+const TN = {chav:'Chaveamento',suico:'Suíço',rank:'Ranking',marca:'Marca',crit:'Critérios',pontos:'Pontuação',extra:'Extra'};
 const slug = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 /* Lista padrão de modalidades (usada só enquanto nada foi salvo no servidor).
    O "id" é fixo: é ele que liga a modalidade aos resultados na tabela res. */
@@ -802,7 +809,7 @@ S = Object.assign(fresh(), S || {});
 /* Monta ACTS e BY a partir da lista de modalidades salva */
 function buildActs() {
  const lista = Array.isArray(S.mods) ? S.mods : MODS_PADRAO;
- ACTS = lista.filter(m => m && m.id && m.n && TN[m.t]).map(m => ({n: m.n, t: m.t, s: m.id, r: !!m.r, oc: !!m.oc, u: m.u === 'dist' ? 'dist' : 'tempo', inv: !!m.inv, cn: m.cn || null, xv: m.xv == null ? 100 : +m.xv, loc: m.loc || '', dt: m.dt || '', hr: m.hr || '', arb: m.arb || '', agc: m.agc || {}, cats: Array.isArray(m.cats) ? m.cats.map(Number) : null, semIns: !!m.si, semCrono: !!m.sc}));
+ ACTS = lista.filter(m => m && m.id && m.n && TN[m.t]).map(m => ({n: m.n, t: m.t, s: m.id, r: !!m.r, oc: !!m.oc, u: m.u === 'dist' ? 'dist' : 'tempo', inv: !!m.inv, cn: m.cn || null, xv: m.xv == null ? 100 : +m.xv, sp: Array.isArray(m.sp) && m.sp.length === 3 ? m.sp.map(Number) : null, loc: m.loc || '', dt: m.dt || '', hr: m.hr || '', arb: m.arb || '', agc: m.agc || {}, cats: Array.isArray(m.cats) ? m.cats.map(Number) : null, semIns: !!m.si, semCrono: !!m.sc}));
  BY = Object.fromEntries(ACTS.map(a => [a.s, a]));
 }
 buildActs();
@@ -1049,6 +1056,7 @@ function chavM(d) {
  return {s1: m.s1 || {}, s2: m.s2 || {}, t3: {...m.t3, a: w1 ? w1[1] : '', b: w2 ? w2[1] : ''}, f: {...m.f, a: w1 ? w1[0] : '', b: w2 ? w2[0] : ''}};
 }
 function place(t, d, a) {
+ if (t == 'suico') { const sp = suicoPts(d, a || cur); return sp ? crank(sp, false) : null; }
  if (!d) return null;
  if (t == 'chav') {
   const x = chavM(d), wf = win(x.f), wt = win(x.t3), p = [null, null, null, null];
@@ -1073,7 +1081,7 @@ function place(t, d, a) {
 const ready = (t, d) => { const p = place(t, {...d, ok: true}); return t == 'marca' && d.modo !== 'class' ? !!p : !!p && p.every(Boolean) };
 function totals() {
  const cat = {}; let done = 0; CATS.forEach(c => cat[c.id] = [0,0,0,0]);
- ACTS.forEach(a => CATS.filter(c => temCat(a, c.id)).forEach(c => { const p = place(a.t, S.res[rk(a, c.id)], a); if (p) { done++; p.forEach((x, i) => { if (x) cat[c.id][i] += S.pts[x-1] || 0 }) } }));
+ ACTS.forEach(a => CATS.filter(c => temCat(a, c.id)).forEach(c => { if (a.t == 'suico') { const sp = suicoPts(S.res[rk(a, c.id)], a); if (sp) { done++; sp.forEach((v, i) => cat[c.id][i] += v); } return; } const p = place(a.t, S.res[rk(a, c.id)], a); if (p) { done++; p.forEach((x, i) => { if (x) cat[c.id][i] += S.pts[x-1] || 0 }) } }));
  const ig = T.map(i => (S.insta[i] || []).filter(Boolean).length * S.ig), fn = T.map(i => (S.fans || []).filter(f => +f.team === i).length * S.fan);
  const ex = ACTS.filter(a => a.t == 'extra').map(a => ({n: a.n, v: extraSoma(a)}));
  return {cat, ig, fn, ex, done, tot: T.map(i => CATS.reduce((a, c) => a + cat[c.id][i], 0) + ig[i] + fn[i] + ex.reduce((s, x) => s + x.v[i], 0))};
@@ -1690,7 +1698,7 @@ Views.modedit = () => {
   </div>${a.t == 'marca' ? `<div class="me-sub">
    <select data-mu="${a.s}" aria-label="Medida de ${esc(a.n)}"><option value="tempo" ${a.u=='tempo'?'selected':''}>Medida: Tempo</option><option value="dist" ${a.u=='dist'?'selected':''}>Medida: Distância</option></select>
    <select data-mi="${a.s}" aria-label="Modo de ${esc(a.n)}"><option value="0" ${!a.inv?'selected':''}>Normal (${a.u=='dist'?'maior distância':'menor tempo'} vence)</option><option value="1" ${a.inv?'selected':''}>Invertido (${a.u=='dist'?'menor distância':'maior tempo'} vence)</option></select>
-  </div>` : ''}${a.t == 'extra' ? `<div class="me-sub1"><label class="ex-cfg">Pontos padrão por lançamento<input type="number" min="0" step="any" data-mxv="${a.s}" value="${a.xv}"></label></div>` : ''}${a.t == 'crit' ? `<div class="me-sub1"><button class="btn alt" data-mcrit="${a.s}">Nomear critérios${a.cn ? ' ✔' : ''}</button></div>` : ''}`;
+  </div>` : ''}${a.t == 'extra' ? `<div class="me-sub1"><label class="ex-cfg">Pontos padrão por lançamento<input type="number" min="0" step="any" data-mxv="${a.s}" value="${a.xv}"></label></div>` : ''}${a.t == 'suico' ? `<div class="me-sub1"><div class="sp-grid">${['Vitória', 'Empate', 'Derrota'].map((n, k) => `<label>${n}<input type="number" min="0" step="any" data-msp="${a.s},${k}" value="${spDe(a)[k]}"></label>`).join('')}</div></div>` : ''}${a.t == 'crit' ? `<div class="me-sub1"><button class="btn alt" data-mcrit="${a.s}">Nomear critérios${a.cn ? ' ✔' : ''}</button></div>` : ''}`;
  const linha = a => `<div class="me-item ${a.oc ? 'oculta' : ''}">${linhaBase(a)}</div>`;
  const porNome = (x, y) => x.n.localeCompare(y.n, 'pt-BR', {sensitivity: 'base'}) * (ordEd == 'za' ? -1 : 1);
  const grupos = ordEd == 'tipo'
@@ -3402,6 +3410,7 @@ function abrirNovaMod() {
     <label>Modo<select id="nvmodo"><option value="0">Normal</option><option value="1">Invertido</option></select></label>
    </div>
    <label class="nv-extra" hidden>Pontos padrão por lançamento<input id="nvxv" type="number" min="0" step="any" value="100"></label>
+   <div class="nv-suico" hidden><span class="nv-tit">Pontos de cada jogo (vão direto para o placar geral)</span><div class="sp-grid"><label>Vitória<input id="nvsp0" type="number" min="0" step="any" value="200"></label><label>Empate<input id="nvsp1" type="number" min="0" step="any" value="160"></label><label>Derrota<input id="nvsp2" type="number" min="0" step="any" value="80"></label></div><p class="muted" style="margin:6px 0 0;text-align:left;font-size:12px">As 4 equipes jogam 2 rodadas, sorteadas de uma vez, sem repetir confronto.</p></div>
    <div class="nv-crit" hidden><span class="nv-tit">Nomes dos critérios (opcional, valem para todas as categorias)</span><div class="crit-grid">${Array.from({length: NCRIT}, (_, k) => `<input data-nvcrit="${k}" placeholder="Critério ${k+1}" maxlength="40" aria-label="Critério ${k+1}">`).join('')}</div></div>
    <div class="nv-cats"><span class="nv-tit">Categorias</span><div class="nv-chips">${CATS.map(c => `<label class="nv-chip"><input type="checkbox" data-nvcat="${c.id}" checked><span>${esc(c.n)}</span></label>`).join('')}</div></div>
    <div class="cr-aviso">${icone('cal')}<span>Dia, horário, local e árbitro de cada categoria são definidos no Cronograma, que confere os conflitos.</span></div>
@@ -3419,6 +3428,7 @@ function nvTipo() {
  const t = $('nvtipo').value;
  $('novadlg').querySelector('.nv-marca').hidden = t != 'marca';
  $('novadlg').querySelector('.nv-extra').hidden = t != 'extra';
+ $('novadlg').querySelector('.nv-suico').hidden = t != 'suico';
  $('novadlg').querySelector('.nv-crit').hidden = t != 'crit';
  $('novadlg').querySelector('.nv-cats').hidden = t == 'extra';
  $('novadlg').querySelector('.nv-ins').hidden = t == 'extra';
@@ -3440,6 +3450,7 @@ async function criarMod(btn) {
   const x = {id, n: nome, t};
   if (t == 'marca') { if ($('nvmedida').value == 'dist') x.u = 'dist'; if ($('nvmodo').value == '1') x.inv = 1; }
   if (t == 'extra') x.xv = Math.max(0, +$('nvxv').value || 0);
+  if (t == 'suico') { const sp = [0, 1, 2].map(k => Math.max(0, +$('nvsp' + k).value || 0)); if (sp.join() !== '200,160,80') x.sp = sp; }
   if (t == 'crit') { const nomes = [...$('novadlg').querySelectorAll('[data-nvcrit]')].map(i => i.value.trim()); if (nomes.some(Boolean)) x.cn = {todos: nomes}; }
   if (t != 'extra' && cats.length < CATS.length) x.cats = cats;
   [['loc', 'nvloc'], ['arb', 'nvarb'], ['dt', 'nvdt'], ['hr', 'nvhr']].forEach(([f, el]) => { const v = $(el) && $(el).value; if (v) x[f] = v; });
@@ -4916,6 +4927,165 @@ document.addEventListener('click', async e => {
  const l = $('contaslista'); if (l) l.innerHTML = contasHTML();
  const r = $('contasresumo'); if (r) r.innerHTML = contasResumo();
 });
+
+/* ==========================================================================
+   37. MODALIDADE "SUÍÇO"
+   - As 4 equipes jogam 2 rodadas (2 jogos por rodada), todos sorteados de uma
+     vez, sem repetir confronto.
+   - Cada jogo vale pontos direto no placar geral (padrão: vitória 200,
+     empate 160, derrota 80). A pontuação da modalidade aparece e entra no
+     placar geral só quando os 4 jogos da categoria estão confirmados.
+   ========================================================================== */
+const SUICO_JOGOS = [['r1a', '1ª rodada · Jogo 1'], ['r1b', '1ª rodada · Jogo 2'], ['r2a', '2ª rodada · Jogo 1'], ['r2b', '2ª rodada · Jogo 2']];
+function spDe(a) { return a && Array.isArray(a.sp) && a.sp.length === 3 ? a.sp : [200, 160, 80]; }
+const temEq = t => t !== '' && t != null;
+function suicoJogoOk(m) { return !!(m && m.ok && temEq(m.a) && temEq(m.b) && num(m.sa) != null && num(m.sb) != null); }
+function suicoFim(d) { return !!(d && d.m) && SUICO_JOGOS.every(([k]) => suicoJogoOk(d.m[k])); }
+function suicoTabela(d, a) {
+ const sp = spDe(a), r = T.map(() => ({v: 0, e: 0, d: 0, pts: 0}));
+ SUICO_JOGOS.forEach(([k]) => {
+  const m = d && d.m && d.m[k]; if (!suicoJogoOk(m)) return;
+  const A = +m.a, B = +m.b, sa = num(m.sa), sb = num(m.sb);
+  if (sa === sb) { r[A].e++; r[B].e++; r[A].pts += sp[1]; r[B].pts += sp[1]; }
+  else { const [w, l] = sa > sb ? [A, B] : [B, A]; r[w].v++; r[w].pts += sp[0]; r[l].d++; r[l].pts += sp[2]; }
+ });
+ return r;
+}
+function suicoPts(d, a) { return suicoFim(d) ? suicoTabela(d, a).map(x => x.pts) : null; }
+
+/* Sorteio único: 1ª rodada A×B e C×D; 2ª rodada A×C/B×D ou A×D/B×C (nunca repete) */
+async function sortearSuico(ci) {
+ const key = rk(cur, ci);
+ if (!await confirmar('Sortear os jogos das duas rodadas?\nO sorteio só pode ser feito uma vez. Os confrontos não se repetem entre as rodadas.')) return;
+ await DB.fetchSingleRes(cur, ci);   // confere se outro aparelho já sorteou
+ if ((S.res[key] || {}).sorteio) { delete D[key]; sec(ci); avisar('Os jogos desta categoria já foram sorteados.'); return; }
+ const e = embaralhar(T), lado = par => embaralhar(par);
+ const r2 = embaralhar([[[e[0], e[2]], [e[1], e[3]]], [[e[0], e[3]], [e[1], e[2]]]])[0];
+ const [j1, j2] = [lado([e[0], e[1]]), lado([e[2], e[3]])], [j3, j4] = embaralhar([lado(r2[0]), lado(r2[1])]);
+ const d = clone(S.res[key] || {});
+ d.m = {r1a: {a: j1[0], b: j1[1]}, r1b: {a: j2[0], b: j2[1]}, r2a: {a: j3[0], b: j3[1]}, r2b: {a: j4[0], b: j4[1]}};
+ d.sorteio = {em: new Date().toISOString()};
+ S.res[key] = d; delete D[key];
+ await DB.persistRes(cur, ci);
+ sec(ci);
+}
+
+/* Confirma um jogo: relê o servidor e grava só esse jogo (dois árbitros podem lançar ao mesmo tempo) */
+async function suicoConfirmar(ci, x, btn) {
+ const key = rk(cur, ci); ensureD(key);
+ const m = D[key].m && D[key].m[x];
+ if (!m || num(m.sa) == null || num(m.sb) == null) return;
+ btn.disabled = true;
+ const rasc = clone(D[key]);
+ await DB.fetchSingleRes(cur, ci);
+ const salvo = clone(S.res[key] || {}), s0 = (salvo.m || {})[x] || {};
+ salvo.m = salvo.m || {};
+ salvo.m[x] = {...s0, sa: num(m.sa), sb: num(m.sb), a: temEq(s0.a) ? s0.a : m.a, b: temEq(s0.b) ? s0.b : m.b, ok: true};
+ S.res[key] = salvo;
+ /* rascunho: mantém só o que ainda está sendo digitado nos outros jogos */
+ const nd = clone(salvo);
+ Object.keys(rasc.m || {}).forEach(k => { const r = rasc.m[k]; if (k !== x && r && !r.ok && !(nd.m[k] && nd.m[k].ok)) nd.m[k] = {...(nd.m[k] || {}), sa: r.sa, sb: r.sb, ok: false}; });
+ if (JSON.stringify(nd) === JSON.stringify(salvo)) delete D[key]; else D[key] = nd;
+ await DB.persistRes(cur, ci);
+ sec(ci);
+ if (!semMov()) { const ed = $('sec' + ci) && $('sec' + ci).querySelector(`[data-edit="${x}"]`), alvo = ed && ed.closest('.match'); if (alvo) alvo.classList.add('salvo'); }
+}
+
+const ladoSui = (t, g) => `<div class="fim-lado ${g ? 'win' : ''}">${temEq(t) ? TM(t) : '<span class="fim-vazio">A definir</span>'}</div>`;
+function placarFimSui(m) {
+ const sa = num(m.sa), sb = num(m.sb), emp = sa === sb, ga = sa > sb, gb = sb > sa;
+ return `<div class="fim-placar">${ladoSui(m.a, ga)}<div class="fim-nums"><span class="${ga || emp ? 'win' : ''}">${sa}</span><span class="fim-x">×</span><span class="${gb || emp ? 'win' : ''}">${sb}</span></div>${ladoSui(m.b, gb)}</div>${emp ? '<p class="sui-emp">Empate</p>' : ''}`;
+}
+
+/* Jogo para quem lança o resultado */
+function suicoJogoHTML(x, m, label) {
+ m = m || {};
+ if (suicoJogoOk(m)) return `<div class="match fim"><h3>${label}</h3>${placarFimSui(m)}<div class="row" style="margin-top:10px"><button class="btn alt" data-edit="${x}">Editar</button></div>${inscPartidaHTML(x, m)}</div>`;
+ const has = temEq(m.a) && temEq(m.b), dis = !has, pronto = has && num(m.sa) != null && num(m.sb) != null;
+ return `<div class="match"><h3>${label}</h3><div class="fim-placar">${ladoSui(m.a)}<div class="fim-nums">${VST(`m.${x}.sa`, m.sa, dis)}<span class="fim-x">×</span>${VST(`m.${x}.sb`, m.sb, dis)}</div>${ladoSui(m.b)}</div>
+ <div class="row" style="margin-top:12px"><button class="btn" data-conf="${x}" ${pronto ? '' : 'disabled'}>Salvar resultado</button></div>${inscPartidaHTML(x, m)}</div>`;
+}
+/* Jogo só para leitura */
+function suicoJogoPubHTML(x, m, label) {
+ m = m || {};
+ if (suicoJogoOk(m)) return `<div class="match fim pub"><h3>${label}</h3>${placarFimSui(m)}</div>`;
+ return `<div class="match pub"><h3>${label}</h3><div class="fim-placar">${ladoSui(m.a)}<div class="fim-nums"><span>–</span><span class="fim-x">×</span><span>–</span></div>${ladoSui(m.b)}</div><p class="pub-aguarda">Aguardando resultado</p></div>`;
+}
+const rodadasSui = (d, fn) => [1, 2].map(n => `<h3 class="sui-rod">${n}ª rodada</h3>` + SUICO_JOGOS.filter(([k]) => k[1] == n).map(([k], i) => fn(k, (d.m || {})[k], `Jogo ${i + 1}`)).join('')).join('');
+
+/* Pontuação da modalidade (no lugar da classificação) */
+function suicoPontosHTML(a, d) {
+ if (!suicoFim(d)) return `<div class="pv"><strong>Pontuação da modalidade</strong><div class="muted">A pontuação aparece ao final das duas rodadas.</div></div>`;
+ const r = suicoTabela(d, a), ord = T.slice().sort((x, y) => r[y].pts - r[x].pts || x - y);
+ return `<div class="pv"><strong>Pontuação da modalidade</strong>${ord.map(i => `<div class="pv3"><span>${tn(i)}</span><span class="pv-val">${r[i].v}V ${r[i].e}E ${r[i].d}D</span><strong>+${r[i].pts}</strong></div>`).join('')}</div>`;
+}
+
+function suicoEditHTML(ci) {
+ const a = cur, key = rk(a, ci), d = view(key), sp = spDe(a);
+ if (!(d.sorteio || (S.res[key] || {}).sorteio)) return `<p class="muted">As 4 equipes jogam duas rodadas. Os 4 jogos são sorteados de uma vez, sem repetir confronto. Vitória vale ${sp[0]}, empate ${sp[1]} e derrota ${sp[2]} pontos, somados direto no placar geral quando a modalidade terminar.</p><div class="row"><button class="btn" data-sortear="${ci}">Sortear jogos</button></div>`;
+ const q = quandoSorteio(d.sorteio || S.res[key].sorteio);
+ return `<p class="muted sorteio-feito">Jogos sorteados${q ? ' em ' + q : ''}</p>` + rodadasSui(d, suicoJogoHTML) + suicoPontosHTML(a, S.res[key] || {});
+}
+
+function suicoPubHTML(ci) {
+ const a = cur, d = S.res[rk(a, ci)] || {}, fim = suicoFim(d);
+ const algum = !!d.m && SUICO_JOGOS.some(([k]) => suicoJogoOk(d.m[k]));
+ const st = fim ? {cls: 'fim', txt: 'Finalizada'} : algum ? {cls: 'and', txt: 'Em andamento'} : situacaoPub(a, ci, {});
+ let h = `<span class="pub-st ${st.cls}">${esc(st.txt)}</span>`;
+ if (!d.sorteio) return h + '<p class="muted">Os jogos ainda não foram sorteados.</p>';
+ return h + rodadasSui(d, suicoJogoPubHTML) + (fim ? suicoPontosHTML(a, d) : '');
+}
+
+const secHTMLAntesSuico = secHTML;
+secHTML = function (ci) {
+ if (cur && cur.t == 'suico') return podeAqui() ? suicoEditHTML(ci) : suicoPubHTML(ci);
+ return secHTMLAntesSuico(ci);
+};
+
+/* Botões do suíço (depois da checagem de permissão, que vem antes) */
+document.addEventListener('click', e => {
+ if (!cur || cur.t != 'suico') return;
+ const t = e.target.closest('button'); if (!t || !$('main').contains(t)) return;
+ const s = t.closest('[id^=sec]'); if (!s) return;
+ const ci = +s.id.slice(3), d = t.dataset;
+ if (d.sortear === undefined && d.conf === undefined && d.edit === undefined) return;
+ e.stopImmediatePropagation();
+ if (d.sortear !== undefined) sortearSuico(ci);
+ else if (d.conf !== undefined) suicoConfirmar(ci, d.conf, t);
+ else { const key = rk(cur, ci); ensureD(key); D[key].m = D[key].m || {}; D[key].m[d.edit] = {...(D[key].m[d.edit] || {}), ok: false}; sec(ci); }
+}, true);
+
+/* Editor de modalidades: pontos de vitória, empate e derrota */
+document.addEventListener('change', async e => {
+ const el = e.target; if (cur || pg !== 'modedit' || !el.dataset || !el.dataset.msp) return;
+ const [id, k] = el.dataset.msp.split(','), v = Math.max(0, +el.value || 0);
+ await DB.patchCfg(['mods'], () => {
+  S.mods = listaMods();
+  const x = S.mods.find(y => y.id === id);
+  if (x) { const sp = Array.isArray(x.sp) && x.sp.length === 3 ? x.sp.slice() : [200, 160, 80]; sp[+k] = v; if (sp.join() === '200,160,80') delete x.sp; else x.sp = sp; }
+  buildActs();
+ });
+ softRender();
+});
+
+/* Planilha de resultados: aba do suíço com os jogos e a pontuação */
+const planCatAntesSuico = planCategoria;
+planCategoria = function (a, c) {
+ if (a.t != 'suico') return planCatAntesSuico(a, c);
+ const d = S.res[rk(a, c.id)] || {}, fim = suicoFim(d), L = [[c.n]];
+ const feitos = SUICO_JOGOS.filter(([k]) => suicoJogoOk((d.m || {})[k])).length;
+ L.push(['Situação', fim ? 'Confirmado' : feitos ? `${feitos} de 4 jogos confirmados` : d.sorteio ? 'Jogos sorteados' : 'Sem resultado confirmado']);
+ L.push([], ['Jogo', 'Equipe A', 'Placar A', 'Placar B', 'Equipe B', 'Resultado']);
+ SUICO_JOGOS.forEach(([k, n]) => {
+  const m = (d.m || {})[k] || {}, ok = suicoJogoOk(m), sa = num(m.sa), sb = num(m.sb);
+  L.push([n, eqNome(m.a) || 'A definir', ok ? sa : '', ok ? sb : '', eqNome(m.b) || 'A definir', ok ? (sa === sb ? 'Empate' : `Vitória de ${eqNome(sa > sb ? m.a : m.b)}`) : 'Pendente']);
+ });
+ L.push([], ['Pontuação da modalidade']);
+ if (fim) { const r = suicoTabela(d, a); L.push(['Equipe', 'Vitórias', 'Empates', 'Derrotas', 'Pontos']); T.slice().sort((x, y) => r[y].pts - r[x].pts || x - y).forEach(i => L.push([eqNome(i), r[i].v, r[i].e, r[i].d, r[i].pts])); }
+ else L.push(['Aparece ao final das duas rodadas']);
+ L.push([], []);
+ return L;
+};
 
 /* Inicialização: primeiro descobre quem está conectado, depois abre a página */
 iniciarAuth().finally(route);
