@@ -516,6 +516,30 @@ body:not(.ed) [data-inscdel]{display:none!important}
 .sp-grid label{display:grid;gap:4px;font-size:12px;font-weight:600;color:var(--mute);text-align:left}
 .sui-emp{margin:8px 0 0;text-align:center;font-size:12px;font-weight:600;color:var(--mute)}
 
+/* Chamada */
+.mem-abas{display:flex;gap:6px;justify-content:center;margin:0 0 14px}
+.ch-dias{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 2px 8px;justify-content:flex-start}
+.ch-dias::-webkit-scrollbar{display:none}
+.ch-dias .chipbtn{flex:none;text-transform:capitalize}
+.ch-outro{display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:13px;color:var(--mute);font-weight:600}
+.ch-outro input{width:auto;flex:1;max-width:190px}
+.ch-tools{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;margin-bottom:10px}
+.ch-tools .busca{grid-column:1/-1}
+.ch-grupo{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:18px 0 6px;flex-wrap:wrap}
+.ch-grupo h3{font-size:16px;display:flex;align-items:center;gap:8px}
+.ch-resumo{font-size:12px;color:var(--mute);font-weight:400}
+.ch-grupo .btn{min-height:34px;padding:6px 10px;font-size:13px}
+.ch-row{display:flex;align-items:center;gap:10px;padding:7px 2px;border-bottom:1px solid var(--line)}
+.ch-row .mem-foto{width:38px;height:38px;font-size:14px}
+.ch-row .mem-info{flex:1}
+.ch-bts{display:flex;gap:6px;flex:none}
+.ch-bt{width:44px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--mute);font:800 16px Figtree,sans-serif;cursor:pointer;transition:background-color .15s,color .15s,border-color .15s}
+.ch-bt[data-v="1"][aria-pressed=true]{background:#1f9d55;border-color:#1f9d55;color:#fff}
+.ch-bt[data-v="0"][aria-pressed=true]{background:#c8283a;border-color:#c8283a;color:#fff}
+.ch-bt:disabled{opacity:.5}
+.ch-row.falta .mem-nome{color:#c8283a}
+.ch-leg{font-size:12px;color:var(--mute);text-align:center;margin:4px 0 0}
+
 /* Confirmação digitada (Zerar tudo) */
 .cx-dig{display:grid;gap:6px;margin-top:14px;white-space:normal;font-size:13px;font-weight:600;color:var(--mute);text-align:left}
 .cx-dig strong{color:var(--ink)}
@@ -852,7 +876,7 @@ const COLS = {
  m:       'teams,pts,mods,colors,cats,locais,arbitros',
  insta:   'teams,ig,insta,colors,mods',
  torc:    'teams,fan,fans,colors,mods',
- membros: 'teams,colors,cats',
+ membros: 'teams,colors,cats,periodo',
  memver:  'teams,colors,cats',
  dados:   'teams',
  contas:  'teams,arbitros',
@@ -1360,7 +1384,7 @@ function carregarXLSX() {
  if (window.XLSX) return Promise.resolve(window.XLSX);
  if (!xlsxProm) xlsxProm = new Promise((ok, erro) => {
   const s = document.createElement('script');
-  s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+  s.src = 'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';   // SheetJS com bordas e cores
   s.onload = () => window.XLSX ? ok(window.XLSX) : erro(new Error('gerador de planilhas indisponível'));
   s.onerror = () => { xlsxProm = null; erro(new Error('não foi possível carregar o gerador de planilhas')); };
   document.head.appendChild(s);
@@ -5086,6 +5110,233 @@ planCategoria = function (a, c) {
  L.push([], []);
  return L;
 };
+
+/* ==========================================================================
+   38. CHAMADA POR DIA DOS JOGOS (Configurações → Integrantes → aba Chamada)
+   - Tabela própria "chamada": uma linha por integrante e dia (presente
+     verdadeiro ou falso). Cada toque grava só aquela linha, então vários
+     professores podem fazer a chamada ao mesmo tempo sem se atrapalhar.
+   - A tela carrega só o dia escolhido e acompanha em tempo real.
+   - Planilha: uma aba por equipe, nomes na primeira coluna e um dia por
+     coluna ("." presente, "F" falta), com bordas e linhas alternadas.
+   ========================================================================== */
+let memAba = 'cad', chDia = null, chDados = {}, chCarregado = null, chF = {q: '', team: '', cat: ''}, chOutros = [];
+try { const a = sessionStorage.getItem('olimp-mem-aba'); if (a === 'ch') memAba = 'ch'; } catch (e) {}
+const chId = (mid, dt) => `${mid}_${dt}`;
+const hojeISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+
+/* Leitura em páginas de 1000 linhas (limite do servidor por consulta) */
+async function lerTudo(fazer) {
+ const l = [];
+ for (let ini = 0; ; ini += 1000) {
+  const { data, error } = await fazer().range(ini, ini + 999);
+  if (error) throw error;
+  l.push(...(data || []));
+  if (!data || data.length < 1000) return l;
+ }
+}
+
+const CH = {
+ async doDia(dt) {
+  if (!db) return Object.fromEntries((S.chamada || []).filter(r => r.dt === dt).map(r => [r.membro, !!r.presente]));
+  const rows = await lerTudo(() => db.from('chamada').select('membro,presente').eq('dt', dt));
+  return Object.fromEntries(rows.map(r => [r.membro, !!r.presente]));
+ },
+ async todos() {
+  if (!db) return (S.chamada || []).slice();
+  return await lerTudo(() => db.from('chamada').select('membro,dt,presente').order('dt'));
+ },
+ async marcar(lista) {   // [{membro, dt, presente}] — null apaga a marcação
+  const agora = new Date().toISOString(), apagar = lista.filter(x => x.presente == null), gravar = lista.filter(x => x.presente != null);
+  if (db) {
+   if (gravar.length) { const { error } = await db.from('chamada').upsert(gravar.map(x => ({id: chId(x.membro, x.dt), membro: x.membro, dt: x.dt, presente: !!x.presente, updated_at: agora}))); if (error) { fail(error); return false; } }
+   if (apagar.length) { const { error } = await db.from('chamada').delete().in('id', apagar.map(x => chId(x.membro, x.dt))); if (error) { fail(error); return false; } }
+  } else {
+   const ids = new Set(lista.map(x => chId(x.membro, x.dt)));
+   S.chamada = (S.chamada || []).filter(r => !ids.has(chId(r.membro, r.dt))).concat(gravar.map(x => ({membro: x.membro, dt: x.dt, presente: !!x.presente})));
+   save();
+  }
+  return true;
+ }
+};
+
+/* Dias para a chamada: período dos jogos; se não houver, os dias do cronograma */
+function diasChamada() {
+ const l = diasPeriodo().map(x => x.dt);
+ const base = l.length ? l : [...new Set((S.agenda || []).filter(r => r.dt && r.hr).map(r => r.dt))];
+ return [...new Set(base.concat(chOutros))].sort();
+}
+function diaPadrao() {
+ const l = diasChamada(), hoje = hojeISO();
+ if (l.includes(hoje)) return hoje;
+ return l.find(d => d >= hoje) || l[l.length - 1] || hoje;
+}
+
+async function carregarDia() {
+ const dt = chDia; chCarregado = null;
+ try { const d = await CH.doDia(dt); if (dt !== chDia) return; chDados = d; chCarregado = dt; }
+ catch (e) { console.error(e); chDados = {}; chCarregado = dt; avisar('Não foi possível carregar a chamada deste dia. Verifique a conexão.'); }
+ const l = $('chlista'); if (l) { l.innerHTML = chListaHTML(); }
+ DB.setupRealtime();
+}
+
+function chMembros() {
+ const q = slug(chF.q);
+ return membros().filter(m => (chF.team === '' || String(m.team) === chF.team) && (chF.cat === '' || String(m.cat) === chF.cat) && (!q || slug(m.nome + ' ' + m.turma).includes(q)));
+}
+function chListaHTML() {
+ if (chCarregado !== chDia) return '<p class="muted">Carregando a chamada do dia…</p>';
+ if (!membros().length) return '<p class="muted">Nenhum integrante cadastrado ainda.</p>';
+ const l = chMembros();
+ if (!l.length) return '<p class="muted">Nenhum integrante encontrado com esses filtros.</p>';
+ const grupos = [...T.map(String), ''].map(t => [t, l.filter(m => String(m.team) === t).sort(porNome)]).filter(([, g]) => g.length);
+ return grupos.map(([t, g]) => {
+  const p = g.filter(m => chDados[m.id] === true).length, f = g.filter(m => chDados[m.id] === false).length, sem = g.length - p - f;
+  return `<div class="ch-grupo"><h3>${esc(teamNome(t))}<span class="ch-resumo">${p} ${p == 1 ? 'presente' : 'presentes'} · ${f} ${f == 1 ? 'falta' : 'faltas'}${sem ? ` · ${sem} sem marcar` : ''}</span></h3>${sem ? `<button class="btn alt" data-chtodos="${t}">Marcar restantes como presentes</button>` : ''}</div>` +
+   g.map(m => { const v = chDados[m.id]; return `<div class="ch-row ${v === false ? 'falta' : ''}">${fotoHTML(m)}<span class="mem-info"><span class="mem-nome">${esc(m.nome)}</span><span class="mem-sub">${esc(memSub(m))}</span></span><span class="ch-bts"><button class="ch-bt" data-ch="${esc(m.id)}" data-v="1" aria-pressed="${v === true}" title="Presente" aria-label="${esc(m.nome)} presente">✓</button><button class="ch-bt" data-ch="${esc(m.id)}" data-v="0" aria-pressed="${v === false}" title="Falta" aria-label="${esc(m.nome)} faltou">F</button></span></div>`; }).join('');
+ }).join('');
+}
+
+const abasMemHTML = () => `<div class="mem-abas" role="tablist"><button class="chipbtn" data-memaba="cad" aria-pressed="${memAba === 'cad'}">Cadastro</button><button class="chipbtn" data-memaba="ch" aria-pressed="${memAba === 'ch'}">Chamada</button></div>`;
+function chamadaHTML() {
+ if (!chDia) chDia = diaPadrao();
+ if (chCarregado !== chDia) setTimeout(() => { if (chCarregado !== chDia) carregarDia(); }, 0);
+ const dias = diasChamada();
+ return `<section class="panel"><h2>Chamada</h2>
+  <p class="muted">Toque em <strong>✓</strong> para presente e em <strong>F</strong> para falta. Toque de novo para desmarcar. Cada marcação é salva na hora. Na planilha, presença aparece como “.” e falta como “F”.</p>
+  ${dias.length ? `<div class="ch-dias">${dias.map(d => `<button class="chipbtn" data-chdia="${d}" aria-pressed="${d === chDia}">${fmtDia(d)}</button>`).join('')}</div>` : '<p class="muted">Defina o período dos jogos (Configurações) para os dias aparecerem aqui, ou escolha uma data abaixo.</p>'}
+  <label class="ch-outro">Outra data<input type="date" id="chdata" value="${esc(chDia)}"></label>
+  <div class="ch-tools">
+   <input class="busca" id="chbusca" type="search" placeholder="Buscar por nome ou turma" value="${esc(chF.q)}" autocomplete="off">
+   <select id="chfteam" aria-label="Filtrar por equipe"><option value="">Todas as equipes</option>${T.map(i => `<option value="${i}" ${chF.team === String(i) ? 'selected' : ''}>${tn(i)}</option>`).join('')}</select>
+   <select id="chfcat" aria-label="Filtrar por categoria"><option value="">Todas as categorias</option>${CATS.map(c => `<option value="${c.id}" ${chF.cat === String(c.id) ? 'selected' : ''}>${esc(c.n)}</option>`).join('')}</select>
+  </div>
+  <div class="row"><button class="btn" data-chexport>Baixar planilha da chamada</button></div>
+  <h3 class="cr-dia-tit">${fmtDia(chDia, true)}</h3>
+  <div id="chlista">${chListaHTML()}</div>
+ </section>`;
+}
+
+const membrosViewAntesCh = Views.membros;
+Views.membros = () => {
+ const h = membrosViewAntesCh();
+ const i = h.indexOf('<section class="panel">');
+ if (memAba !== 'ch') return i < 0 ? abasMemHTML() + h : h.slice(0, i) + abasMemHTML() + h.slice(i);
+ return h.slice(0, Math.max(0, i)) + abasMemHTML() + chamadaHTML();
+};
+
+/* Marca um integrante (otimista: a tela muda na hora e volta se o servidor recusar) */
+async function chMarcar(lista, btns) {
+ const antes = lista.map(x => [x.membro, chDados[x.membro]]);
+ lista.forEach(x => { if (x.presente == null) delete chDados[x.membro]; else chDados[x.membro] = x.presente; });
+ const l = $('chlista'); if (l) l.innerHTML = chListaHTML();
+ if (!await CH.marcar(lista)) {
+  antes.forEach(([m, v]) => { if (v == null) delete chDados[m]; else chDados[m] = v; });
+  const l2 = $('chlista'); if (l2) l2.innerHTML = chListaHTML();
+ }
+}
+
+document.addEventListener('click', async e => {
+ const t = e.target.closest('button'); if (!t || cur || pg !== 'membros') return;
+ const d = t.dataset;
+ if (d.memaba) { memAba = d.memaba; try { sessionStorage.setItem('olimp-mem-aba', memAba); } catch (er) {} render(); DB.setupRealtime(); }
+ else if (d.chdia) { chDia = d.chdia; chCarregado = null; render(); }
+ else if (d.ch) {
+  const v = d.v === '1', atual = chDados[d.ch];
+  chMarcar([{membro: d.ch, dt: chDia, presente: atual === v ? null : v}]);
+ }
+ else if (d.chtodos !== undefined) {
+  const alvo = chMembros().filter(m => String(m.team) === d.chtodos && chDados[m.id] == null);
+  if (!alvo.length) return;
+  if (!await confirmar(`Marcar ${alvo.length} ${alvo.length == 1 ? 'integrante' : 'integrantes'} de ${teamNome(d.chtodos)} como presentes em ${fmtDia(chDia)}?\nQuem já está com falta continua com falta.`)) return;
+  t.disabled = true;
+  await chMarcar(alvo.map(m => ({membro: m.id, dt: chDia, presente: true})));
+ }
+ else if (d.chexport !== undefined) exportarChamada(t);
+});
+document.addEventListener('change', e => {
+ if (cur || pg !== 'membros') return;
+ const el = e.target;
+ if (el.id === 'chdata' && el.value) { if (!diasChamada().includes(el.value)) chOutros.push(el.value); chDia = el.value; chCarregado = null; render(); }
+ else if (el.id === 'chfteam' || el.id === 'chfcat') { chF[el.id === 'chfteam' ? 'team' : 'cat'] = el.value; const l = $('chlista'); if (l) l.innerHTML = chListaHTML(); }
+});
+document.addEventListener('input', e => {
+ if (e.target.id === 'chbusca' && pg === 'membros') { chF.q = e.target.value; const l = $('chlista'); if (l) l.innerHTML = chListaHTML(); }
+});
+
+/* Tempo real: só a chamada do dia aberto */
+const rtAntesCh = DB.setupRealtime;
+DB.setupRealtime = function () {
+ rtAntesCh.call(DB);
+ if (!db || cur || pg !== 'membros' || memAba !== 'ch' || !chDia) return;
+ db.channel('olimp-chamada-' + chDia)
+  .on('postgres_changes', {event: '*', schema: 'public', table: 'chamada', filter: `dt=eq.${chDia}`}, p => {
+   if (p.eventType === 'DELETE') { const id = p.old && p.old.id; if (id) Object.keys(chDados).forEach(m => { if (chId(m, chDia) === id) delete chDados[m]; }); }
+   else if (p.new && p.new.dt === chDia) chDados[p.new.membro] = !!p.new.presente;
+   const l = $('chlista'); if (l && !(document.activeElement && document.activeElement.id === 'chbusca' && false)) l.innerHTML = chListaHTML();
+  })
+  .subscribe();
+};
+
+/* Lista de integrantes lida em páginas (o servidor entrega no máximo 1000 linhas por consulta) */
+MEM.listar = async function () {
+ if (!db) return;
+ try { S.membros = (await lerTudo(() => db.from('membros').select('*').order('id'))).map(normMem); }
+ catch (e) { console.error(e); }
+};
+
+/* Ao excluir um integrante, a chamada dele também sai */
+const memApagarAntesCh = MEM.apagar;
+MEM.apagar = async function (id) {
+ const ok = await memApagarAntesCh.call(MEM, id);
+ if (ok) { if (db) db.from('chamada').delete().eq('membro', id).then(({ error }) => { if (error) console.error(error); }); else { S.chamada = (S.chamada || []).filter(r => r.membro !== id); save(); } }
+ return ok;
+};
+
+/* ---------- Planilha da chamada ---------- */
+async function exportarChamada(btn) {
+ const txt = btn.textContent;
+ btn.disabled = true; btn.textContent = 'Gerando planilha…';
+ try {
+  const [X, rows] = await Promise.all([carregarXLSX(), CH.todos(), MEM.listar()]);
+  const mapa = {};
+  rows.forEach(r => { (mapa[r.membro] = mapa[r.membro] || {})[r.dt] = !!r.presente; });
+  const dias = [...new Set(diasChamada().concat(rows.map(r => r.dt)))].sort();
+  if (!membros().length) { avisar('Nenhum integrante cadastrado.'); return; }
+  const wb = X.utils.book_new(), usados = new Set();
+  const borda = {style: 'thin', color: {rgb: 'C9D2E0'}}, bordas = {top: borda, bottom: borda, left: borda, right: borda};
+  const fundo = rgb => ({patternType: 'solid', fgColor: {rgb}});
+  const fmtCab = dt => { const d = new Date(dt + 'T12:00:00'); return `${d.toLocaleDateString('pt-BR', {weekday: 'short'}).replace('.', '')} ${d.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}`; };
+  const equipes = [...T.map(String), ''].filter(t => membros().some(m => String(m.team) === t));
+  equipes.forEach(t => {
+   const l = membros().filter(m => String(m.team) === t).sort(porNome);
+   const cor = t === '' ? 'E8EEF6' : corEquipe(+t).replace('#', '').toUpperCase();
+   const titulo = `Chamada · ${teamNome(t)} · ${nomeJogos()}`;
+   const aoa = [[titulo, ...dias.map(() => '')], ['Aluno', ...dias.map(fmtCab)], ...l.map(m => [m.nome, ...dias.map(dt => { const v = (mapa[m.id] || {})[dt]; return v === true ? '.' : v === false ? 'F' : ''; })])];
+   const ws = X.utils.aoa_to_sheet(aoa), ncol = dias.length + 1;
+   for (let r = 0; r < aoa.length; r++) for (let c = 0; c < ncol; c++) {
+    const ref = X.utils.encode_cell({r, c}); if (!ws[ref]) ws[ref] = {t: 's', v: ''};
+    const cel = ws[ref];
+    if (r === 0) cel.s = {font: {bold: true, sz: 13, color: {rgb: '0F1C36'}}, alignment: {horizontal: 'left', vertical: 'center'}};
+    else if (r === 1) cel.s = {font: {bold: true, color: {rgb: '000000'}}, fill: fundo(cor), border: bordas, alignment: {horizontal: c ? 'center' : 'left', vertical: 'center'}};
+    else {
+     const alt = (r % 2) ? 'FFFFFF' : 'F2F5FA', falta = c > 0 && cel.v === 'F';
+     cel.s = {fill: fundo(alt), border: bordas, alignment: {horizontal: c ? 'center' : 'left', vertical: 'center'}, font: falta ? {bold: true, color: {rgb: 'C8283A'}} : {color: {rgb: '1F2A44'}}};
+    }
+   }
+   ws['!merges'] = [{s: {r: 0, c: 0}, e: {r: 0, c: Math.max(0, ncol - 1)}}];
+   ws['!cols'] = [{wch: Math.min(44, Math.max(18, ...l.map(m => m.nome.length + 2)))}, ...dias.map(() => ({wch: 11}))];
+   ws['!rows'] = [{hpt: 24}, {hpt: 20}];
+   X.utils.book_append_sheet(wb, ws, nomeAba(teamNome(t), usados));
+  });
+  X.writeFile(wb, `${slug(nomeJogos()) || 'olimpiadas'}-chamada-${hojeISO()}.xlsx`);
+ } catch (e) {
+  console.error(e);
+  avisar('Não foi possível gerar a planilha da chamada: ' + (e && e.message || e));
+ } finally {
+  if (document.contains(btn)) { btn.disabled = false; btn.textContent = txt; }
+ }
+}
 
 /* Inicialização: primeiro descobre quem está conectado, depois abre a página */
 iniciarAuth().finally(route);
