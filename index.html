@@ -592,6 +592,22 @@ a.mv-mod:hover{border-color:var(--ink)}
 .cr-plano .ruim{color:#c8283a}
 .cr-plano .aviso{color:#b7791f}
 
+/* Horários da modalidade (mesmos dados do cronograma) */
+.ags{margin-top:6px;padding-top:12px;border-top:1px solid var(--line);text-align:left}
+.ags h3{display:flex;align-items:center;gap:6px;font-size:15px;margin:0 0 8px}
+.ags-grp{display:grid;gap:4px;font-size:12px;font-weight:600;color:var(--mute);margin-bottom:10px}
+.ags-bloco{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px;background:var(--card)}
+.ags-bloco>strong{display:block;font-size:14px;margin-bottom:6px}
+.ags-campos{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr);gap:6px}
+.ags-campos label{display:grid;gap:3px;font-size:11px;font-weight:600;color:var(--mute)}
+.ags-campos .ags-loc{grid-column:1/-1}
+.ags-arb{margin-top:6px}
+.ags-arb .nv-tit{font-size:11px}
+.ags-st{margin-top:6px;font-size:12px;font-weight:600}
+.ags-st.bom{color:#1f9d55}.ags-st.ruim{color:#c8283a}.ags-st.aviso{color:#b7791f}.ags-st.neutro{color:var(--mute)}
+.ags-nota{font-size:12px;color:var(--mute);margin:0 0 8px}
+@media (max-width:480px){.ags-campos{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.ags-campos>label:first-child{grid-column:1/-1}}
+
 /* Confirmação digitada (Zerar tudo) */
 .cx-dig{display:grid;gap:6px;margin-top:14px;white-space:normal;font-size:13px;font-weight:600;color:var(--mute);text-align:left}
 .cx-dig strong{color:var(--ink)}
@@ -6110,6 +6126,213 @@ gerarProposta = function (embaralhar_) {
  auto.prop = fixos.map(x => ({...x})).concat(pend);
  auto.assin = assinAgenda();
 };
+
+/* ==========================================================================
+   45. JANELA "LOCAL, DATA, HORÁRIO E ÁRBITRO" DA MODALIDADE = MESMOS DADOS DO CRONOGRAMA
+   A janela da modalidade edita diretamente o cronograma (tabela agenda) e o
+   agrupamento das categorias (o mesmo campo da janela do cronograma). Não há
+   cópia: o que muda em um lugar aparece no outro.
+   ========================================================================== */
+let agEd = null;
+const agEdCats = () => { const s = [...$('agdlg').querySelectorAll('[data-agcatsel]')]; const a = BY[agEd.mod]; return s.length ? CATS.filter(c => s.some(x => x.checked && +x.dataset.agcatsel === c.id)).map(c => c.id) : catsDe(a).map(c => c.id); };
+const agEdA = () => { const a = BY[agEd.mod]; const cats = agEdCats(); return {...a, cats: cats.length ? cats : a.cats}; };
+
+function agEdInit(a) {
+ const b = {};
+ catsDe(a).forEach(c => { const e = efetivo(a, c.id), ok = e.dt && e.hr && !e.pre; b[c.id] = {dt: ok ? e.dt : '', hr: ok ? e.hr : '', dur: +e.dur || DUR_PADRAO, loc: e.loc || a.loc || '', arb: e.arb || a.arb || ''}; });
+ const primeiro = Object.values(b).find(x => x.dt) || Object.values(b)[0] || {dt: '', hr: '', dur: DUR_PADRAO, loc: a.loc || '', arb: a.arb || ''};
+ agEd = {mod: a.s, grp: a.grp || '', b, g: {...primeiro}};
+}
+
+function agCampoDia(key, v) {
+ const dias = diasPeriodo().map(d => d.dt);
+ if (!dias.length) return `<label>Dia<input type="date" data-ags="${key},dt" value="${esc(v.dt || '')}"></label>`;
+ return `<label>Dia<select data-ags="${key},dt"><option value="">— sem dia —</option>${[...new Set(dias.concat(v.dt ? [v.dt] : []))].sort().map(d => `<option value="${d}" ${d === v.dt ? 'selected' : ''}>${esc(fmtDia(d))}</option>`).join('')}</select></label>`;
+}
+function agBlocoHTML(key, titulo, v) {
+ return `<div class="ags-bloco" data-agsbloco="${key}">${titulo ? `<strong>${esc(titulo)}</strong>` : ''}
+  <div class="ags-campos">
+   ${agCampoDia(key, v)}
+   <label>Início<input type="time" step="300" data-ags="${key},hr" value="${esc(v.hr || '')}"></label>
+   <label>Duração<select data-ags="${key},dur">${DURS.map(d => `<option value="${d}" ${d === +v.dur ? 'selected' : ''}>${durTxt(d)}</option>`).join('')}</select></label>
+   <label class="ags-loc">Local<select data-ags="${key},loc"><option value="">Sem local</option>${cadLista('locais').map(x => `<option value="${esc(x.id)}" ${x.id === v.loc ? 'selected' : ''}>${esc(x.n)}</option>`).join('')}</select></label>
+  </div>
+  <div class="ags-arb"><span class="nv-tit">Árbitros</span>${arbPickHTML(`data-ags="${key},arb"`, v.arb)}</div>
+  <div class="ags-st" data-agsst="${key}"></div>
+ </div>`;
+}
+function agSchedHTML() {
+ const a = agEdA(), cats = catsDe(a);
+ const corpo = agEd.grp
+  ? `<p class="ags-nota">${agEd.grp === 'junto' ? 'Todas as categorias acontecem juntas neste dia e horário.' : agEd.grp === 'dia' ? 'As categorias acontecem uma depois da outra neste dia, a partir do início.' : 'As categorias acontecem uma depois da outra no mesmo período (manhã ou tarde) do início.'}</p>${agBlocoHTML('g', '', agEd.g)}<div id="agsplano"></div>`
+  : cats.map(c => agBlocoHTML(String(c.id), c.n, agEd.b[c.id] || {dt: '', hr: '', dur: DUR_PADRAO, loc: BY[agEd.mod].loc || '', arb: BY[agEd.mod].arb || ''})).join('');
+ return `<h3>${icone('cal')} Horários no cronograma</h3>
+  <label class="ags-grp">Categorias desta modalidade<select id="agsgrp">${GRUPOS.map(([v, n]) => `<option value="${v}" ${agEd.grp === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+  ${corpo}
+  <p class="ags-nota">Estes horários são os mesmos do Cronograma: mudar aqui muda lá, e vice-versa. Deixe o dia vazio para tirar a categoria do cronograma.</p>`;
+}
+
+/* Itens que serão gravados, cada um com os conflitos encontrados */
+function agEdItens() {
+ const a = agEdA(), cats = catsDe(a).map(c => c.id);
+ if (agEd.grp) {
+  const g = agEd.g;
+  if (!g.dt || !g.hr) return {itens: cats.map(cat => ({mod: a.s, n: a.n, cat, dt: '', hr: '', dur: +g.dur, loc: g.loc, arb: g.arb, vazio: true}))};
+  const p = planoGrupo(a, {...g, dur: +g.dur}, agEd.grp);
+  return p;
+ }
+ const itens = cats.map(cat => { const v = agEd.b[cat] || {}; return {mod: a.s, n: a.n, cat, dt: v.dt || '', hr: v.hr || '', dur: +v.dur || DUR_PADRAO, loc: v.loc || '', arb: v.arb || '', vazio: !(v.dt && v.hr), ok: true}; });
+ itens.forEach(x => {
+  if (x.vazio) return;
+  const k = conflitos(x), f = l => l.filter(y => y.mod !== a.s);
+  x.k = {loc: f(k.loc), arb: f(k.arb), cat: f(k.cat)};
+  /* entre as próprias categorias (local e árbitros), a não ser que estejam exatamente juntas */
+  itens.forEach(y => { if (y === x || y.vazio || y.dt !== x.dt || (y.hr === x.hr && +y.dur === +x.dur) || !sobrepoe(x, y)) return;
+   if (x.loc && y.loc === x.loc) x.k.loc.push({...y, n: a.n});
+   if (arbIds(x.arb).some(id => arbIds(y.arb).includes(id))) x.k.arb.push({...y, n: a.n}); });
+ });
+ return {itens};
+}
+function agStatus() {
+ if (!agEd || !$('agsched')) return;
+ const p = agEdItens(), st = x => {
+  if (x.vazio) return ['neutro', 'Sem horário no cronograma'];
+  if (!cabe(x.dt, x.hr, x.dur)) return ['ruim', `Fora do horário dos jogos (${janelasTxt(x.dt) || 'sem jogos nesse dia'})`];
+  if (x.k.loc.length) return ['ruim', `Local ocupado: ${x.k.loc.map(quem).join('; ')}`];
+  if (x.k.arb.length) return ['ruim', `Árbitro ocupado: ${x.k.arb.map(quem).join('; ')}`];
+  if (x.k.cat.length) return ['aviso', `${catNome(x.cat)} tem outra atividade: ${x.k.cat.map(quem).join('; ')} (dá para salvar, com confirmação)`];
+  return ['bom', `Livre · ${fmtDia(x.dt)} ${faixa(x)}`];
+ };
+ if (agEd.grp) {
+  const box = $('agsplano'); if (!box) return;
+  box.innerHTML = `<div class="cr-plano"><strong>Todas as categorias</strong>${(p.itens || []).map(x => { const [c, t] = st(x); return `<div class="${c === 'bom' ? '' : c}"><span>${esc(catNome(x.cat))}</span><span>${esc(x.vazio ? '—' : t)}</span></div>`; }).join('')}${p.erro ? `<div class="ruim">${esc(p.erro)}</div>` : ''}</div>`;
+  const s = $('agsched').querySelector('[data-agsst="g"]'); if (s) s.innerHTML = '';
+ } else (p.itens || []).forEach(x => { const el = $('agsched').querySelector(`[data-agsst="${x.cat}"]`); if (el) { const [c, t] = st(x); el.className = 'ags-st ' + c; el.textContent = t; } });
+}
+function agRedesenha() { const box = $('agsched'); if (!box) return; box.innerHTML = agSchedHTML(); agStatus(); }
+
+/* Monta a janela: esconde os campos antigos e põe os horários do cronograma */
+const abrirAgendaAntesSched = abrirAgenda;
+abrirAgenda = function (a) {
+ abrirAgendaAntesSched(a);
+ if (a.t == 'extra') { agEd = null; return; }
+ const corpo = $('agdlg').querySelector('.reg-body');
+ const cats = corpo.querySelector('[data-agcatsel]'), base = cats ? cats.closest('.nv-cats') : null;
+ [...corpo.children].forEach(el => { if (el !== base && !el.matches('.ag-por') && !el.querySelector('[data-agcrono]') && !el.matches('[data-agcrono]')) { el.hidden = true; el.classList.add('ag-legado'); } });
+ const por = $('agporcat'); if (por) por.closest('.ag-por').hidden = true;
+ agEdInit(a);
+ (base || corpo.lastElementChild).insertAdjacentHTML('afterend', `<div id="agsched" class="ags"></div>`);
+ $('agsched').hidden = !!a.semCrono;
+ agRedesenha();
+};
+document.addEventListener('change', e => {
+ const el = e.target; if (!agEd || !$('agdlg').open) return;
+ if (el.id === 'agsgrp') {
+  const de = agEd.grp, para = el.value;
+  if (!de && para) { const v = Object.values(agEd.b).find(x => x.dt) || agEd.g; agEd.g = {...v}; }
+  if (de && !para) { const p = agEdItens(); (p.itens || []).forEach(x => { agEd.b[x.cat] = {dt: x.dt, hr: x.hr, dur: x.dur, loc: x.loc, arb: x.arb}; }); }
+  agEd.grp = para; agRedesenha();
+ }
+ else if (el.dataset && el.dataset.ags) {
+  const [key, f] = el.dataset.ags.split(','), alvo = key === 'g' ? agEd.g : (agEd.b[key] = agEd.b[key] || {dt: '', hr: '', dur: DUR_PADRAO, loc: '', arb: ''});
+  alvo[f] = f === 'dur' ? +el.value : el.value;
+  agStatus();
+ }
+ else if (el.dataset && el.dataset.agcatsel !== undefined) agRedesenha();
+ else if (el.id === 'agcronochk') { const s = $('agsched'); if (s) s.hidden = !el.checked; }
+});
+document.addEventListener('input', e => { if (agEd && $('agdlg').open && e.target.dataset && e.target.dataset.ags && /,hr$/.test(e.target.dataset.ags)) { const [key] = e.target.dataset.ags.split(','); (key === 'g' ? agEd.g : agEd.b[key] || {}).hr = e.target.value; agStatus(); } });
+
+/* Salvar: modalidade (categorias, inscrição, agrupamento) e horários, juntos */
+const salvarAgendaAntesSched = salvarAgenda;
+salvarAgenda = async function (id, limpar, btn) {
+ const a0 = BY[id];
+ if (!a0 || a0.t == 'extra' || !agEd || agEd.mod !== id) return salvarAgendaAntesSched(id, limpar, btn);
+ const dlg = $('agdlg'); if (!dlg.open) return false;
+ const sel = [...dlg.querySelectorAll('[data-agcatsel]')];
+ const cats = sel.length ? sel.filter(x => x.checked).map(x => +x.dataset.agcatsel) : null;
+ if (cats && !cats.length) { avisar('Escolha pelo menos uma categoria.'); return false; }
+ const insc = $('aginsc'), cron = $('agcronochk'), usaCrono = !cron || cron.checked;
+ const txt = btn ? btn.textContent : '', solta = () => { if (btn && document.contains(btn)) { btn.disabled = false; btn.textContent = txt; } };
+ if (btn) { btn.disabled = true; btn.textContent = 'Salvando…'; }
+ let linhas = [];
+ if (usaCrono) {
+  await AG.listar();   // confere com a versão mais recente
+  const p = agEdItens();
+  if (p.erro) { avisar(p.erro); solta(); return false; }
+  const itens = p.itens || [];
+  const fora = itens.filter(x => !x.vazio && !cabe(x.dt, x.hr, x.dur));
+  if (fora.length) { avisar(`Fora do horário dos jogos:\n${fora.map(x => `${catNome(x.cat)}: ${fmtDia(x.dt)} ${faixa(x)} (${janelasTxt(x.dt) || 'sem jogos nesse dia'})`).join('\n')}`); solta(); return false; }
+  const bloq = itens.filter(x => !x.vazio && (x.k.loc.length || x.k.arb.length));
+  if (bloq.length) { avisar(`Não foi possível salvar: há conflito.\n${bloq.map(x => `${catNome(x.cat)}: ${[x.k.loc.length && `local ocupado (${x.k.loc.map(quem).join('; ')})`, x.k.arb.length && `árbitro ocupado (${x.k.arb.map(quem).join('; ')})`].filter(Boolean).join(', ')}`).join('\n')}`); solta(); return false; }
+  const comCat = itens.filter(x => !x.vazio && x.k.cat.length);
+  if (comCat.length) {
+   if (!await confirmar(`Atenção: algumas categorias já têm atividade nesse horário.\n${comCat.map(x => `${catNome(x.cat)}: ${x.k.cat.map(quem).join('; ')}`).join('\n')}\nAs atividades vão acontecer ao mesmo tempo para a mesma categoria.\nSalvar mesmo assim?`)) { solta(); return false; }
+   comCat.forEach(x => { x.junta = true; });
+  }
+  /* só grava o que mudou (inclui categorias desmarcadas, que saem do cronograma) */
+  const agora = new Date().toISOString(), atual = c => efetivo(a0, c);
+  const muda = x => { const e = atual(x.cat), ok = e.dt && e.hr && !e.pre; if (x.vazio) return ok || !!agRow(a0.s, x.cat); return !ok || e.dt !== x.dt || e.hr !== x.hr || +e.dur !== +x.dur || (e.loc || '') !== (x.loc || '') || (e.arb || '') !== (x.arb || '') || (!!x.junta && !(agRow(a0.s, x.cat) || {}).permite_cat); };
+  linhas = itens.filter(muda).map(x => ({id: agId(a0.s, x.cat), mod: a0.s, cat: +x.cat, dt: x.vazio ? null : x.dt, hr: x.vazio ? null : x.hr, dur: x.vazio ? null : +x.dur || DUR_PADRAO, loc: x.vazio ? null : x.loc || null, arb: x.vazio ? null : x.arb || null, permite_cat: !!x.junta, updated_at: agora}));
+  const fora2 = catsDe(a0).map(c => c.id).filter(c => cats && !cats.includes(c) && agRow(a0.s, c) && agRow(a0.s, c).dt);
+  fora2.forEach(c => linhas.push({id: agId(a0.s, c), mod: a0.s, cat: c, dt: null, hr: null, dur: null, loc: null, arb: null, permite_cat: false, updated_at: agora}));
+ }
+ const prim = agEd.grp ? agEd.g : (Object.values(agEd.b).find(x => x.loc || x.arb) || {});
+ const ok = await DB.patchCfg(['mods'], () => {
+  S.mods = listaMods();
+  const x = S.mods.find(y => y.id === id);
+  if (x) {
+   if (cats) { if (cats.length < CATS.length) x.cats = cats; else delete x.cats; }
+   if (insc) { if (insc.checked) delete x.si; else x.si = 1; }
+   if (cron) { if (cron.checked) delete x.sc; else x.sc = 1; }
+   if (agEd.grp) x.grp = agEd.grp; else delete x.grp;
+   /* local e árbitros sugeridos ao agendar (gerador automático) acompanham o que foi salvo */
+   if (prim.loc) x.loc = prim.loc; else delete x.loc;
+   if (prim.arb) x.arb = prim.arb; else delete x.arb;
+  }
+  buildActs();
+ });
+ if (!ok) { solta(); return false; }
+ if (linhas.length && !await gravarLinhas(linhas)) { solta(); return false; }
+ solta();
+ if (dlg.open) dlg.close();
+ render();
+ return true;
+};
+/* Em tempo real: se o cronograma mudar enquanto a janela está aberta, só o quadro de situação é refeito */
+setInterval(() => { if (agEd && $('agdlg').open) agStatus(); }, 4000);
+$('agdlg').addEventListener('close', () => { agEd = null; });
+
+/* ==========================================================================
+   46. LIMPAR CRONOGRAMA (administrador)
+   Apaga dia, horário, local e árbitro de todas as atividades. Como todas as
+   páginas leem a mesma tabela, some ao mesmo tempo do Cronograma, das páginas
+   das modalidades, de Minhas partidas e da configuração de cada modalidade.
+   ========================================================================== */
+async function limparCronograma(btn) {
+ if (!ehAdmin()) { avisar('Só o administrador pode limpar o cronograma.'); return; }
+ if (!await confirmarDigitando('Limpar o cronograma inteiro?\nTodas as atividades perdem dia, horário, local e árbitros, em todas as páginas do site. O período dos jogos, os locais e árbitros cadastrados e o agrupamento das categorias continuam.\nEssa ação não pode ser desfeita.', 'Limpar cronograma')) return;
+ btn.disabled = true; btn.textContent = 'Limpando…';
+ const volta = () => { if (document.contains(btn)) { btn.disabled = false; btn.textContent = 'Limpar cronograma'; } };
+ if (db) {
+  const { error } = await db.from('agenda').delete().neq('id', '');
+  if (error) { fail(error); volta(); return; }
+ }
+ S.agenda = []; save();
+ /* horários antigos guardados na própria modalidade também saem, para não voltarem a aparecer */
+ const ok = await DB.patchCfg(['mods'], () => {
+  S.mods = listaMods();
+  S.mods.forEach(x => { ['dt', 'hr', 'loc', 'arb', 'agc'].forEach(f => delete x[f]); });
+  buildActs();
+ });
+ volta();
+ if (!ok) return;
+ render();
+ avisar('Cronograma limpo. Nenhuma atividade tem dia, horário, local ou árbitro agora.');
+}
+const cronoedAntesLimpar = Views.cronoed;
+Views.cronoed = () => cronoedAntesLimpar().replace(/(<div class="row nv-topo">[\s\S]*?)(<\/div>)/, (m, ini, fim) => `${ini}${ehAdmin() ? '<button class="btn warn" data-crzerar>Limpar cronograma</button>' : ''}${fim}`);
+document.addEventListener('click', e => { const t = e.target.closest('[data-crzerar]'); if (t && pg === 'cronoed') limparCronograma(t); });
 
 /* Inicialização: primeiro descobre quem está conectado, depois abre a página */
 iniciarAuth().finally(route);
