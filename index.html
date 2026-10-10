@@ -3599,7 +3599,7 @@ async function criarMod(btn) {
   const x = {id, n: nome, t};
   if (t == 'marca') { if ($('nvmedida').value == 'dist') x.u = 'dist'; if ($('nvmodo').value == '1') x.inv = 1; }
   if (t == 'extra') x.xv = Math.max(0, +$('nvxv').value || 0);
-  if (t == 'suico') { const sp = [0, 1, 2].map(k => Math.max(0, +$('nvsp' + k).value || 0)); if (sp.join() !== '200,160,80') x.sp = sp; }
+  if (t == 'suico') { const sp = [0, 1, 2].map(k => Math.max(0, +$('nvsp' + k).value || 0)); if (sp.join() !== spGlobal().join()) x.sp = sp; }
   if (t == 'crit') { const nomes = [...$('novadlg').querySelectorAll('[data-nvcrit]')].map(i => i.value.trim()); if (nomes.some(Boolean)) x.cn = {todos: nomes}; }
   if (t != 'extra' && cats.length < CATS.length) x.cats = cats;
   [['loc', 'nvloc'], ['arb', 'nvarb'], ['dt', 'nvdt'], ['hr', 'nvhr']].forEach(([f, el]) => { const v = $(el) && $(el).value; if (v) x[f] = v; });
@@ -5218,7 +5218,7 @@ document.addEventListener('change', async e => {
  await DB.patchCfg(['mods'], () => {
   S.mods = listaMods();
   const x = S.mods.find(y => y.id === id);
-  if (x) { const sp = Array.isArray(x.sp) && x.sp.length === 3 ? x.sp.slice() : [200, 160, 80]; sp[+k] = v; if (sp.join() === '200,160,80') delete x.sp; else x.sp = sp; }
+  if (x) { const sp = Array.isArray(x.sp) && x.sp.length === 3 ? x.sp.slice() : spGlobal().slice(); sp[+k] = v; if (sp.join() === spGlobal().join()) delete x.sp; else x.sp = sp; }
   buildActs();
  });
  softRender();
@@ -6333,6 +6333,48 @@ async function limparCronograma(btn) {
 const cronoedAntesLimpar = Views.cronoed;
 Views.cronoed = () => cronoedAntesLimpar().replace(/(<div class="row nv-topo">[\s\S]*?)(<\/div>)/, (m, ini, fim) => `${ini}${ehAdmin() ? '<button class="btn warn" data-crzerar>Limpar cronograma</button>' : ''}${fim}`);
 document.addEventListener('click', e => { const t = e.target.closest('[data-crzerar]'); if (t && pg === 'cronoed') limparCronograma(t); });
+
+/* ==========================================================================
+   47. PONTOS DO SISTEMA SUÍÇO NA JANELA "PONTOS POR POSIÇÃO"
+   Pontuação geral (vitória, empate, derrota) guardada numa entrada fixa da lista
+   de modalidades. Vale para todas as modalidades suíças que não têm pontuação
+   própria (definida no editor de modalidades).
+   ========================================================================== */
+const SP_ID = '__suico', SP_PADRAO = [200, 160, 80];
+function spGlobal() { const x = (S.mods || []).find(m => m && m.id === SP_ID && Array.isArray(m.sp) && m.sp.length === 3); return x ? x.sp.map(Number) : SP_PADRAO; }
+spDe = a => a && Array.isArray(a.sp) && a.sp.length === 3 ? a.sp : spGlobal();
+
+const cfgAntesSuicoPts = Views.cfg;
+Views.cfg = () => {
+ const h = cfgAntesSuicoPts();
+ const sui = ACTS.filter(a => a.t == 'suico'), proprias = sui.filter(a => Array.isArray(a.sp) && a.sp.join() !== spGlobal().join()), g = spGlobal();
+ if (cfgPartes.pontos != null) cfgPartes.pontos += `<h3 class="me-grupo" style="margin-top:18px">Sistema suíço <span>(pontos por jogo, direto no placar geral)</span></h3>
+  <div class="sp-grid">${['Vitória', 'Empate', 'Derrota'].map((n, k) => `<label>${n}<input type="number" min="0" step="any" data-spg="${k}" value="${g[k]}"></label>`).join('')}</div>
+  <p class="muted" style="margin:8px 0 0">${sui.length ? `Vale para ${sui.length - proprias.length} de ${sui.length} ${sui.length == 1 ? 'modalidade suíça' : 'modalidades suíças'}.` : 'Ainda não há modalidade suíça. Esta pontuação será usada nas que forem criadas.'}${proprias.length ? ` ${proprias.length == 1 ? 'Uma tem' : proprias.length + ' têm'} pontuação própria: ${proprias.map(a => esc(a.n)).join(', ')}.` : ''}</p>
+  ${proprias.length ? '<div class="row" style="margin-top:8px"><button class="btn alt" data-spgtodas>Usar esta pontuação em todas</button></div>' : ''}`;
+ return h;
+};
+document.addEventListener('change', async e => {
+ const el = e.target; if (!el.dataset || el.dataset.spg === undefined) return;
+ const k = +el.dataset.spg, v = Math.max(0, +el.value || 0);
+ await DB.patchCfg(['mods'], () => {
+  S.mods = listaMods();
+  let x = S.mods.find(m => m.id === SP_ID);
+  if (!x) { x = {id: SP_ID, fx: 1, t: 'fixo', n: 'Pontos do sistema suíço'}; S.mods.push(x); }
+  const sp = Array.isArray(x.sp) && x.sp.length === 3 ? x.sp.slice() : SP_PADRAO.slice(); sp[k] = v; x.sp = sp;
+  buildActs();
+ });
+ softRender();
+});
+document.addEventListener('click', async e => {
+ const t = e.target.closest('[data-spgtodas]'); if (!t) return;
+ if (!await confirmar('Usar a pontuação geral do sistema suíço em todas as modalidades suíças?\nAs pontuações próprias de cada uma serão removidas.')) return;
+ t.disabled = true;
+ await DB.patchCfg(['mods'], () => { S.mods = listaMods(); S.mods.forEach(m => { if (m.t == 'suico') delete m.sp; }); buildActs(); });
+ render();
+});
+/* nova modalidade suíça já começa com a pontuação geral */
+document.addEventListener('change', e => { if (e.target.id === 'nvtipo' && e.target.value === 'suico') spGlobal().forEach((v, k) => { const i = $('nvsp' + k); if (i) i.value = v; }); });
 
 /* Inicialização: primeiro descobre quem está conectado, depois abre a página */
 iniciarAuth().finally(route);
