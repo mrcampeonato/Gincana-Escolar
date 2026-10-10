@@ -637,6 +637,21 @@ a.mv-mod:hover{border-color:var(--ink)}
 .pts-cat tr.pen-row td{color:#c8283a;font-weight:600}
 .pn-atalho{display:flex;justify-content:flex-end;margin-top:10px}
 
+/* Integrante suspenso */
+.insc-lin.susp,.insc-row.susp{cursor:not-allowed}
+.insc-lin.susp span,.insc-row.susp .mem-nome{color:#c8283a;font-weight:600}
+.insc-lin.susp span{white-space:normal}
+.insc-lin.susp small{display:block;font-size:11px;font-weight:400;color:#c8283a;opacity:.85}
+.insc-row.susp .mem-sub{color:#c8283a}
+.susp-tag{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;background:rgba(200,40,58,.12);color:#c8283a;font-size:11px;font-weight:600;vertical-align:middle}
+.susp-box{border:1px solid rgba(200,40,58,.35);background:rgba(200,40,58,.06);border-radius:12px;padding:10px 12px;text-align:left;font-size:13px}
+.susp-box strong{color:#c8283a}
+.su-busca{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;margin-bottom:8px}
+.su-item{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--line);text-align:left}
+.su-item .mem-foto{width:38px;height:38px;font-size:14px}
+.su-item .mem-info{flex:1}
+.su-item p{margin:2px 0 0;font-size:12px;color:var(--mute)}
+
 /* Confirmação digitada (Zerar tudo) */
 .cx-dig{display:grid;gap:6px;margin-top:14px;white-space:normal;font-size:13px;font-weight:600;color:var(--mute);text-align:left}
 .cx-dig strong{color:var(--ink)}
@@ -1038,6 +1053,7 @@ function opsCfg(cols, antes) {
  return ops;
 }
 const fail = e => {
+ if (/INTEGRANTE_SUSPENSO/.test(String(e && (e.message || e.details) || ''))) { avisar('Aluno suspenso: sem poder participar de modalidade até liberação.'); SUSP.listar(ehAdmin()).then(() => { if (cur) sec(curC); }); return; }
  const m = String(e && (e.message || e.code) || JSON.stringify(e)).replace(/^(?:\w*Error:\s*)+/, '');
  avisar(/row-level security|permission denied|42501|sem permiss/i.test(m + ' ' + (e && e.code || ''))
   ? 'Sua conta não tem permissão para alterar os dados. Entre com uma conta liberada pelo administrador.'
@@ -1465,11 +1481,12 @@ async function route() {
   if (recente) {}
   else if (cur) tarefas.push(DB.fetchSingleRes(cur, curC), AG.daMod(cur.s));
   else if (pg == 'placar') tarefas.push(DB.fetchAllRes(), PEN.listar(false));
-  else if (pg == 'penal') tarefas.push(PEN.listar(true));
+  else if (pg == 'penal') tarefas.push(PEN.listar(true), MEM.listar());
   else if (pg == 'mod') tarefas.push(DB.fetchAllRes(), AG.listar());
   else if (pg == 'membros' || pg == 'memver') tarefas.push(MEM.listar());
   else if (pg == 'insc') tarefas.push(MEM.listar(), AG.listar(), inscSel ? carregarInsc() : null);
   else if (pg == 'crono' || pg == 'cronoed' || pg == 'cronoauto' || pg == 'minhas' || pg == 'modedit') tarefas.push(AG.listar());
+  if (tarefas.length && precisaSusp()) tarefas.push(SUSP.listar(ehAdmin()));
   await Promise.all(tarefas);
   if (tarefas.length) { lidoEm[chaveLeitura] = Date.now(); save(); }
  } catch (e) { console.error(e); }
@@ -3142,7 +3159,7 @@ function desenharInscritos() {
  $('inscbody').innerHTML = !l.length ? '<p class="muted">Ninguém inscrito nesta modalidade e categoria ainda.</p>' :
   (porPartida ? `<p class="insc-resumo">${l.length} ${l.length == 1 ? 'inscrito' : 'inscritos'} · a presença é conferida ${inscD.a.t == 'chav' ? 'em cada partida' : 'em “Integrantes”, na página da modalidade'}</p>` : `<p class="insc-resumo"><strong>${pres}</strong> de ${l.length} presentes</p>`) +
   grupos.map(([t, g]) => `<div class="mem-grupo"><h3>${esc(teamNome(t))}</h3><span>${porPartida ? g.length : g.filter(x => x.ins.presente).length + '/' + g.length}</span></div>` +
-   g.map(x => `<label class="insc-row">${porPartida ? '' : `<input type="checkbox" data-pres="${esc(x.ins.id)}" ${x.ins.presente ? 'checked' : ''} aria-label="Presença de ${esc(x.m.nome)}">`}${fotoHTML(x.m)}<span class="mem-info"><span class="mem-nome">${esc(x.m.nome)}</span><span class="mem-sub">${esc(x.m.turma || '—')}</span></span><button class="btn warn btn-del insc-del" data-inscdel="${esc(x.ins.id)}" aria-label="Remover inscrição de ${esc(x.m.nome)}" title="Remover inscrição">${icone('lixo')}</button></label>`).join('')).join('');
+   g.map(x => `<label class="insc-row ${suspenso(x.m.id) ? 'susp' : ''}">${porPartida ? '' : `<input type="checkbox" data-pres="${esc(x.ins.id)}" ${x.ins.presente ? 'checked' : ''} ${suspenso(x.m.id) ? 'disabled' : ''} aria-label="Presença de ${esc(x.m.nome)}">`}${fotoHTML(x.m)}<span class="mem-info"><span class="mem-nome">${esc(x.m.nome)}</span><span class="mem-sub">${suspenso(x.m.id) ? esc(SUSP_TXT) : esc(x.m.turma || '—')}</span></span><button class="btn warn btn-del insc-del" data-inscdel="${esc(x.ins.id)}" aria-label="Remover inscrição de ${esc(x.m.nome)}" title="Remover inscrição">${icone('lixo')}</button></label>`).join('')).join('');
  $('inscfoot').innerHTML = '<button class="btn alt" data-inscadd>+ Inscrever na hora</button><span class="mem-esp"></span><button class="btn" data-inscfechar>Fechar</button>';
 }
 async function mostrarCandidatos() {
@@ -3171,7 +3188,7 @@ function candHTML(q) {
  if (!l.length) return '<p class="muted">Ninguém encontrado.</p>';
  const todos = l.every(m => inscD.sel.has(m.id));
  return `<button class="cand-todos" data-candtodos>${todos ? 'Desmarcar todos' : 'Marcar todos'} (${l.length})</button>` +
-  l.map(m => `<label class="insc-row cand"><input type="checkbox" data-candsel="${esc(m.id)}" ${inscD.sel.has(m.id) ? 'checked' : ''}>${fotoHTML(m)}<span class="mem-info"><span class="mem-nome">${esc(m.nome)}</span><span class="mem-sub">${esc(teamNome(m.team))} · ${esc(m.turma || '—')}</span></span></label>`).join('');
+  l.map(m => suspenso(m.id) ? `<label class="insc-row cand susp"><input type="checkbox" disabled>${fotoHTML(m)}<span class="mem-info"><span class="mem-nome">${esc(m.nome)}</span><span class="mem-sub">${esc(SUSP_TXT)}</span></span></label>` : `<label class="insc-row cand"><input type="checkbox" data-candsel="${esc(m.id)}" ${inscD.sel.has(m.id) ? 'checked' : ''}>${fotoHTML(m)}<span class="mem-info"><span class="mem-nome">${esc(m.nome)}</span><span class="mem-sub">${esc(teamNome(m.team))} · ${esc(m.turma || '—')}</span></span></label>`).join('');
 }
 function candAtualiza() {
  const eq = [...new Set(inscD.cand.map(m => String(m.team)))].sort();
@@ -3266,7 +3283,7 @@ function inscBlocoHTML(x, times) {
  const col = t => {
   const l = inscPag.lista.filter(y => y.m.team === +t).sort((p, q) => porNome(p.m, q.m));
   return `<div class="insc-col"><h4><span>${tn(+t)}</span><span>${pres(l)}/${l.length}</span></h4>${l.length
-   ? l.map(y => `<label class="insc-lin"><input type="checkbox" data-ipres="${esc(y.ins.id)}" data-ipart="${x}" ${presNa(y.ins, x) ? 'checked' : ''} aria-label="Presença de ${esc(y.m.nome)}"><span>${esc(y.m.nome)}</span></label>`).join('')
+   ? l.map(y => suspenso(y.m.id) ? `<label class="insc-lin susp" title="${esc(SUSP_TXT)}"><input type="checkbox" disabled aria-label="${esc(y.m.nome)}: suspenso"><span>${esc(y.m.nome)}<small>${esc(SUSP_TXT)}</small></span></label>` : `<label class="insc-lin"><input type="checkbox" data-ipres="${esc(y.ins.id)}" data-ipart="${x}" ${presNa(y.ins, x) ? 'checked' : ''} aria-label="Presença de ${esc(y.m.nome)}"><span>${esc(y.m.nome)}</span></label>`).join('')
    : '<p class="insc-vazio">Ninguém inscrito</p>'}</div>`;
  };
  return tog + `<div class="insc-part ${times.length > 2 ? 'insc-4' : ''}">${times.map(col).join('')}</div>`;
@@ -3390,7 +3407,7 @@ function marcaHTML(a, d, lock) {
   else if (!ok) opts = [['', 'Carregando…']];
   else {
    const l = inscPag.lista.filter(y => y.m.team === +x.team).sort((p, q) => porNome(p.m, q.m));
-   opts = [['', l.length ? (x.n && !x.mid ? x.n : '— atleta —') : (x.n && !x.mid ? x.n : 'Nenhum inscrito')], ...l.map(y => [y.m.id, y.m.nome])];
+   opts = [['', l.length ? (x.n && !x.mid ? x.n : '— atleta —') : (x.n && !x.mid ? x.n : 'Nenhum inscrito')], ...l.filter(y => !suspenso(y.m.id) || y.m.id === x.mid).map(y => [y.m.id, suspenso(y.m.id) ? y.m.nome + ' (suspenso)' : y.m.nome])];
    if (x.mid && !l.some(y => y.m.id === x.mid)) opts.push([x.mid, x.n || 'Atleta']);
   }
   return SEL(`e.${k}.mid`, x.mid, opts, lock || semTime || !ok);
@@ -6645,6 +6662,110 @@ TILES_CFG.push({titulo: 'Penalidades', sub: 'Descontos de pontos das equipes', i
 GRUPOS_CFG[0][1].push('Penalidades');
 const renderNavAntesPen = renderNav;
 renderNav = function () { renderNavAntesPen(); if (pg === 'penal') { const a = $('tabs').querySelector('a[href="#/configuracoes"]'); if (a) a.setAttribute('aria-current', 'page'); } };
+
+/* ==========================================================================
+   50. SUSPENSÃO DE INTEGRANTE (só o administrador suspende e libera)
+   - Tabela própria "suspensoes" (uma linha por integrante suspenso). O motivo
+     fica numa tabela que só o administrador lê.
+   - Nas modalidades o nome aparece em vermelho com o aviso, sem poder marcar
+     presença, ser inscrito na hora ou ser escolhido como atleta. O banco
+     também recusa marcar presença de quem está suspenso.
+   - A chamada dos dias de jogos não muda.
+   ========================================================================== */
+const SUSP_TXT = 'Aluno suspenso: sem poder participar de modalidade até liberação';
+const suspenso = id => !!(S.susp && S.susp[id]);
+const precisaSusp = () => !!db && (podeEditar() || ehArbitro());
+const SUSP = {
+ async listar(comMotivo) {
+  if (!db) return;
+  const { data, error } = await db.from('suspensoes').select('membro,criado_em');
+  if (error) { console.error(error); return; }   // tabela ainda não criada: ninguém suspenso
+  let mot = {};
+  if (comMotivo && data && data.length) { const r = await db.from('suspensoes_obs').select('membro,motivo'); if (!r.error) mot = Object.fromEntries((r.data || []).map(x => [x.membro, x.motivo])); }
+  S.susp = Object.fromEntries((data || []).map(x => [x.membro, {em: x.criado_em, motivo: mot[x.membro] || ''}]));
+ },
+ async suspender(mid, motivo) {
+  if (!db) { S.susp = {...(S.susp || {}), [mid]: {em: new Date().toISOString(), motivo}}; save(); return true; }
+  const { error } = await db.rpc('suspender_integrante', {p_membro: mid, p_motivo: motivo || ''});
+  if (error) { fail(/suspender_integrante|PGRST202/.test(String(error.message || error.code)) ? {message: 'O banco ainda não tem a suspensão de integrantes. Rode o arquivo olimpiadas-suspensao.sql no Supabase.'} : error); return false; }
+  await SUSP.listar(true); return true;
+ },
+ async liberar(mid) {
+  if (!db) { const s = {...(S.susp || {})}; delete s[mid]; S.susp = s; save(); return true; }
+  const { error } = await db.from('suspensoes').delete().eq('membro', mid);
+  if (error) { fail(error); return false; }
+  const s = {...(S.susp || {})}; delete s[mid]; S.susp = s; return true;
+ }
+};
+/* mensagem clara se o banco recusar presença de suspenso */
+
+
+/* páginas que mostram integrantes nas modalidades também acompanham em tempo real */
+const rtAntesSusp = DB.setupRealtime;
+DB.setupRealtime = function () {
+ rtAntesSusp.call(DB);
+ if (!precisaSusp() || !(cur || pg === 'membros' || pg === 'insc' || pg === 'penal')) return;
+ db.channel('olimp-susp-' + (cur ? cur.s : pg)).on('postgres_changes', {event: '*', schema: 'public', table: 'suspensoes'}, () => {
+  SUSP.listar(ehAdmin()).then(() => { if (cur) sec(curC); else softRender(); });
+ }).subscribe();
+};
+
+/* Janela do integrante (Configurações → Integrantes): situação e botão do administrador */
+const abrirMemAntesSusp = abrirMem;
+abrirMem = function (m) {
+ abrirMemAntesSusp(m);
+ if (!m || !ehAdmin()) return;
+ const f = $('memdlg').querySelector('.mem-form'); if (!f) return;
+ const s = (S.susp || {})[m.id];
+ f.insertAdjacentHTML('beforeend', s
+  ? `<div class="susp-box"><strong>Suspenso das modalidades</strong>${s.motivo ? `<br>${esc(s.motivo)}` : ''}<div class="row" style="margin:8px 0 0;justify-content:flex-start"><button class="btn alt" data-suliberar="${esc(m.id)}">Liberar para as modalidades</button></div></div>`
+  : `<button class="btn warn" data-suabrir="${esc(m.id)}">Suspender das modalidades</button>`);
+};
+async function pedirSuspensao(m) {
+ const dlg = $('cxdlg');
+ const motivo = await new Promise(res => {
+  dlg.innerHTML = `<div class="reg-box"><div class="reg-body cx-body">Suspender <strong>${esc(m.nome)}</strong> (${esc(teamNome(m.team))}) das modalidades?\nEle fica em vermelho nas listas das modalidades e não pode participar até ser liberado. A chamada dos dias de jogos não muda.<label class="cx-dig"><span>Motivo (opcional, só o administrador vê)</span><input id="sumotivo" maxlength="300" autocomplete="off"></label></div><div class="reg-foot"><button class="btn alt" data-cx="0">Cancelar</button><button class="btn warn" data-cx="1">Suspender</button></div></div>`;
+  const fim = v => { dlg.onclick = null; dlg.oncancel = null; if (dlg.open) dlg.close(); res(v); };
+  dlg.onclick = e => { const b = e.target.closest('[data-cx]'); if (b) fim(b.dataset.cx === '1' ? ($('sumotivo').value || '').trim() : null); };
+  dlg.oncancel = e => { e.preventDefault(); fim(null); };
+  if (!dlg.open) dlg.showModal();
+  $('sumotivo').focus();
+ });
+ if (motivo === null) return false;
+ return SUSP.suspender(m.id, motivo);
+}
+document.addEventListener('click', async e => {
+ const t = e.target.closest('[data-suabrir],[data-suliberar]'); if (!t) return;
+ if (!ehAdmin()) { avisar('Só o administrador pode suspender ou liberar integrantes.'); return; }
+ const id = t.dataset.suabrir || t.dataset.suliberar, m = membros().find(x => x.id === id); if (!m) return;
+ if (t.dataset.suabrir) { t.disabled = true; const ok = await pedirSuspensao(m); t.disabled = false; if (!ok) return; }
+ else { if (!await confirmar(`Liberar ${m.nome} para participar das modalidades?`)) return; t.disabled = true; if (!await SUSP.liberar(id)) { t.disabled = false; return; } }
+ if ($('memdlg').open && memEd && memEd.id === id) abrirMem(m);
+ render();
+});
+
+/* Página de Penalidades: seção de integrantes suspensos */
+let suBusca = '';
+const penalAntesSusp = Views.penal;
+Views.penal = () => {
+ const lista = Object.entries(S.susp || {}).map(([id, s]) => ({m: membros().find(x => x.id === id), s})).filter(x => x.m).sort((a, b) => a.m.nome.localeCompare(b.m.nome, 'pt-BR'));
+ return penalAntesSusp() + `<section class="panel" id="suspainel"><h2>Integrantes suspensos <span class="cr-n">${lista.length}</span></h2>
+  <p class="muted">Suspenso não participa das modalidades até ser liberado: o nome fica em vermelho nas listas das modalidades. A chamada dos dias de jogos não muda.</p>
+  ${lista.length ? lista.map(({m, s}) => `<div class="su-item">${fotoHTML(m)}<span class="mem-info"><span class="mem-nome">${esc(m.nome)}<span class="susp-tag">suspenso</span></span><span class="mem-sub">${esc(teamNome(m.team))} · ${esc(memSub(m))}</span>${s.motivo ? `<p>${esc(s.motivo)}</p>` : ''}</span><button class="btn alt" data-suliberar="${esc(m.id)}">Liberar</button></div>`).join('') : '<p class="muted">Ninguém suspenso.</p>'}
+  <h3 class="me-grupo">Suspender integrante</h3>
+  <div class="su-busca"><input id="subusca" type="search" placeholder="Buscar integrante pelo nome ou turma" value="${esc(suBusca)}" autocomplete="off"></div>
+  <div id="suresult">${suResultHTML()}</div>
+ </section>`;
+};
+function suResultHTML() {
+ const q = slug(suBusca); if (q.length < 2) return '<p class="muted">Digite pelo menos 2 letras.</p>';
+ const l = membros().filter(m => !suspenso(m.id) && slug(m.nome + ' ' + m.turma).includes(q)).sort(porNome).slice(0, 20);
+ if (!l.length) return '<p class="muted">Ninguém encontrado.</p>';
+ return l.map(m => `<div class="su-item">${fotoHTML(m)}<span class="mem-info"><span class="mem-nome">${esc(m.nome)}</span><span class="mem-sub">${esc(teamNome(m.team))} · ${esc(memSub(m))}</span></span><button class="btn warn" data-suabrir="${esc(m.id)}">Suspender</button></div>`).join('');
+}
+document.addEventListener('input', e => { if (e.target.id === 'subusca') { suBusca = e.target.value; const r = $('suresult'); if (r) r.innerHTML = suResultHTML(); } });
+/* a página de penalidades passa a carregar a lista de integrantes */
+COLS.penal = 'teams,colors,mods,cats';
 
 /* Inicialização: primeiro descobre quem está conectado, depois abre a página */
 iniciarAuth().finally(route);
