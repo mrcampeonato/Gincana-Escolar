@@ -975,7 +975,7 @@ const catNome = id => (CATS.find(c => c.id === +id) || {}).n || '';
 
 /* Páginas do sistema: cada uma tem a sua própria URL (hash) */
 const TABS = [
- ['placar','Placar geral','#/'],
+ ['placar','Placar geral','#/placar'],
  ['mod','Modalidades','#/modalidades'],
  ['memver','Integrantes','#/integrantes'],
  ['crono','Cronograma','#/cronograma'],
@@ -983,6 +983,7 @@ const TABS = [
 ];
 const ROUTES = {
  ...Object.fromEntries(TABS.map(([k,,h]) => [h, k])),
+ '#/': 'placar',                             // página inicial oficial do site: Placar geral
  '#/configuracoes/modalidades': 'modedit',  // página vinculada às Configurações
  '#/configuracoes/integrantes': 'membros',   // gerenciar integrantes (Configurações)
  '#/configuracoes/inscricoes': 'insc',
@@ -2959,6 +2960,7 @@ function icone(n) {
   camadas: '<path d="M12 2l10 5-10 5L2 7z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>',
   escudo: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
   medalha: '<circle cx="12" cy="15" r="6"/><path d="M8.2 9.8L5 2h4l3 6 3-6h4l-3.2 7.8"/><path d="M12 13v4"/>',
+  casa: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/>',
   pessoa: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>',
   eng: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'
  }[n] || '';
@@ -4687,7 +4689,7 @@ function bloqueioHTML(p) {
   : AUTH.papel === 'pendente'
    ? 'Sua conta ainda não foi liberada. Peça ao administrador para liberar o seu acesso.'
    : `Esta área é só para ${precisa}.`;
- return `<section class="panel acesso">${icone('cadeado')}<h2>Área restrita</h2><p class="muted">${txt}</p><div class="row">${AUTH.user ? '' : '<button class="btn" data-entrar>Entrar</button>'}<a class="btn alt" href="#/" style="text-decoration:none;display:inline-flex;align-items:center">Ir para o placar</a></div></section>`;
+ return `<section class="panel acesso">${icone('cadeado')}<h2>Área restrita</h2><p class="muted">${txt}</p><div class="row">${AUTH.user ? '' : '<button class="btn" data-entrar>Entrar</button>'}<a class="btn alt" href="#/" style="text-decoration:none;display:inline-flex;align-items:center">Ir para o início</a></div></section>`;
 }
 const renderAntesAcesso = render;
 render = function () {
@@ -6887,6 +6889,23 @@ secHTML = function (ci) {
  return cur && cur.t == 'marca' && podeAqui() ? h + `<div class="bat-acoes"><button class="btn alt" data-addbat>+ Bateria</button><span class="muted">Divide a disputa em baterias. O resultado já lançado vira a Bateria 1.</span></div>` : h;
 };
 
+/* Bateria gravada no servidor numa operação atômica (função res_bat).
+   Devolve o resultado atualizado; undefined = sem a função (usa a gravação antiga); null = erro. */
+let resBatOk = true;
+async function resBat(a, ci, op, n, b) {
+ if (!db || !resBatOk) return undefined;
+ try {
+  const { data, error } = await db.rpc('res_bat', {p_id: `${a.s}_${ci}`, p_op: op, p_n: n, p_bat: b || {}});
+  if (!error) { applyRes(`${a.s}_${ci}`, data); return data || {}; }
+  const msg = String(error.message || error.code || '');
+  if (/res_bat|PGRST202|Could not find the function/i.test(msg) && !/BAT_/.test(msg)) { resBatOk = false; return undefined; }
+  if (/BAT_MAX/.test(msg)) avisar(`O máximo é de ${BAT_MAX} baterias.`);
+  else if (/BAT_USADA|BAT_FIXA/.test(msg)) { avisar('Essa bateria não pode ser removida: ela já tem resultado ou faz parte da configuração da modalidade.'); await DB.fetchSingleRes(a, ci); }
+  else fail(error);
+  return null;
+ } catch (e) { fail(e); return null; }
+}
+
 /* botões das baterias (depois da checagem de permissão) */
 document.addEventListener('click', async e => {
  if (!cur) return;
@@ -6904,11 +6923,16 @@ document.addEventListener('click', async e => {
   if (cur.u !== 'dist') { const inv = temposInvalidos(b.e); if (inv.length) { avisaTempo(inv); return; } }
   if (!ready('marca', b)) return;
   t.disabled = true;
-  await DB.fetchSingleRes(cur, ci);   // grava só esta bateria, sobre a versão mais recente
-  const salvo = clone(S.res[key] || {});
-  salvo.bat = Array.isArray(salvo.bat) ? salvo.bat : [];
-  for (let i = 0; i <= n; i++) salvo.bat[i] = salvo.bat[i] || {};
-  salvo.bat[n] = {...b, ok: true};
+  let salvo = await resBat(cur, ci, 'set', n, {...b, ok: true});   // grava só esta bateria, de forma atômica no servidor
+  if (salvo === null) { t.disabled = false; return; }
+  const viaServidor = !!salvo;
+  if (!viaServidor) {   // banco sem a função res_bat: relê e grava o documento
+   await DB.fetchSingleRes(cur, ci);
+   salvo = clone(S.res[key] || {});
+   salvo.bat = Array.isArray(salvo.bat) ? salvo.bat : [];
+   for (let i = 0; i <= n; i++) salvo.bat[i] = salvo.bat[i] || {};
+   salvo.bat[n] = {...b, ok: true};
+  }
   S.res[key] = salvo;
   const rasc = D[key]; delete D[key];
   if (rasc && Array.isArray(rasc.bat)) {   // mantém o que ainda está sendo digitado nas outras baterias
@@ -6916,7 +6940,7 @@ document.addEventListener('click', async e => {
    rasc.bat.forEach((x, i) => { if (i !== n && x && !x.ok && !(nd.bat[i] && nd.bat[i].ok) && JSON.stringify(x) !== JSON.stringify(nd.bat[i] || {})) { nd.bat[i] = x; resto = true; } });
    if (resto) D[key] = nd;
   }
-  await DB.persistRes(cur, ci);
+  if (viaServidor) save(); else await DB.persistRes(cur, ci);
   sec(ci);
  }
 }, true);
@@ -6979,6 +7003,20 @@ document.addEventListener('click', async e => {
  const ci = +s.id.slice(3), key = rk(cur, ci), add = t.dataset.addbat !== undefined;
  if (add && !temBat(cur, ci) && !await confirmar('Dividir esta disputa em baterias?\nO resultado já lançado vira a Bateria 1 e a Bateria 2 fica em aberto.\nA classificação sai da melhor marca de cada equipe, e os pontos só entram no placar quando todas as baterias forem confirmadas.')) return;
  t.disabled = true;
+ if (temBat(cur, ci)) {   // já está em baterias: inclui/remove de forma atômica no servidor
+  const r = await resBat(cur, ci, add ? 'push' : 'pop', add ? batsDe(view(key), cur).length : nbDe(cur));
+  if (r === null) { sec(ci); return; }
+  if (r) {
+   const rasc = D[key]; delete D[key];
+   if (rasc && Array.isArray(rasc.bat)) { const nd = clone(r); let mud = false; rasc.bat.forEach((x, i) => { if (i < nd.bat.length && x && !x.ok && !(nd.bat[i] && nd.bat[i].ok) && JSON.stringify(x) !== JSON.stringify(nd.bat[i])) { nd.bat[i] = x; mud = true; } }); if (mud) D[key] = nd; }
+   if (!add && r.bat.length <= 1 && nbDe(cur) <= 1) {   // voltou a uma bateria só: deixa de ter baterias
+    const plano = converteBat(r, 1).d; S.res[key] = plano;
+    if (D[key]) { const x = (D[key].bat || [])[0]; D[key] = x && !x.ok && !plano.ok ? {...clone(plano), ...x} : undefined; if (!D[key]) delete D[key]; }
+    await DB.persistRes(cur, ci);
+   } else save();
+   sec(ci); return;
+  }
+ }
  await DB.fetchSingleRes(cur, ci);   // parte da versão mais recente do servidor
  const base = clone(S.res[key] || {});
  let d = Array.isArray(base.bat) ? base : nbDe(cur) > 1 ? {...base, bat: []} : converteBat(base, BAT_MAX).d;
@@ -7046,6 +7084,27 @@ document.addEventListener('change', async e => {
  if (!await confirmar(`Empate: ${[eu, ...outros].map(i => eqNome(i)).join(' e ')} em ${v}º lugar?\nAs equipes empatadas recebem os mesmos pontos.`)) return;
  el.value = v;
  edit(ci, k, v, `[data-k="${k}"]`);
+}, true);
+
+/* ==========================================================================
+   55. CONFIRMAÇÃO AO REMOVER ATLETA (MODALIDADES DE MARCA)
+   Roda antes de todos os outros cliques (fase de captura na janela).
+   Linha vazia sai direto; linha com equipe, atleta ou marca pede confirmação.
+   ========================================================================== */
+window.addEventListener('click', async e => {
+ const t = e.target.closest && e.target.closest('[data-rme],[data-rmeb]'); if (!t || t.disabled || !cur || cur.t != 'marca') return;
+ if (t._confirmado) { t._confirmado = false; return; }
+ const s = t.closest('[id^=sec]'); if (!s) return;
+ const ci = +s.id.slice(3), d = view(rk(cur, ci)), bat = t.dataset.rmeb !== undefined;
+ const [n, k] = bat ? t.dataset.rmeb.split(',').map(Number) : [null, +t.dataset.rme];
+ const x = ((bat ? ((d.bat || [])[n] || {}).e : d.e) || [])[k];
+ if (!x || !(x.n || x.mid || x.t || (x.team !== '' && x.team != null))) return;   // linha vazia: remove sem perguntar
+ e.preventDefault(); e.stopImmediatePropagation();
+ const desc = [x.n || '', x.team !== '' && x.team != null ? eqNome(x.team) : '', x.t || ''].filter(Boolean).join(' · ');
+ if (!await confirmar(`Remover ${x.n ? 'este atleta' : 'esta linha'}${bat ? ` da bateria ${n + 1}` : ''}?\n${desc}`)) return;
+ const sel = bat ? `[data-rmeb="${n},${k}"]` : `[data-rme="${k}"]`, b = document.querySelector(`#sec${ci} ${sel}`);
+ if (!b || b.disabled) return;
+ b._confirmado = true; b.click();
 }, true);
 
 /* Inicialização: primeiro descobre quem está conectado, depois abre a página */
