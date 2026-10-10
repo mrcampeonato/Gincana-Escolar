@@ -608,6 +608,11 @@ a.mv-mod:hover{border-color:var(--ink)}
 .ags-nota{font-size:12px;color:var(--mute);margin:0 0 8px}
 @media (max-width:480px){.ags-campos{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.ags-campos>label:first-child{grid-column:1/-1}}
 
+/* Configurações em grupos */
+.cfg-grupo{margin-bottom:16px}
+.cfg-grupo>h3{font:600 12px Figtree,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);margin:0 0 8px 4px;text-align:left}
+.cfg-grupo .cfg-tiles{margin-bottom:0}
+
 /* Confirmação digitada (Zerar tudo) */
 .cx-dig{display:grid;gap:6px;margin-top:14px;white-space:normal;font-size:13px;font-weight:600;color:var(--mute);text-align:left}
 .cx-dig strong{color:var(--ink)}
@@ -960,7 +965,7 @@ const COLS = {
 };
 
 let cur = null, curC = 0, pg = 'placar', flt = 'todas', first = true;
-let navTok = 0, carregando = false, pendente = false;
+let navTok = 0, carregando = false, pendente = false, lidoEm = {};
 
 /* Helper Utilities */
 const $ = id => document.getElementById(id);
@@ -985,6 +990,27 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth: {persistSession: true, autoRefreshToken: true, detectSessionInUrl: true}, global: {fetch: fetchResiliente}, realtime: {params: {eventsPerSecond: 10}}}) : null;
 
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)) } catch (e) {} };
+/* Diferença entre antes e depois de cada coluna, em operações pequenas:
+   listas de itens com id (modalidades, torcida, locais, árbitros...) mudam item a item;
+   listas de listas (Instagram) mudam casa a casa; o resto troca o valor inteiro. */
+let cfgPatchOk = true;
+function opsCfg(cols, antes) {
+ const ops = [], igual = (x, y) => JSON.stringify(x) === JSON.stringify(y);
+ const comId = v => Array.isArray(v) && v.every(x => x && typeof x === 'object' && !Array.isArray(x) && x.id != null);
+ const deListas = (x, y) => Array.isArray(x) && Array.isArray(y) && x.length === y.length && x.every(Array.isArray) && y.every(Array.isArray);
+ cols.forEach(c => {
+  const a = antes[c], d = S[c] == null ? null : S[c];
+  if (igual(a, d)) return;
+  if (comId(a) && comId(d) && a.length) {
+   const ma = new Map(a.map(x => [String(x.id), x])), md = new Map(d.map(x => [String(x.id), x]));
+   ma.forEach((x, id) => { if (!md.has(id)) ops.push({op: 'del', col: c, id}); });
+   md.forEach((x, id) => { if (!ma.has(id) || !igual(ma.get(id), x)) ops.push({op: 'upsert', col: c, item: x}); });
+  } else if (deListas(a, d)) {
+   d.forEach((l, i) => { if (!igual(a[i], l)) l.forEach((v, j) => { if (!igual((a[i] || [])[j], v)) ops.push({op: 'jset', col: c, path: [String(i), String(j)], value: v == null ? null : v}); }); });
+  } else ops.push({op: 'set', col: c, value: d});
+ });
+ return ops;
+}
 const fail = e => {
  const m = String(e && (e.message || e.code) || JSON.stringify(e)).replace(/^(?:\w*Error:\s*)+/, '');
  avisar(/row-level security|permission denied|42501|sem permiss/i.test(m + ' ' + (e && e.code || ''))
@@ -1045,9 +1071,18 @@ const DB = {
     const { data, error } = await db.from('cfg').select(cols.join(',')).eq('id', 'geral');
     if (!error && data && data.length) applyCfg(data[0]);
    }
+   const antes = Object.fromEntries(cols.map(c => [c, S[c] == null ? null : JSON.parse(JSON.stringify(S[c]))]));
    mutate();
    save();
    if (!db) return true;
+   if (cfgPatchOk) {
+    const ops = opsCfg(cols, antes);
+    if (!ops.length) return true;
+    const { error } = await db.rpc('cfg_patch', { ops });
+    if (!error) return true;
+    if (!/cfg_patch|PGRST202|Could not find the function/i.test(String(error.message || error.code))) { fail(error); return false; }
+    cfgPatchOk = false;   // banco ainda sem a função: usa a gravação antiga
+   }
    const payload = { id: 'geral' };
    cols.forEach(c => payload[c] = S[c]);
    const { error } = await db.from('cfg').upsert(payload);
@@ -1398,15 +1433,18 @@ async function route() {
  DB.setupRealtime();
  try {
   /* todas as buscas da página saem ao mesmo tempo (uma ida ao servidor em vez de várias em fila) */
-  const tarefas = [DB.fetchCfg(COLS[cur ? 'm' : pg])];
-  if (cur) tarefas.push(DB.fetchSingleRes(cur, curC), AG.daMod(cur.s));
+  const chaveLeitura = cur ? `m:${cur.s}:${curC}:${podeAqui() ? 1 : 0}` : pg;
+  const recente = !editavel && Date.now() - (lidoEm[chaveLeitura] || 0) < 15000;
+  const tarefas = recente ? [] : [DB.fetchCfg(COLS[cur ? 'm' : pg])];
+  if (recente) {}
+  else if (cur) tarefas.push(DB.fetchSingleRes(cur, curC), AG.daMod(cur.s));
   else if (pg == 'placar') tarefas.push(DB.fetchAllRes());
   else if (pg == 'mod') tarefas.push(DB.fetchAllRes(), AG.listar());
   else if (pg == 'membros' || pg == 'memver') tarefas.push(MEM.listar());
   else if (pg == 'insc') tarefas.push(MEM.listar(), AG.listar(), inscSel ? carregarInsc() : null);
   else if (pg == 'crono' || pg == 'cronoed' || pg == 'cronoauto' || pg == 'minhas' || pg == 'modedit') tarefas.push(AG.listar());
   await Promise.all(tarefas);
-  save();
+  if (tarefas.length) { lidoEm[chaveLeitura] = Date.now(); save(); }
  } catch (e) { console.error(e); }
 
  if (tok !== navTok) return; // o usuário já navegou para outra página
@@ -6375,6 +6413,49 @@ document.addEventListener('click', async e => {
 });
 /* nova modalidade suíça já começa com a pontuação geral */
 document.addEventListener('change', e => { if (e.target.id === 'nvtipo' && e.target.value === 'suico') spGlobal().forEach((v, k) => { const i = $('nvsp' + k); if (i) i.value = v; }); });
+
+/* ==========================================================================
+   48. REVISÃO GERAL: ATALHOS AGRUPADOS, CARREGAMENTO INICIAL E DADOS FRESCOS
+   ========================================================================== */
+/* Novos atalhos para funções que ficavam escondidas dentro de outras páginas */
+TILES_CFG.push({titulo: 'Inscrições', sub: 'Modalidades de cada integrante', ico: 'trofeu', abre: 'href="#/configuracoes/inscricoes"'});
+TILES_CFG.push({titulo: 'Chamada', sub: 'Presença por dia dos jogos', ico: 'planilha', abre: 'href="#/configuracoes/integrantes" data-irchamada'});
+document.addEventListener('click', e => { if (e.target.closest('[data-irchamada]')) { memAba = 'ch'; try { sessionStorage.setItem('olimp-mem-aba', 'ch'); } catch (er) {} } });
+document.addEventListener('click', e => { const a = e.target.closest('a[href="#/configuracoes/integrantes"]:not([data-irchamada])'); if (a && a.closest('.cfg-tiles')) { memAba = 'cad'; try { sessionStorage.setItem('olimp-mem-aba', 'cad'); } catch (er) {} } });
+
+/* Atalhos das Configurações separados por assunto */
+const GRUPOS_CFG = [
+ ['Competição', ['Modalidades', 'Categorias', 'Equipes', 'Pontos por posição']],
+ ['Agenda', ['Período dos jogos', 'Cronograma', 'Locais', 'Árbitros']],
+ ['Pessoas', ['Integrantes', 'Inscrições', 'Chamada', 'Contas']],
+ ['Site', ['Visibilidade', 'Dados']]
+];
+function tileHTML(t) {
+ const tag = t.abre.startsWith('href') ? 'a' : 'button';
+ return `<${tag} class="cfg-tile" ${t.abre} ${tag == 'button' ? 'type="button"' : ''}><span class="cfg-ico">${icone(t.ico)}</span><span class="cfg-txt"><strong>${t.titulo}</strong><small>${t.sub}</small></span><span class="cfg-seta" aria-hidden="true">›</span></${tag}>`;
+}
+function tilesAgrupadosHTML() {
+ const usados = new Set();
+ const blocos = GRUPOS_CFG.map(([nome, titulos]) => {
+  const l = titulos.map(ti => TILES_CFG.find(t => t.titulo === ti)).filter(Boolean);
+  l.forEach(t => usados.add(t.titulo));
+  if (!l.length) return '';
+  const soAdmin = l.every(t => /data-soadmin/.test(t.abre));
+  return `<div class="cfg-grupo" ${soAdmin ? 'data-soadmin' : ''}><h3>${nome}</h3><nav class="cfg-tiles" aria-label="${nome}">${l.map(tileHTML).join('')}</nav></div>`;
+ });
+ const resto = TILES_CFG.filter(t => !usados.has(t.titulo));
+ if (resto.length) blocos.push(`<div class="cfg-grupo"><h3>Outros</h3><nav class="cfg-tiles">${resto.map(tileHTML).join('')}</nav></div>`);
+ return blocos.join('');
+}
+const cfgAntesGrupos = Views.cfg;
+Views.cfg = () => cfgAntesGrupos().replace(/<nav class="cfg-tiles"[^>]*>[\s\S]*?<\/nav>/, () => tilesAgrupadosHTML());
+
+/* Ao voltar a conexão, tudo é relido do servidor */
+addEventListener('online', () => { lidoEm = {}; });
+/* Gravações feitas aqui já atualizam os dados locais; as de outras pessoas chegam em tempo real */
+
+/* Enquanto descobre quem está conectado, a página já mostra o carregamento */
+if (!$('main').innerHTML) $('main').innerHTML = `<section class="panel" aria-busy="true"><div class="skel" aria-hidden="true"><span></span><span></span><span></span></div><p class="muted">Carregando…</p></section>`;
 
 /* Inicialização: primeiro descobre quem está conectado, depois abre a página */
 iniciarAuth().finally(route);
