@@ -169,7 +169,7 @@ button:disabled,input:disabled,select:disabled,.csel:disabled{opacity:.45;cursor
 .me-reg{border-color:var(--line);font-size:16px}
 .cat-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center;margin-bottom:8px}
 .cat-row.novo{grid-template-columns:minmax(0,1fr) auto;margin-top:12px}
-.me-sub{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:6px;margin:-2px 0 14px}
+.me-sub{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) minmax(0,.9fr);gap:6px;margin:-2px 0 14px}
 .me-sub select,
 .me-sub .csel{font-size:13px;min-width:0}
 .me-sub1{margin:-2px 0 14px}
@@ -652,6 +652,14 @@ a.mv-mod:hover{border-color:var(--ink)}
 .su-item .mem-info{flex:1}
 .su-item p{margin:2px 0 0;font-size:12px;color:var(--mute)}
 
+/* Baterias e tempo inválido */
+.bat{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px}
+.bat.bat-ok{border-color:#1f9d55;background:rgba(31,157,85,.04)}
+.bat-acoes{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:4px 0 12px}.bat-acoes .muted{font-size:13px}
+.bat>h3{margin-top:0}
+.input-tempo.inv,.input-dist.inv{border-color:#c8283a!important;box-shadow:0 0 0 3px rgba(200,40,58,.18)!important;color:#c8283a}
+@media (max-width:620px){.me-sub{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.me-sub [data-mnb]{grid-column:1/-1}}
+
 /* Confirmação digitada (Zerar tudo) */
 .cx-dig{display:grid;gap:6px;margin-top:14px;white-space:normal;font-size:13px;font-weight:600;color:var(--mute);text-align:left}
 .cx-dig strong{color:var(--ink)}
@@ -945,7 +953,7 @@ S = Object.assign(fresh(), S || {});
 /* Monta ACTS e BY a partir da lista de modalidades salva */
 function buildActs() {
  const lista = Array.isArray(S.mods) ? S.mods : MODS_PADRAO;
- ACTS = lista.filter(m => m && m.id && m.n && TN[m.t]).map(m => ({n: m.n, t: m.t, s: m.id, r: !!m.r, oc: !!m.oc, u: m.u === 'dist' ? 'dist' : 'tempo', inv: !!m.inv, cn: m.cn || null, xv: m.xv == null ? 100 : +m.xv, sp: Array.isArray(m.sp) && m.sp.length === 3 ? m.sp.map(Number) : null, grp: ['junto', 'dia', 'periodo'].includes(m.grp) ? m.grp : '', loc: m.loc || '', dt: m.dt || '', hr: m.hr || '', arb: m.arb || '', agc: m.agc || {}, cats: Array.isArray(m.cats) ? m.cats.map(Number) : null, semIns: !!m.si, semCrono: !!m.sc}));
+ ACTS = lista.filter(m => m && m.id && m.n && TN[m.t]).map(m => ({n: m.n, t: m.t, s: m.id, r: !!m.r, oc: !!m.oc, u: m.u === 'dist' ? 'dist' : 'tempo', inv: !!m.inv, cn: m.cn || null, xv: m.xv == null ? 100 : +m.xv, sp: Array.isArray(m.sp) && m.sp.length === 3 ? m.sp.map(Number) : null, grp: ['junto', 'dia', 'periodo'].includes(m.grp) ? m.grp : '', nb: Math.max(1, Math.min(8, +m.nb || 1)), loc: m.loc || '', dt: m.dt || '', hr: m.hr || '', arb: m.arb || '', agc: m.agc || {}, cats: Array.isArray(m.cats) ? m.cats.map(Number) : null, semIns: !!m.si, semCrono: !!m.sc}));
  BY = Object.fromEntries(ACTS.map(a => [a.s, a]));
 }
 buildActs();
@@ -1215,6 +1223,7 @@ function ptime(s) {
  s = String(s || '').trim(); if (!s) return null;
  if (!/['’:]/.test(s)) return num(s.replace(',', '.'));
  const p = s.split(/['’:]/).map(Number); if (p.some(isNaN)) return null;
+ if (p[1] >= 60 || p.length > 3 || (p[2] || 0) >= 100) return null;   // segundos de 00 a 59
  return p.length == 2 ? p[0] * 60 + p[1] : p[0] * 60 + p[1] + (p[2] || 0) / 100;
 }
 function win(m) {
@@ -1228,6 +1237,7 @@ function chavM(d) {
  return {s1: m.s1 || {}, s2: m.s2 || {}, t3: {...m.t3, a: w1 ? w1[1] : '', b: w2 ? w2[1] : ''}, f: {...m.f, a: w1 ? w1[0] : '', b: w2 ? w2[0] : ''}};
 }
 function place(t, d, a) {
+ if (t == 'marca' && d && Array.isArray(d.bat)) { const m = batMelhor(d, a || cur); return m && m.fim ? m.p : null; }
  if (t == 'suico') { const sp = suicoPts(d, a || cur); return sp ? crank(sp, false) : null; }
  if (!d) return null;
  if (t == 'chav') {
@@ -1253,7 +1263,7 @@ function place(t, d, a) {
 const ready = (t, d) => { const p = place(t, {...d, ok: true}); return t == 'marca' && d.modo !== 'class' ? !!p : !!p && p.every(Boolean) };
 function totals() {
  const cat = {}; let done = 0; CATS.forEach(c => cat[c.id] = [0,0,0,0]);
- ACTS.forEach(a => CATS.filter(c => temCat(a, c.id)).forEach(c => { if (a.t == 'suico') { const sp = suicoPts(S.res[rk(a, c.id)], a); if (sp) { done++; sp.forEach((v, i) => cat[c.id][i] += v); } return; } const p = place(a.t, S.res[rk(a, c.id)], a); if (p) { done++; p.forEach((x, i) => { if (x) cat[c.id][i] += S.pts[x-1] || 0 }) } }));
+ ACTS.forEach(a => CATS.filter(c => temCat(a, c.id)).forEach(c => { if (a.t == 'suico') { const sp = suicoPts(S.res[rk(a, c.id)], a); if (sp) { done++; sp.forEach((v, i) => cat[c.id][i] += v); } return; } const rb = S.res[rk(a, c.id)]; if (a.t == 'marca' && rb && Array.isArray(rb.bat)) { const m = batMelhor(rb, a); if (m && m.fim) { done++; m.p.forEach((x, i) => { if (x) cat[c.id][i] += S.pts[x-1] || 0 }); } return; } const p = place(a.t, S.res[rk(a, c.id)], a); if (p) { done++; p.forEach((x, i) => { if (x) cat[c.id][i] += S.pts[x-1] || 0 }) } }));
  const ig = T.map(i => (S.insta[i] || []).filter(Boolean).length * S.ig), fn = T.map(i => (S.fans || []).filter(f => +f.team === i).length * S.fan);
  const ex = ACTS.filter(a => a.t == 'extra').map(a => ({n: a.n, v: extraSoma(a)}));
  return {cat, ig, fn, ex, done, tot: T.map(i => CATS.reduce((a, c) => a + cat[c.id][i], 0) + ig[i] + fn[i] + ex.reduce((s, x) => s + x.v[i], 0))};
@@ -1927,6 +1937,7 @@ Views.modedit = () => {
   </div>${a.t == 'marca' ? `<div class="me-sub">
    <select data-mu="${a.s}" aria-label="Medida de ${esc(a.n)}"><option value="tempo" ${a.u=='tempo'?'selected':''}>Medida: Tempo</option><option value="dist" ${a.u=='dist'?'selected':''}>Medida: Distância</option></select>
    <select data-mi="${a.s}" aria-label="Modo de ${esc(a.n)}"><option value="0" ${!a.inv?'selected':''}>Normal (${a.u=='dist'?'maior distância':'menor tempo'} vence)</option><option value="1" ${a.inv?'selected':''}>Invertido (${a.u=='dist'?'menor distância':'maior tempo'} vence)</option></select>
+   <select data-mnb="${a.s}" aria-label="Baterias de ${esc(a.n)}" title="Quantidade inicial de baterias. A arbitragem também pode incluir baterias na página da modalidade.">${[1, 2, 3, 4, 5, 6, 7, 8].map(n => `<option value="${n}" ${nbDe(a) === n ? 'selected' : ''}>${n == 1 ? 'Sem baterias' : n + ' baterias'}</option>`).join('')}</select>
   </div>` : ''}${a.t == 'extra' ? `<div class="me-sub1"><label class="ex-cfg">Pontos padrão por lançamento<input type="number" min="0" step="any" data-mxv="${a.s}" value="${a.xv}"></label></div>` : ''}${a.t == 'suico' ? `<div class="me-sub1"><div class="sp-grid">${['Vitória', 'Empate', 'Derrota'].map((n, k) => `<label>${n}<input type="number" min="0" step="any" data-msp="${a.s},${k}" value="${spDe(a)[k]}"></label>`).join('')}</div></div>` : ''}${a.t == 'crit' ? `<div class="me-sub1"><button class="btn alt" data-mcrit="${a.s}">Nomear critérios${a.cn ? ' ✔' : ''}</button></div>` : ''}`;
  const linha = a => `<div class="me-item ${a.oc ? 'oculta' : ''}">${linhaBase(a)}</div>`;
  const porNome = (x, y) => x.n.localeCompare(y.n, 'pt-BR', {sensitivity: 'base'}) * (ordEd == 'za' ? -1 : 1);
@@ -3395,7 +3406,7 @@ function marcaHTML(a, d, lock) {
  const tog = `<div class="filters" role="group" aria-label="Forma de lançamento">
   <button class="chipbtn" data-cmodo="notas" aria-pressed="${!cls}" ${lock?'disabled':''}>${dist ? 'Distâncias' : 'Tempos'}</button>
   <button class="chipbtn" data-cmodo="class" aria-pressed="${cls}" ${lock?'disabled':''}>Só classificação final</button></div>`;
- if (cls) return tog + `<p class="muted">Informe apenas a colocação final de cada equipe.</p>` + rankHTML(d, lock);
+ if (cls) return tog + `<p class="muted">Informe apenas a colocação final de cada equipe. Em caso de empate, dê a mesma colocação às equipes empatadas.</p>` + rankLivreHTML(d, lock);
 
  const ok = !!inscPag && inscPag.chave === cur.s + '|' + curC;
  if (!ok) garantirInscPag();
@@ -3542,7 +3553,7 @@ function agHTML(a, ci) {
  let hr = g.hr;
  if (ci == null && !hr && (Object.values(a.agc || {}).some(o => o && o.hr) || agRows(a.s).some(r => r.hr))) hr = 'horário por categoria';
  if (hr) p.push(`<span>${icone('rel')}${esc(hr)}</span>`);
- if (ci != null) { const arb = nomeArb(g.arb); if (arb) p.push(`<span>${icone('pessoa')}${esc(arb)}</span>`); }
+ if (ci != null) { const arb = nomeArb(g.arb); if (arb) p.push(`<span>${icone('apito')}${esc(arb)}</span>`); }
  return p.length ? `<span class="ag">${p.join('')}</span>` : '';
 }
 
@@ -3639,6 +3650,7 @@ function abrirNovaMod() {
    <div class="ag-grid nv-marca" hidden>
     <label>Medida<select id="nvmedida"><option value="tempo">Tempo</option><option value="dist">Distância</option></select></label>
     <label>Modo<select id="nvmodo"><option value="0">Normal</option><option value="1">Invertido</option></select></label>
+    <label>Baterias<select id="nvnb">${[1, 2, 3, 4, 5, 6, 7, 8].map(n => `<option value="${n}">${n == 1 ? 'Sem baterias' : n + ' baterias'}</option>`).join('')}</select></label>
    </div>
    <label class="nv-extra" hidden>Pontos padrão por lançamento<input id="nvxv" type="number" min="0" step="any" value="100"></label>
    <div class="nv-suico" hidden><span class="nv-tit">Pontos de cada jogo (vão direto para o placar geral)</span><div class="sp-grid"><label>Vitória<input id="nvsp0" type="number" min="0" step="any" value="200"></label><label>Empate<input id="nvsp1" type="number" min="0" step="any" value="160"></label><label>Derrota<input id="nvsp2" type="number" min="0" step="any" value="80"></label></div><p class="muted" style="margin:6px 0 0;text-align:left;font-size:12px">As 4 equipes jogam 2 rodadas, sorteadas de uma vez, sem repetir confronto.</p></div>
@@ -3679,7 +3691,7 @@ async function criarMod(btn) {
   if (S.mods.some(x => !x.fx && mesmoNome(x.n, nome))) { repetido = true; return; }
   id = novoId(nome, S.mods);
   const x = {id, n: nome, t};
-  if (t == 'marca') { if ($('nvmedida').value == 'dist') x.u = 'dist'; if ($('nvmodo').value == '1') x.inv = 1; }
+  if (t == 'marca') { if ($('nvmedida').value == 'dist') x.u = 'dist'; if ($('nvmodo').value == '1') x.inv = 1; if (+$('nvnb').value > 1) x.nb = +$('nvnb').value; }
   if (t == 'extra') x.xv = Math.max(0, +$('nvxv').value || 0);
   if (t == 'suico') { const sp = [0, 1, 2].map(k => Math.max(0, +$('nvsp' + k).value || 0)); if (sp.join() !== spGlobal().join()) x.sp = sp; }
   if (t == 'crit') { const nomes = [...$('novadlg').querySelectorAll('[data-nvcrit]')].map(i => i.value.trim()); if (nomes.some(Boolean)) x.cn = {todos: nomes}; }
@@ -3914,7 +3926,7 @@ const TILES_CFG = [
  {titulo: 'Modalidades', sub: 'Tipos, agenda e regulamentos', ico: 'trofeu', abre: 'href="#/configuracoes/modalidades"'},
  {titulo: 'Cronograma', sub: 'Dias, horários, locais e árbitros', ico: 'cal', abre: 'href="#/configuracoes/cronograma"'},
  {titulo: 'Locais', sub: 'Onde acontecem as partidas', ico: 'pin', abre: 'data-cadabrir="locais"'},
- {titulo: 'Árbitros', sub: 'Quem apita as partidas', ico: 'bandeira', abre: 'data-cadabrir="arbitros"'}
+ {titulo: 'Árbitros', sub: 'Quem apita as partidas', ico: 'apito', abre: 'data-cadabrir="arbitros"'}
 ];
 const tilesCfgHTML = () => `<nav class="cfg-tiles" aria-label="Atalhos das configurações">${TILES_CFG.map(t => {
  const tag = t.abre.startsWith('href') ? 'a' : 'button';
@@ -4081,7 +4093,7 @@ function gradeHTML(edita) {
  const card = x => {
   const loc = nomeLocal(x.loc), arb = nomeArb(x.arb);
   const conf = edita && (conflitos(x).loc.length || conflitos(x).arb.length);
-  const meta = [loc && `<span>${icone('pin')}${esc(loc)}</span>`, arb && `<span>${icone('pessoa')}${esc(arb)}</span>`].filter(Boolean).join('');
+  const meta = [loc && `<span>${icone('pin')}${esc(loc)}</span>`, arb && `<span>${icone('apito')}${esc(arb)}</span>`].filter(Boolean).join('');
   const abre = !edita && podeAbrirMod(x.mod, x.cat);
   const attrs = edita ? `type="button" data-cragendar="${x.mod},${x.cat}"` : abre ? `href="#/m/${x.mod}/${x.cat}"` : '';
   const tag = edita ? 'button' : abre ? 'a' : 'div';
@@ -4972,7 +4984,7 @@ render = function () {
 
 /* ---------- Minhas partidas (árbitro) ---------- */
 Views.minhas = () => {
- if (!ehArbitro()) return `<section class="panel acesso">${icone('bandeira')}<h2>Minhas partidas</h2><p class="muted">${AUTH.papel === 'arbitro' ? 'Sua conta de árbitro ainda não foi vinculada a um árbitro cadastrado. Peça ao administrador.' : 'Esta página é para os árbitros.'}</p></section>`;
+ if (!ehArbitro()) return `<section class="panel acesso">${icone('apito')}<h2>Minhas partidas</h2><p class="muted">${AUTH.papel === 'arbitro' ? 'Sua conta de árbitro ainda não foi vinculada a um árbitro cadastrado. Peça ao administrador.' : 'Esta página é para os árbitros.'}</p></section>`;
  const l = [];
  ACTS.filter(a => !a.oc || true).forEach(a => (a.t == 'extra' ? [{id: EXTRA_CI, n: 'Lançamentos'}] : catsDe(a)).forEach(c => {
   if (!arbitroPode(a, c.id)) return;
@@ -6766,6 +6778,269 @@ function suResultHTML() {
 document.addEventListener('input', e => { if (e.target.id === 'subusca') { suBusca = e.target.value; const r = $('suresult'); if (r) r.innerHTML = suResultHTML(); } });
 /* a página de penalidades passa a carregar a lista de integrantes */
 COLS.penal = 'teams,colors,mods,cats';
+
+/* ==========================================================================
+   51. APITO, BATERIAS NAS MODALIDADES DE MARCA E VALIDAÇÃO DO TEMPO
+   - Baterias: cada bateria tem os seus atletas. A classificação da modalidade
+     sai da MELHOR marca de cada equipe somando todas as baterias, e só ela
+     dá pontos (uma pontuação por categoria), quando todas forem confirmadas.
+     Cada bateria é confirmada e gravada sozinha (relendo o servidor antes),
+     então dois árbitros podem lançar baterias diferentes ao mesmo tempo.
+   - Tempo: minutos'segundos'centésimos, com segundos de 00 a 59.
+   ========================================================================== */
+const iconeAntesApito = icone;
+icone = n => n === 'apito'
+ ? '<svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><path d="M8.5 9.5a3.5 3.5 0 0 0 7 0"/><path d="M8.5 7.5a3.5 3.5 0 0 1 7 0z"/><path d="M7 7.5h11"/></svg>'
+ : iconeAntesApito(n);
+
+function nbDe(a) { return Math.max(1, Math.min(8, +(a && a.nb) || 1)); }
+const BAT_MAX = 12;
+/* com baterias: pela configuração da modalidade OU porque a arbitragem incluiu baterias nesta categoria */
+const temBat = (a, ci) => {
+ if (!a || a.t != 'marca') return false; if (nbDe(a) > 1) return true;
+ if (ci == null) { if (a !== cur) return false; ci = curC; }
+ const k = rk(a, ci), d = D[k] || S.res[k]; return !!d && Array.isArray(d.bat);
+};
+function batsDe(d, a) { const b = Array.isArray(d && d.bat) ? d.bat : []; return Array.from({length: Math.min(BAT_MAX, Math.max(nbDe(a), b.length))}, (_, i) => b[i] || {}); }
+const aUnica = a => ({...a, nb: 1});
+/* melhor marca de cada equipe juntando as baterias confirmadas (null se nenhuma)
+   p: colocação da modalidade · x: marca, atleta e bateria · fim: todas confirmadas */
+function batMelhor(d, a) {
+ a = a || {}; const dist = a.u === 'dist', menor = dist ? !!a.inv : !a.inv, ler = dist ? pdist : ptime;
+ const v = [null, null, null, null], x = [null, null, null, null], bats = batsDe(d, a);
+ bats.forEach((b, bi) => {
+  if (!b.ok) return;
+  (b.e || []).forEach(e => {
+   const s = e ? ler(e.t) : null; if (s == null || e.team === '' || e.team == null) return;
+   const i = +e.team; if (v[i] == null || (menor ? s < v[i] : s > v[i])) { v[i] = s; x[i] = {t: String(e.t).trim(), n: e.n || '', b: bi + 1}; }
+  });
+ });
+ if (!v.some(y => y != null)) return null;
+ return {v, x, p: crank(v, menor), fim: bats.every(b => b.ok), feitas: bats.filter(b => b.ok).length, nb: bats.length};
+}
+
+/* ---------- validação do tempo ---------- */
+const TEMPO_RX = /^\d{1,2}'\d{2}'\d{2}$/;
+const tempoInvalido = v => { v = String(v || '').trim(); return !!v && TEMPO_RX.test(v) && ptime(v) == null; };
+document.addEventListener('input', e => {
+ const el = e.target; if (!el.classList || !el.classList.contains('input-tempo')) return;
+ const inv = tempoInvalido(el.value); el.classList.toggle('inv', inv); el.title = inv ? 'Tempo inválido: os segundos vão de 00 a 59' : '';
+});
+function temposInvalidos(lista) { return (lista || []).filter(x => x && tempoInvalido(x.t)).map(x => x.t); }
+function avisaTempo(l) { avisar(`Tempo inválido: ${[...new Set(l)].join(', ')}.\nDigite minutos'segundos'centésimos, com os segundos de 00 a 59 (ex.: 01'05'32).`); }
+/* confirmação da marca sem baterias: barra tempo inválido */
+document.addEventListener('click', e => {
+ const t = e.target.closest('[data-conf]'); if (!t || !cur || cur.t != 'marca') return;
+ const s = t.closest('[id^=sec]'); if (!s || temBat(cur, +s.id.slice(3))) return;
+ const d = view(rk(cur, +s.id.slice(3))), inv = cur.u === 'dist' ? [] : temposInvalidos(d.e);
+ if (inv.length) { e.stopImmediatePropagation(); avisaTempo(inv); }
+}, true);
+
+/* ---------- página da modalidade com baterias ---------- */
+function batClassHTML(aS, b, final) {
+ b = {...b, modo: ''};
+ const p = place('marca', {...b, ok: true}, aS); if (!p) return `<div class="pv"><strong>Melhor marca de cada equipe nesta bateria</strong><div class="muted">Sem marcas válidas ainda.</div></div>`;
+ const vf = valorFinal('marca', b, aS);
+ return `<div class="pv"><strong>Melhor marca de cada equipe nesta bateria${final ? '' : ' (prévia, ainda não salva)'}</strong>${T.filter(i => p[i]).sort((x, y) => p[x] - p[y]).map(i => `<div class="pv3"><span>${tn(i)}</span><span class="pv-val">${vf ? esc(vf[i] || '') : ''}</span><span></span></div>`).join('')}</div>`;
+}
+function batTotalHTML(d, a) {
+ const m = batMelhor(d, a), nb = batsDe(d, a).length;
+ if (!m) return `<div class="pv"><strong>Classificação da modalidade</strong><div class="muted">Sai da melhor marca de cada equipe somando todas as baterias. Os pontos entram no placar geral quando as ${nb} baterias estiverem confirmadas.</div></div>`;
+ const ord = T.filter(i => m.p[i]).sort((x, y) => m.p[x] - m.p[y]), sem = T.filter(i => !m.p[i]);
+ return `<div class="pv"><strong>Classificação da modalidade · melhor marca de cada equipe${m.fim ? '' : ` (prévia: ${m.feitas} de ${nb} baterias confirmadas)`}</strong>${ord.map(i => `<div class="pv3"><span>${m.p[i]}º · ${tn(i)}</span><span class="pv-val">${esc(m.x[i].t)}${m.x[i].n ? ' · ' + esc(m.x[i].n) : ''} · bat. ${m.x[i].b}</span><strong>${m.fim ? '+' + (S.pts[m.p[i] - 1] || 0) : '—'}</strong></div>`).join('')}${sem.map(i => `<div class="pv3"><span>${tn(i)}</span><span class="pv-val muted">sem marca</span><strong>${m.fim ? '+0' : '—'}</strong></div>`).join('')}${m.fim ? '' : `<div class="muted" style="margin-top:6px">Os pontos entram no placar geral quando todas as baterias forem confirmadas.</div>`}</div>`;
+}
+function batEditHTML(ci) {
+ const a = cur, key = rk(a, ci), d = view(key), aS = aUnica(a), salvo = S.res[key] || {};
+ return batsDe(d, a).map((b, n) => {
+  const lock = !!b.ok;
+  let h = marcaHTML(aS, {...b, modo: ''}, lock)
+   .replace(/<div class="filters" role="group" aria-label="Forma de lançamento">[\s\S]*?<\/div>/, '')
+   .replace(/data-k="e\./g, `data-k="bat.${n}.e.`).replace(/data-k="p\./g, `data-k="bat.${n}.p.`)
+   .replace(/data-rme="/g, `data-rmeb="${n},`).replace(/data-adde(?=[\s>])/g, `data-addeb="${n}"`).replace(/data-cmodo="/g, `data-cmodob="${n},`);
+  const pronto = ready('marca', {...b, modo: ''}) && (a.u === 'dist' || !temposInvalidos(b.e).length);
+  const foot = lock ? `<div class="row" style="margin-top:10px"><span class="ok">✔ Bateria confirmada</span><button class="btn alt" data-editb="${n}">Editar</button></div>`
+   : `<div class="row" style="margin-top:10px"><button class="btn" data-confb="${n}" ${pronto ? '' : 'disabled'}>Confirmar bateria ${n + 1}</button></div>`;
+  return `<div class="bat ${lock ? 'bat-ok' : ''}"><h3 class="sui-rod">Bateria ${n + 1}</h3>${lock ? `<div class="fim-campos">${h}</div>` : h}${batClassHTML(aS, b, lock)}${foot}</div>`;
+ }).join('') + batAcoesHTML(ci) + batTotalHTML(salvo, a) + `<div class="insc-geral">${inscBlocoHTML('g', T)}</div>`;
+}
+const batVazia = b => !b || (!b.ok && !(b.e || []).some(e => e && (e.t || e.n || (e.team !== '' && e.team != null))));
+function batAcoesHTML(ci) {
+ const a = cur, bats = batsDe(view(rk(a, ci)), a), n = bats.length;
+ const rm = n - 1 >= nbDe(a) && batVazia(bats[n - 1]);
+ return `<div class="bat-acoes"><button class="btn alt" data-addbat ${n >= BAT_MAX ? 'disabled' : ''}>+ Bateria</button>${rm ? `<button class="btn alt" data-rmbat>Remover bateria ${n}</button>` : ''}<span class="muted">${n} ${n == 1 ? 'bateria' : 'baterias'}${n >= BAT_MAX ? ` (máximo ${BAT_MAX})` : ''}</span></div>`;
+}
+function batPubHTML(ci) {
+ const a = cur, d = S.res[rk(a, ci)] || {}, aS = aUnica(a), bats = batsDe(d, a), feitas = bats.filter(b => b.ok).length;
+ const st = feitas === bats.length ? {cls: 'fim', txt: 'Finalizada'} : feitas ? {cls: 'and', txt: `Em andamento · ${feitas} de ${bats.length} baterias`} : situacaoPub(a, ci, {});
+ return `<span class="pub-st ${st.cls}">${esc(st.txt)}</span>` + bats.map((b, n) => `<div class="bat ${b.ok ? 'bat-ok' : ''}"><h3 class="sui-rod">Bateria ${n + 1}</h3>${b.ok ? marcasPub(aS, b) || '<p class="muted">Sem marcas.</p>' : '<p class="muted">Aguardando resultado.</p>'}</div>`).join('') + (feitas ? batTotalHTML(d, a) : '');
+}
+const secHTMLAntesBat = secHTML;
+secHTML = function (ci) {
+ if (temBat(cur, ci)) return podeAqui() ? batEditHTML(ci) : batPubHTML(ci);
+ const h = secHTMLAntesBat(ci);
+ return cur && cur.t == 'marca' && podeAqui() ? h + `<div class="bat-acoes"><button class="btn alt" data-addbat>+ Bateria</button><span class="muted">Divide a disputa em baterias. O resultado já lançado vira a Bateria 1.</span></div>` : h;
+};
+
+/* botões das baterias (depois da checagem de permissão) */
+document.addEventListener('click', async e => {
+ if (!cur) return;
+ const t = e.target.closest('button'); if (!t || !$('main').contains(t)) return;
+ const s = t.closest('[id^=sec]'); if (!s || !temBat(cur, +s.id.slice(3))) return;
+ const d = t.dataset, ci = +s.id.slice(3), key = rk(cur, ci);
+ const bat = n => { ensureD(key); D[key].bat = Array.isArray(D[key].bat) ? D[key].bat : []; for (let i = 0; i <= n; i++) D[key].bat[i] = D[key].bat[i] || {}; return D[key].bat[n]; };
+ if (d.addeb !== undefined) { e.stopImmediatePropagation(); const b = bat(+d.addeb); b.e = (b.e && b.e.length ? b.e : [{}]).concat([{}]); sec(ci); }
+ else if (d.rmeb !== undefined) { e.stopImmediatePropagation(); const [n, k] = d.rmeb.split(',').map(Number), b = bat(n); (b.e = b.e || [{}]).splice(k, 1); sec(ci); }
+ else if (d.cmodob !== undefined) { e.stopImmediatePropagation(); const [n, m] = d.cmodob.split(','), b = bat(+n); b.modo = m === 'class' ? 'class' : ''; sec(ci); }
+ else if (d.editb !== undefined) { e.stopImmediatePropagation(); bat(+d.editb).ok = false; sec(ci); }
+ else if (d.confb !== undefined) {
+  e.stopImmediatePropagation();
+  const n = +d.confb, b = clone(bat(n)); delete b.modo; delete b.p;
+  if (cur.u !== 'dist') { const inv = temposInvalidos(b.e); if (inv.length) { avisaTempo(inv); return; } }
+  if (!ready('marca', b)) return;
+  t.disabled = true;
+  await DB.fetchSingleRes(cur, ci);   // grava só esta bateria, sobre a versão mais recente
+  const salvo = clone(S.res[key] || {});
+  salvo.bat = Array.isArray(salvo.bat) ? salvo.bat : [];
+  for (let i = 0; i <= n; i++) salvo.bat[i] = salvo.bat[i] || {};
+  salvo.bat[n] = {...b, ok: true};
+  S.res[key] = salvo;
+  const rasc = D[key]; delete D[key];
+  if (rasc && Array.isArray(rasc.bat)) {   // mantém o que ainda está sendo digitado nas outras baterias
+   const nd = clone(salvo); let resto = false;
+   rasc.bat.forEach((x, i) => { if (i !== n && x && !x.ok && !(nd.bat[i] && nd.bat[i].ok) && JSON.stringify(x) !== JSON.stringify(nd.bat[i] || {})) { nd.bat[i] = x; resto = true; } });
+   if (resto) D[key] = nd;
+  }
+  await DB.persistRes(cur, ci);
+  sec(ci);
+ }
+}, true);
+/* atleta e equipe dentro da bateria */
+document.addEventListener('change', e => {
+ const el = e.target, k = el.dataset && el.dataset.k; if (!k || !temBat(cur, curC)) return;
+ const m = k.match(/^bat\.(\d+)\.e\.(\d+)\.(mid|team)$/); if (!m) return;
+ const key = rk(cur, curC); if (!D[key] || !D[key].bat || !D[key].bat[+m[1]]) return;
+ const x = (D[key].bat[+m[1]].e || [])[+m[2]]; if (!x) return;
+ const y = inscPag && inscPag.lista.find(z => z.m.id === x.mid);
+ if (m[3] === 'mid') x.n = y ? y.m.nome : (x.mid ? x.n : '');
+ else if (!y || y.m.team !== +x.team) { delete x.mid; delete x.n; }
+ sec(curC);
+});
+
+/* editor de modalidades: quantidade de baterias */
+document.addEventListener('change', async e => {
+ const el = e.target; if (cur || pg !== 'modedit' || !el.dataset || !el.dataset.mnb) return;
+ const id = el.dataset.mnb, a = BY[id], nb = +el.value; if (!a || nbDe(a) === nb) return;
+ el.disabled = true;
+ const cis = [...CATS.map(c => c.id), EXTRA_CI], docs = {};
+ if (db) {   // relê do servidor os resultados dessa modalidade antes de converter
+  const { data, error } = await db.from('res').select('*').in('id', cis.map(ci => `${a.s}_${ci}`));
+  if (error) { fail(error); el.disabled = false; el.value = nbDe(a); return; }
+  (data || []).forEach(r => { applyRes(r.id, r.d); docs[r.id] = r.d; });
+ } else cis.forEach(ci => { const d = S.res[rk(a, ci)]; if (d) docs[`${a.s}_${ci}`] = d; });
+ const conv = Object.entries(docs).map(([id, d]) => ({id, ...converteBat(d, nb)})).filter(x => x.mudou);
+ const perdidas = conv.reduce((n, x) => n + x.perdidas, 0);
+ if (conv.length && !await confirmar(`Mudar "${a.n}" para ${nb == 1 ? 'sem baterias' : nb + ' baterias'}?\nOs resultados já lançados (inclusive baterias finalizadas) serão mantidos.` +
+   (perdidas ? `\n\nAtenção: ${perdidas} ${perdidas == 1 ? 'bateria com resultado ficará' : 'baterias com resultado ficarão'} de fora e ${perdidas == 1 ? 'será descartada' : 'serão descartadas'}.` : '') +
+   (nb > nbDe(a) && nbDe(a) > 1 ? `\nAs novas baterias ficam em aberto: os pontos só entram quando todas forem confirmadas.` : ''))) { el.disabled = false; el.value = nbDe(a); return; }
+ const ok = await DB.patchCfg(['mods'], () => { S.mods = listaMods(); const x = S.mods.find(y => y.id === id); if (x) { if (nb > 1) x.nb = nb; else delete x.nb; } buildActs(); });
+ if (ok && conv.length) {
+  conv.forEach(x => { const k = parseId(x.id); if (k) { S.res[k] = x.d; delete D[k]; } });
+  save();
+  if (db) { const { error } = await db.from('res').upsert(conv.map(x => ({id: x.id, d: x.d}))); if (error) fail(error); }
+ }
+ render();
+});
+/* converte o resultado entre "sem baterias" e "N baterias" sem perder o que já foi lançado */
+function converteBat(d, nb) {
+ d = clone(d || {});
+ const tem = x => !!x && (x.ok || (x.e || []).some(e => e && (e.t || e.n || (e.team !== '' && e.team != null))) || (x.p && Object.values(x.p).some(v => v !== '' && v != null)));
+ let bats; const mudou = Array.isArray(d.bat) || ['e', 'modo', 'p', 'ok'].some(k => d[k] !== undefined);
+ if (Array.isArray(d.bat)) bats = d.bat;
+ else { const u = {}; ['e', 'modo', 'p', 'ok'].forEach(k => { if (d[k] !== undefined) u[k] = d[k]; }); bats = tem(u) ? [u] : []; }
+ ['e', 'modo', 'p', 'ok', 'bat'].forEach(k => delete d[k]);
+ const perdidas = bats.slice(nb).filter(tem).length;
+ if (nb > 1) { const nv = bats.slice(0, nb).map(b => { b = {...(b || {})}; if (b.modo === 'class') { delete b.modo; delete b.p; if (!(b.e || []).length) b.ok = false; } return b; }); if (nv.length) d.bat = nv; }
+ else if (bats[0]) Object.assign(d, bats[0]);
+ return {d, perdidas, mudou};
+}
+
+/* incluir / remover bateria direto na página da modalidade (árbitro, equipe ou administrador).
+   A quantidade fica no resultado da categoria, então não depende da configuração. */
+document.addEventListener('click', async e => {
+ const t = e.target.closest('[data-addbat],[data-rmbat]'); if (!t || !cur || cur.t != 'marca' || !$('main').contains(t)) return;
+ const s = t.closest('[id^=sec]'); if (!s) return;
+ e.stopImmediatePropagation();
+ const ci = +s.id.slice(3), key = rk(cur, ci), add = t.dataset.addbat !== undefined;
+ if (add && !temBat(cur, ci) && !await confirmar('Dividir esta disputa em baterias?\nO resultado já lançado vira a Bateria 1 e a Bateria 2 fica em aberto.\nA classificação sai da melhor marca de cada equipe, e os pontos só entram no placar quando todas as baterias forem confirmadas.')) return;
+ t.disabled = true;
+ await DB.fetchSingleRes(cur, ci);   // parte da versão mais recente do servidor
+ const base = clone(S.res[key] || {});
+ let d = Array.isArray(base.bat) ? base : nbDe(cur) > 1 ? {...base, bat: []} : converteBat(base, BAT_MAX).d;
+ if (!Array.isArray(d.bat)) d.bat = [];
+ const n = Math.max(nbDe(cur), d.bat.length, 1);
+ for (let i = 0; i < n; i++) d.bat[i] = d.bat[i] || {};
+ if (add) {
+  if (n >= BAT_MAX) { avisar(`O máximo é de ${BAT_MAX} baterias.`); sec(ci); return; }
+  d.bat.push({});
+ } else {
+  if (n - 1 < nbDe(cur) || !batVazia(d.bat[n - 1])) { avisar('Essa bateria não pode ser removida: ela já tem resultado ou faz parte da configuração da modalidade.'); sec(ci); return; }
+  d.bat.pop();
+  if (d.bat.length <= 1 && nbDe(cur) <= 1) d = converteBat(d, 1).d;   // volta a ser sem baterias
+ }
+ /* mantém o que ainda está sendo digitado */
+ const r = D[key]; delete D[key];
+ if (r) {
+  const rb = Array.isArray(r.bat) ? r.bat : (converteBat(r, BAT_MAX).d.bat || []);
+  if (Array.isArray(d.bat)) { const nd = clone(d); let mud = false; rb.forEach((x, i) => { if (i < nd.bat.length && x && !x.ok && !(nd.bat[i] && nd.bat[i].ok) && JSON.stringify(x) !== JSON.stringify(nd.bat[i])) { nd.bat[i] = x; mud = true; } }); if (mud) D[key] = nd; }
+  else if (rb[0] && !rb[0].ok && !d.ok) D[key] = {...clone(d), ...rb[0]};
+ }
+ S.res[key] = d;
+ await DB.persistRes(cur, ci);
+ sec(ci);
+}, true);
+
+/* planilha de resultados: uma seção por bateria */
+const planCatAntesBat = planCategoria;
+planCategoria = function (a, c) {
+ if (!temBat(a, c.id)) return planCatAntesBat(a, c);
+ const d = S.res[rk(a, c.id)] || {}, aS = aUnica(a), L = [[c.n]], bats = batsDe(d, a);
+ L.push(['Situação', bats.every(b => b.ok) ? 'Confirmado' : `${bats.filter(b => b.ok).length} de ${bats.length} baterias confirmadas`]);
+ bats.forEach((b, n) => {
+  L.push([], [`Bateria ${n + 1}`]);
+  if (!b.ok) { L.push(['Sem resultado confirmado']); return; }
+  L.push(['Atleta', 'Equipe', a.u == 'dist' ? 'Distância' : 'Tempo']); (b.e || []).filter(x => x && (x.t || x.n)).forEach(x => L.push([x.n || '', eqNome(x.team), x.t || '']));
+ });
+ const m = batMelhor(d, a);
+ L.push([], [m && m.fim ? 'Classificação da modalidade (melhor marca de cada equipe)' : 'Classificação da modalidade (prévia, faltam baterias)']);
+ if (m) { L.push(['Posição', 'Equipe', a.u == 'dist' ? 'Melhor distância' : 'Melhor tempo', 'Atleta', 'Bateria', 'Pontos']); T.filter(i => m.p[i]).sort((x, y) => m.p[x] - m.p[y]).forEach(i => L.push([`${m.p[i]}º`, eqNome(i), m.x[i].t, m.x[i].n, m.x[i].b, m.fim ? S.pts[m.p[i] - 1] || 0 : ''])); } else L.push(['Sem resultado confirmado']);
+ L.push([], []);
+ return L;
+};
+
+/* ==========================================================================
+   52. EMPATE NAS MODALIDADES DE MARCA
+   Marcas iguais já dão a mesma colocação (e os mesmos pontos) às equipes.
+   No modo "só classificação final" a mesma colocação pode ser escolhida
+   para mais de uma equipe.
+   ========================================================================== */
+function rankLivreHTML(d, lock) {
+ return T.map(t => `<div class="row" style="justify-content:space-between">${who(t)}<div style="flex:1;max-width:180px">${SEL('p.' + t, d.p?.[t], [['', '—'], ...[1, 2, 3, 4].map(n => [n, n + 'º lugar'])], lock)}</div></div>`).join('');
+}
+
+/* mesma colocação para duas equipes: pede confirmação do empate */
+document.addEventListener('change', async e => {
+ const el = e.target, k = el.dataset && el.dataset.k, m = k && k.match(/^p\.(\d)$/);
+ if (!m || !cur || cur.t != 'marca' || el.value === '') return;
+ const s = el.closest('[id^=sec]'); if (!s || temBat(cur, +s.id.slice(3))) return;
+ const ci = +s.id.slice(3), d = view(rk(cur, ci)), eu = +m[1], v = el.value;
+ const outros = T.filter(i => i !== eu && String(d.p?.[i] ?? '') === String(v));
+ if (!outros.length) return;
+ e.stopImmediatePropagation();
+ el.value = d.p?.[eu] ?? '';
+ if (!await confirmar(`Empate: ${[eu, ...outros].map(i => eqNome(i)).join(' e ')} em ${v}º lugar?\nAs equipes empatadas recebem os mesmos pontos.`)) return;
+ el.value = v;
+ edit(ci, k, v, `[data-k="${k}"]`);
+}, true);
 
 /* Inicialização: primeiro descobre quem está conectado, depois abre a página */
 iniciarAuth().finally(route);
