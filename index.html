@@ -661,6 +661,9 @@ a.mv-mod:hover{border-color:var(--ink)}
 /* Baterias e tempo inválido */
 .bat{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px}
 .bat.bat-ok{border-color:#1f9d55;background:rgba(31,157,85,.04)}
+.trava-aviso{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff7e6;border:1px solid #f0c36d;color:#7a4b00;border-radius:12px;padding:8px 12px;margin:0 0 10px;font-size:14px;text-align:left}
+.trava-aviso .ico{flex:0 0 auto}.trava-aviso span{flex:1 1 180px}.trava-aviso .btn{padding:6px 12px;min-height:0}
+[data-travado]{opacity:.55;cursor:not-allowed}
 .ct-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#c3cad6;margin-right:7px;vertical-align:1px;flex:0 0 auto}
 .ct-dot.on{background:#1fbf5b;box-shadow:0 0 0 3px rgba(31,191,91,.22)}
 .ct-st{display:block;font-size:12px;color:var(--mute,#64748b)}.ct-ok{color:#1f9d55;font-weight:600}.ct-aguarda{color:#b7791f;font-weight:600}
@@ -7333,6 +7336,193 @@ Views.contas = function () {
  const h = ViewsContasAntesOn.apply(this, arguments);
  return h.replace('<div class="row ct-resumo" id="contasresumo">', `<p class="ct-online" id="ctonline">${contasLista ? onlineResumo() : ''}</p><div class="row ct-resumo" id="contasresumo">`);
 };
+
+/* ==========================================================================
+   57. TRAVA DE EDIÇÃO DO PLACAR
+   Quando alguém começa a editar um placar (um jogo do chaveamento ou do
+   suíço, uma bateria, ou o resultado inteiro nas demais modalidades), os
+   outros aparelhos veem "Fulano está editando" e não conseguem mexer nele
+   até que seja salvo. A trava vale 90 s e é renovada a cada 30 s enquanto
+   a pessoa está na página; se o aparelho fecha ou perde a conexão, ela
+   expira sozinha. Editor e administrador podem liberar na mão.
+   ========================================================================== */
+const TRAV = {
+ ok: true, res: null, lista: {}, minhas: new Set(), skew: 0, ch: null,
+ eu() { return AUTH.user ? AUTH.user.id : null; },
+ ativo(t) { return !!t && new Date(t.ate).getTime() > Date.now() + this.skew; },
+ deOutro(p) {
+  if (!p) return null;
+  const chk = q => { const t = this.lista[q]; return t && this.ativo(t) && t.uid !== this.eu() ? t : null; };
+  return chk(p) || (p !== '*' ? chk('*') : null);
+ },
+ usa() { return !!db && this.ok && !!cur && cur.t !== 'extra' && !!AUTH.user && podeAqui(); },
+ nome() { return (AUTH.arb && typeof nomeArb === 'function' && nomeArb(AUTH.arb)) || AUTH.nome || (AUTH.user && AUTH.user.email) || 'Alguém'; },
+ async carregar() {
+  this.lista = {}; this.res = cur ? `${cur.s}_${curC}` : null;
+  if (!this.usa()) return;
+  const id = this.res, { data, error } = await db.from('travas').select('parte,uid,nome,ate,res').eq('res', id);
+  if (error) { if (/travas|42P01|PGRST205|does not exist|schema cache/i.test(String(error.message || error.code))) this.ok = false; return; }
+  if (id !== this.res) return;
+  (data || []).forEach(t => this.lista[t.parte] = t);
+  [...this.minhas].forEach(p => { const t = this.lista[p]; if (!t || t.uid !== this.eu() || !this.ativo(t)) this.minhas.delete(p); });   // venceu ou foi liberada
+  marcarTravas(); limparTravas();
+ },
+ aplicar(t) { if (!t || t.res !== this.res) return; this.lista[t.parte] = t; if (t.uid === this.eu() && !this.ativo(t)) this.minhas.delete(t.parte); marcarTravas(); },
+ async pegar(p) {
+  if (!this.usa() || !p) return true;
+  const res = this.res;
+  const { data, error } = await db.rpc('travar', {p_res: res, p_parte: p, p_nome: this.nome()});
+  if (error) { if (/travar|PGRST202|Could not find the function/i.test(String(error.message || error.code))) { this.ok = false; return true; } return true; }   // sem a trava no banco: segue sem travar
+  if (data && data.agora) this.skew = new Date(data.agora).getTime() - Date.now();
+  if (res !== this.res) return true;
+  if (data && data.ok) { this.minhas.add(p); this.lista[p] = {parte: p, res, uid: this.eu(), nome: this.nome(), ate: data.ate}; return true; }
+  this.lista[p] = {parte: p, res, uid: data && data.uid, nome: data && data.nome, ate: data && data.ate};
+  return false;
+ },
+ async soltar(p, forcar) {
+  this.minhas.delete(p);
+  if (!db || !this.ok || !this.res) return;
+  const t = this.lista[p]; if (t && (t.uid === this.eu() || forcar)) this.lista[p] = {...t, ate: new Date(Date.now() + this.skew - 1000).toISOString()};
+  await db.rpc('soltar_trava', {p_res: this.res, p_parte: p, p_forcar: !!forcar}).then(() => {}, () => {});
+ },
+ soltarTodas() { [...this.minhas].forEach(p => this.soltar(p)); }
+};
+/* qual parte do placar um elemento edita */
+function parteDe(el, ci) {
+ if (!el || !el.dataset || !cur) return null;
+ const d = el.dataset, k = d.k || d.step || '';
+ if (/^(insc|ip|pres)/.test(k)) return null;
+ if (temBat(cur, ci)) {
+  if (d.addbat !== undefined) return null;   // incluir bateria é gravação atômica, não precisa travar
+  const m = k.match(/^bat\.(\d+)\./); if (m) return 'b' + m[1];
+  const n = d.addeb ?? d.confb ?? d.editb ?? (d.rmeb || d.cmodob ? (d.rmeb || d.cmodob).split(',')[0] : undefined);
+  return n !== undefined && n !== '' ? 'b' + n : null;
+ }
+ if (cur.t === 'chav' || cur.t === 'suico') { const m = k.match(/^m\.(\w+)\./); if (m) return m[1]; return d.conf || d.edit || null; }
+ if (cur.t === 'extra') return null;
+ return k || d.conf !== undefined || d.edit !== undefined || d.adde !== undefined || d.rme !== undefined || d.cmodo !== undefined || d.addbat !== undefined ? '*' : null;
+}
+const SEL_PLACAR = '[data-k],[data-step],[data-conf],[data-edit],[data-adde],[data-rme],[data-cmodo],[data-addeb],[data-rmeb],[data-confb],[data-editb],[data-cmodob],[data-addbat]';
+const ROT_PARTE = {s1: 'a Semifinal 1', s2: 'a Semifinal 2', t3: 'a disputa de 3º lugar', f: 'a final', r1a: 'o jogo 1 da 1ª rodada', r1b: 'o jogo 2 da 1ª rodada', r2a: 'o jogo 1 da 2ª rodada', r2b: 'o jogo 2 da 2ª rodada', '*': 'este placar'};
+const rotParte = p => /^b\d+$/.test(p) ? `a bateria ${+p.slice(1) + 1}` : ROT_PARTE[p] || 'este jogo';
+/* desenha as travas: desativa o que outro aparelho está editando e mostra quem é */
+function marcarTravas() {
+ if (!cur) return;
+ const s = $('sec' + curC); if (!s) return;
+ s.querySelectorAll('.trava-aviso').forEach(x => x.remove());
+ s.querySelectorAll('[data-travado]').forEach(el => { el.disabled = false; el.removeAttribute('data-travado'); });
+ if (!TRAV.usa()) return;
+ const avisos = new Map();
+ s.querySelectorAll(SEL_PLACAR).forEach(el => {
+  const p = parteDe(el, curC), t = TRAV.deOutro(p); if (!t) return;
+  if (!el.disabled) { el.disabled = true; el.setAttribute('data-travado', ''); }
+  const q = TRAV.lista['*'] && TRAV.deOutro('*') ? '*' : p;
+  if (!avisos.has(q)) avisos.set(q, {t: TRAV.deOutro(q) || t, el});
+ });
+ avisos.forEach(({t, el}, p) => {
+  const h = `<div class="trava-aviso" role="status">${icone('cadeado')}<span><strong>${esc(t.nome || 'Outro aparelho')}</strong> está editando ${rotParte(p)}. Fica liberado quando salvar.</span>${podeEditar() ? `<button class="btn alt" data-travlib="${esc(p)}">Liberar</button>` : ''}</div>`;
+  const alvo = p === '*' ? null : el.closest('.match, .bat');
+  if (alvo) alvo.insertAdjacentHTML('afterbegin', h); else s.insertAdjacentHTML('afterbegin', h);
+ });
+}
+/* parte com alteração ainda não salva neste aparelho? */
+function parteSuja(p) {
+ const key = rk(cur, curC), dr = D[key], sv = S.res[key] || {};
+ const a = elPlacar(document.activeElement);
+ if (a && $('main').contains(a) && parteDe(a, curC) === p && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)) return true;
+ if (document.querySelector('.csel-pop')) return true;   // lista de escolha aberta
+ if (!dr) return false;
+ if (p === '*') return !eqJ(dr, sv);
+ if (/^b\d+$/.test(p)) { const n = +p.slice(1); return !eqJ((dr.bat || [])[n] || {}, (sv.bat || [])[n] || {}); }
+ return !eqJ((dr.m || {})[p] || {}, (sv.m || {})[p] || {});
+}
+/* partes com alteração não salva neste aparelho */
+function partesSujas() {
+ const key = rk(cur, curC), dr = D[key]; if (!dr) return [];
+ const sv = S.res[key] || {};
+ if (temBat(cur, curC)) return (dr.bat || []).map((b, n) => !eqJ(b || {}, (sv.bat || [])[n] || {}) ? 'b' + n : null).filter(Boolean);
+ if (cur.t === 'chav' || cur.t === 'suico') return [...new Set([...Object.keys(dr.m || {}), ...Object.keys(sv.m || {})])].filter(x => !eqJ((dr.m || {})[x] || {}, (sv.m || {})[x] || {}));
+ if (cur.t === 'extra') return [];
+ return eqJ(dr, sv) ? [] : ['*'];
+}
+function limparTravas() {
+ if (!cur || !TRAV.usa()) return;
+ [...TRAV.minhas].forEach(p => { if (!parteSuja(p)) TRAV.soltar(p); });
+ partesSujas().forEach(p => { if (!TRAV.minhas.has(p)) pegarOuDesfazer(p); });   // alterou sem trava (ex.: trava expirou): pede de novo
+}
+/* volta a parte para o que está salvo (quando outro aparelho travou antes) */
+function desfazParte(p) {
+ const key = rk(cur, curC), dr = D[key]; if (!dr) return;
+ const sv = S.res[key] || {};
+ if (p === '*') delete D[key];
+ else if (/^b\d+$/.test(p)) { const n = +p.slice(1); if (Array.isArray(dr.bat)) dr.bat[n] = clone((sv.bat || [])[n] || {}); }
+ else { dr.m = dr.m || {}; if (sv.m && sv.m[p]) dr.m[p] = clone(sv.m[p]); else delete dr.m[p]; }
+}
+const travPend = new Set();
+async function pegarOuDesfazer(p) {
+ if (TRAV.minhas.has(p) || travPend.has(p)) return;
+ travPend.add(p);
+ let ok; try { ok = await TRAV.pegar(p); } finally { travPend.delete(p); }
+ if (ok) { marcarTravas(); return; }
+ const t = TRAV.lista[p] || {};
+ const a = document.activeElement; if (a && a.blur) a.blur();
+ desfazParte(p); sec(curC);
+ avisar(`${t.nome || 'Outro aparelho'} começou a editar ${rotParte(p)} um instante antes. Espere ele salvar para editar.`);
+}
+/* bloqueia e pede a trava no primeiro toque */
+/* elemento do placar por trás do alvo (as listas de escolha são desenhadas como botão .csel) */
+function elPlacar(x) {
+ if (!x || !x.closest) return null;
+ const c = x.closest('.csel'); if (c && c._sel) return c._sel;
+ return x.closest(SEL_PLACAR);
+}
+function guardaTrava(e) {
+ if (!TRAV.usa()) return;
+ const el = elPlacar(e.target); if (!el || !$('main').contains(el)) return;
+ const p = parteDe(el, curC); if (!p) return;
+ const t = TRAV.deOutro(p);
+ if (t) {
+  e.preventDefault(); e.stopImmediatePropagation(); if (el.blur) el.blur();
+  if (e.type !== 'focusin') avisar(`${t.nome || 'Outro aparelho'} está editando ${rotParte(p)}. Fica liberado quando salvar.`);
+  marcarTravas(); return;
+ }
+ if (el.dataset.conf !== undefined || el.dataset.confb !== undefined) return;   // confirmar não precisa travar
+ pegarOuDesfazer(p);
+}
+window.addEventListener('focusin', guardaTrava, true);
+window.addEventListener('pointerdown', guardaTrava, true);
+window.addEventListener('click', guardaTrava, true);
+window.addEventListener('change', guardaTrava, true);
+document.addEventListener('focusout', () => setTimeout(limparTravas, 0));
+document.addEventListener('click', async e => {
+ const t = e.target.closest('[data-travlib]'); if (!t) return;
+ e.stopImmediatePropagation();
+ const p = t.dataset.travlib, x = TRAV.lista[p] || {};
+ if (!await confirmar(`Liberar ${rotParte(p)}?\n${x.nome || 'O outro aparelho'} ainda pode estar editando. O que ele não salvou será juntado ao que estiver no servidor quando ele confirmar.`)) return;
+ await TRAV.soltar(p, true); marcarTravas();
+}, true);
+/* desenho: depois de cada atualização da seção */
+const secAntesTrava = sec;
+sec = function (ci) { secAntesTrava(ci); if (cur && ci === curC) { marcarTravas(); limparTravas(); } };
+const renderAntesTrava = render;
+render = function () { renderAntesTrava.apply(this, arguments); if (cur) { marcarTravas(); limparTravas(); } };
+/* tempo real das travas desta página + renovação */
+const rtAntesTrava = DB.setupRealtime;
+DB.setupRealtime = function () {
+ rtAntesTrava.apply(this, arguments);
+ TRAV.carregar();
+ if (!TRAV.usa() || !TRAV.res) return;
+ const id = TRAV.res;
+ db.channel('olimp-trava-' + id).on('postgres_changes', {event: '*', schema: 'public', table: 'travas', filter: `res=eq.${id}`}, x => { if (x.new) TRAV.aplicar(x.new); }).subscribe();
+};
+addEventListener('hashchange', () => TRAV.soltarTodas());
+setInterval(async () => {
+ if (!cur || document.hidden) return;
+ limparTravas();
+ for (const p of [...TRAV.minhas]) { if (!(await TRAV.pegar(p))) { desfazParte(p); sec(curC); avisar(`A edição de ${rotParte(p)} passou para ${(TRAV.lista[p] || {}).nome || 'outro aparelho'}.`); } }
+ marcarTravas();   // travas que expiraram somem
+}, 30000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && cur) { TRAV.carregar(); [...TRAV.minhas].forEach(p => TRAV.pegar(p)); } });
 
 /* Inicialização: primeiro descobre quem está conectado, depois abre a página */
 iniciarAuth().finally(route);
