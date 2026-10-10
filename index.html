@@ -661,6 +661,10 @@ a.mv-mod:hover{border-color:var(--ink)}
 /* Baterias e tempo inválido */
 .bat{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px}
 .bat.bat-ok{border-color:#1f9d55;background:rgba(31,157,85,.04)}
+.ct-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#c3cad6;margin-right:7px;vertical-align:1px;flex:0 0 auto}
+.ct-dot.on{background:#1fbf5b;box-shadow:0 0 0 3px rgba(31,191,91,.22)}
+.ct-st{display:block;font-size:12px;color:var(--mute,#64748b)}.ct-ok{color:#1f9d55;font-weight:600}.ct-aguarda{color:#b7791f;font-weight:600}
+.ct-online{margin:4px 0 10px;font-size:14px}
 .bat-acoes{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:4px 0 12px}.bat-acoes .muted{font-size:13px}
 .bat>h3{margin-top:0}
 .input-tempo.inv,.input-dist.inv{border-color:#c8283a!important;box-shadow:0 0 0 3px rgba(200,40,58,.18)!important;color:#c8283a!important;background:#fdecee!important}
@@ -1034,7 +1038,10 @@ const clone = o => JSON.parse(JSON.stringify(o));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const rk = (a, ci) => a.s+'|'+ci;
 const view = k => D[k] || S.res[k] || {};
-const ensureD = k => { if (!D[k]) D[k] = clone(S.res[k] || {}) };
+/* Gravação segura dos resultados (seção 56): RB = última versão vinda do servidor {d, v};
+   DO = versão do servidor de onde saiu o rascunho D; EMVOO = gravações em andamento */
+const RB = {}, DO = {}, EMVOO = {};
+const ensureD = k => { if (!D[k]) { D[k] = clone(S.res[k] || {}); DO[k] = clone(RB[k] ? RB[k].d : (S.res[k] || {})); } };
 function getPath(o, p) { return p.split('.').reduce((a,k) => a?.[k], o) }
 function setPath(o, path, val) { const k = path.split('.'); for (let n=0; n<k.length-1; n++) { if (o[k[n]]==null) o[k[n]] = /^\d+$/.test(k[n+1]) ? [] : {}; o = o[k[n]] } o[k[k.length-1]] = val }
 
@@ -1049,7 +1056,7 @@ const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)) } catch 
 /* Diferença entre antes e depois de cada coluna, em operações pequenas:
    listas de itens com id (modalidades, torcida, locais, árbitros...) mudam item a item;
    listas de listas (Instagram) mudam casa a casa; o resto troca o valor inteiro. */
-let cfgPatchOk = true;
+let cfgPatchOk = true, cfgPatchV2 = true;
 function opsCfg(cols, antes) {
  const ops = [], igual = (x, y) => JSON.stringify(x) === JSON.stringify(y);
  const comId = v => Array.isArray(v) && v.every(x => x && typeof x === 'object' && !Array.isArray(x) && x.id != null);
@@ -1060,7 +1067,15 @@ function opsCfg(cols, antes) {
   if (comId(a) && comId(d) && a.length) {
    const ma = new Map(a.map(x => [String(x.id), x])), md = new Map(d.map(x => [String(x.id), x]));
    ma.forEach((x, id) => { if (!md.has(id)) ops.push({op: 'del', col: c, id}); });
-   md.forEach((x, id) => { if (!ma.has(id) || !igual(ma.get(id), x)) ops.push({op: 'upsert', col: c, item: x}); });
+   md.forEach((x, id) => {
+    if (ma.has(id) && igual(ma.get(id), x)) return;
+    if (!ma.has(id) || !cfgPatchV2) { ops.push({op: 'upsert', col: c, item: x}); return; }
+    /* item alterado: manda só os campos que mudaram (duas pessoas mexendo em campos diferentes da mesma modalidade não se atropelam) */
+    const o = ma.get(id), set = {}, unset = [];
+    Object.keys(x).forEach(k => { if (!igual(o[k], x[k])) set[k] = x[k]; });
+    Object.keys(o).forEach(k => { if (!(k in x)) unset.push(k); });
+    ops.push({op: 'patch', col: c, id, set, unset});
+   });
   } else if (deListas(a, d)) {
    d.forEach((l, i) => { if (!igual(a[i], l)) l.forEach((v, j) => { if (!igual((a[i] || [])[j], v)) ops.push({op: 'jset', col: c, path: [String(i), String(j)], value: v == null ? null : v}); }); });
   } else ops.push({op: 'set', col: c, value: d});
@@ -1081,8 +1096,17 @@ function parseId(id) {
  const a = BY[parts.join('_')];
  return a && ci != null ? rk(a, ci) : null;
 }
-function applyRes(id, d) { const k = parseId(id); if (k && d) S.res[k] = d; }
-function removeRes(id) { const k = parseId(id); if (k) delete S.res[k]; }
+function applyRes(id, d, v) {
+ const k = parseId(id); if (!k || !d) return;
+ const rb = RB[k]; v = v == null ? null : +v;
+ if (v != null && rb && rb.v != null && v < rb.v) return;   // versão antiga chegando atrasada: ignora
+ chavesFixas(d);
+ const antes = rb ? rb.d : undefined;
+ RB[k] = {d: clone(d), v};
+ /* gravação deste aparelho em andamento: mantém a alteração local por cima da versão nova */
+ S.res[k] = EMVOO[k] && antes !== undefined && S.res[k] && !eqJ(S.res[k], antes) ? merge3(antes, S.res[k], d, true).v : d;
+}
+function removeRes(id) { const k = parseId(id); if (k) { delete S.res[k]; RB[k] = {d: {}, v: 0}; } }
 
 function applyCfg(d) {
  if (!d) return;
@@ -1106,8 +1130,8 @@ const DB = {
   if (!db) return;
   const { data, error } = await db.from('res').select('*');
   if (error || !data) return;
-  S.res = {};
-  data.forEach(item => applyRes(item.id, item.d));
+  S.res = {}; Object.keys(RB).forEach(k => delete RB[k]);
+  data.forEach(item => applyRes(item.id, item.d, item.v));
  },
 
  /* Usado pela página de uma modalidade/categoria específica */
@@ -1116,8 +1140,8 @@ const DB = {
   const docId = `${a.s}_${ci}`;
   const { data, error } = await db.from('res').select('*').eq('id', docId);
   if (error) return;
-  if (data && data.length) applyRes(data[0].id, data[0].d);
-  else delete S.res[rk(a, ci)];
+  if (data && data.length) applyRes(data[0].id, data[0].d, data[0].v);
+  else { delete S.res[rk(a, ci)]; RB[rk(a, ci)] = {d: {}, v: 0}; }
  },
 
  /* Grava somente as colunas alteradas, logo após reler a versão mais recente do servidor.
@@ -1133,9 +1157,12 @@ const DB = {
    save();
    if (!db) return true;
    if (cfgPatchOk) {
-    const ops = opsCfg(cols, antes);
+    let ops = opsCfg(cols, antes);
     if (!ops.length) return true;
-    const { error } = await db.rpc('cfg_patch', { ops });
+    let { error } = await db.rpc('cfg_patch', { ops });
+    if (error && cfgPatchV2 && /operação inválida|operacao invalida/i.test(String(error.message))) {   // banco com a versão antiga da função
+     cfgPatchV2 = false; ops = opsCfg(cols, antes); ({ error } = await db.rpc('cfg_patch', { ops }));
+    }
     if (!error) return true;
     if (!/cfg_patch|PGRST202|Could not find the function/i.test(String(error.message || error.code))) { fail(error); return false; }
     cfgPatchOk = false;   // banco ainda sem a função: usa a gravação antiga
@@ -1157,24 +1184,27 @@ const DB = {
   if (error) fail(error);
  },
 
+ /* Grava conferindo a versão: se outro aparelho gravou antes, junta as duas alterações
+    (nada se perde) e tenta de novo. Gravações do mesmo resultado entram em fila. */
  async persistRes(a, ci) {
+  const key = rk(a, ci);
+  if (S.res[key]) chavesNovas(S.res[key]);
   save();
-  if (!db || !a) return;
-  const docId = `${a.s}_${ci}`;
-  const payload = { id: docId, d: S.res[rk(a, ci)] || {} };
-  const { error } = await db.from('res').upsert(payload);
-  if (error) fail(error);
+  if (!db || !a) return true;
+  const enviado = clone(S.res[key] || {});   // o que gravar e de qual versão do servidor partiu
+  const base = RB[key] ? clone(RB[key].d) : {}, v = RB[key] ? RB[key].v : null;
+  return filaRes(key, () => gravarRes(key, `${a.s}_${ci}`, enviado, base, v));
  },
 
  /* Tempo real focado: cada página escuta somente o que exibe */
  setupRealtime() {
   if (!db) return;
-  db.removeAllChannels();
+  db.getChannels().filter(c => c !== PRES.ch).forEach(c => db.removeChannel(c));   // mantém o canal de quem está online
   const nome = cur ? `olimp-m-${cur.s}-${curC}` : `olimp-${pg}`;
   const ch = db.channel(nome);
   const onRes = p => {
    if (p.eventType === 'DELETE') { if (p.old && p.old.id) removeRes(p.old.id); }
-   else if (p.new) applyRes(p.new.id, p.new.d);
+   else if (p.new) applyRes(p.new.id, p.new.d, p.new.v);
    save(); softRender();
   };
   ch.on('postgres_changes', { event: '*', schema: 'public', table: 'cfg' }, p => {
@@ -1199,8 +1229,8 @@ const typing = () => {
 };
 const softRender = () => {
  if (carregando) return;
- if (hasDraft()) return;
  if (typing()) { pendente = true; return; }
+ if (hasDraft()) { if (rebaseD(rk(cur, curC))) sec(curC); return; }   // rascunho aberto: recebe o que outro aparelho gravou
  rFlex = true; try { render(); } finally { rFlex = false; }   // atualização automática: só troca o que mudou
 };
 let rFlex = false;
@@ -1516,7 +1546,7 @@ addEventListener('hashchange', route);
 
 /* Ações de Edição e Confirmação (páginas de modalidade) */
 function edit(ci, k, v, fs) {
- const key = rk(cur, ci); ensureD(key); setPath(D[key], k, v);
+ const key = rk(cur, ci); ensureD(key); setPath(D[key], k, v); chavesNovas(D[key]); rebaseD(key);
  const mm = k.match(/^m\.(\w+)\.s[ab]$/);
  if (mm) { const m = D[key].m[mm[1]]; if (!(num(m.sa)!=null && num(m.sa)===num(m.sb))) { delete m.da; delete m.db; } }
  sec(ci);
@@ -1524,7 +1554,7 @@ function edit(ci, k, v, fs) {
 }
 
 function confirmAct(ci, x) {
- const key = rk(cur, ci); ensureD(key); const d = D[key];
+ const key = rk(cur, ci); ensureD(key); rebaseD(key); const d = D[key];
  if (cur.t == 'chav') {
   d.m = d.m || {}; const v = chavM(d); const m = {...(x=='s1'||x=='s2' ? d.m[x] : v[x]), ok:true}; if (!win(m)) return;
   const sorteada = S.res[key] && S.res[key].sorteio && S.res[key].m && S.res[key].m[x];
@@ -1540,7 +1570,7 @@ function confirmAct(ci, x) {
 }
 
 function reopen(ci, x) {
- const key = rk(cur, ci); ensureD(key);
+ const key = rk(cur, ci); ensureD(key); rebaseD(key);
  if (cur.t == 'chav') { D[key].m = D[key].m || {}; D[key].m[x] = D[key].m[x] || {}; D[key].m[x].ok = false; }
  else D[key].ok = false;
  sec(ci);
@@ -2834,7 +2864,7 @@ async function patchExtra(a, mutate) {
  const key = rk(a, EXTRA_CI);
  if (db) {
   const { data, error } = await db.from('res').select('*').eq('id', `${a.s}_${EXTRA_CI}`);
-  if (!error) { if (data && data.length) S.res[key] = data[0].d; else delete S.res[key]; }
+  if (!error) { if (data && data.length) applyRes(data[0].id, data[0].d, data[0].v); else { delete S.res[key]; RB[key] = {d: {}, v: 0}; } }
  }
  const d = clone(S.res[key] || {}); d.e = d.e || []; mutate(d); S.res[key] = d;
  await DB.persistRes(a, EXTRA_CI);
@@ -3374,17 +3404,24 @@ const quandoSorteio = s => { try { return new Date(s.em).toLocaleString('pt-BR',
 const presNa = (ins, x) => Array.isArray(ins.partidas) && ins.partidas.includes(x);
 INSC.presencaPartida = async (ins, x, v) => {
  let atual = Array.isArray(ins.partidas) ? ins.partidas.slice() : [];
- if (db) {
-  const { data, error } = await db.from('inscricoes').select('partidas').eq('id', ins.id);
+ const muda = l => v ? [...new Set([...l, x])] : l.filter(p => p !== x);
+ if (!db) { const nova = muda(atual), y = (S.insc || []).find(z => z.id === ins.id); if (y) y.partidas = nova; save(); return nova; }
+ /* grava só se ninguém mexeu na lista depois da leitura (dois árbitros marcando o mesmo integrante em partidas diferentes) */
+ for (let n = 0; n < 6; n++) {
+  const { data, error } = await db.from('inscricoes').select('partidas,updated_at').eq('id', ins.id);
   if (error) { fail(error); return null; }
-  if (data && data.length && Array.isArray(data[0].partidas)) atual = data[0].partidas;
+  const lido = data && data[0] ? data[0] : null;
+  if (lido && Array.isArray(lido.partidas)) atual = lido.partidas;
+  const nova = muda(atual);
+  let q = db.from('inscricoes').update({partidas: nova, updated_at: new Date().toISOString()}).eq('id', ins.id);
+  q = lido && lido.updated_at ? q.eq('updated_at', lido.updated_at) : q;
+  const r = await q.select('id');
+  if (r.error) { fail(r.error); return null; }
+  if (!lido || !lido.updated_at || (r.data && r.data.length)) return nova;
+  await new Promise(ok => setTimeout(ok, 50 + Math.random() * 150));   // outro aparelho gravou antes: relê e tenta de novo
  }
- const nova = v ? [...new Set([...atual, x])] : atual.filter(p => p !== x);
- if (db) {
-  const { error } = await db.from('inscricoes').update({partidas: nova, updated_at: new Date().toISOString()}).eq('id', ins.id);
-  if (error) { fail(error); return null; }
- } else { const y = (S.insc || []).find(z => z.id === ins.id); if (y) y.partidas = nova; save(); }
- return nova;
+ fail(new Error('Não foi possível marcar a presença agora. Tente de novo.'));
+ return null;
 };
 
 /* ==========================================================================
@@ -6896,7 +6933,11 @@ async function resBat(a, ci, op, n, b) {
  if (!db || !resBatOk) return undefined;
  try {
   const { data, error } = await db.rpc('res_bat', {p_id: `${a.s}_${ci}`, p_op: op, p_n: n, p_bat: b || {}});
-  if (!error) { applyRes(`${a.s}_${ci}`, data); return data || {}; }
+  if (!error) {
+   const env = data && typeof data === 'object' && 'd' in data && typeof data.v === 'number', doc = env ? data.d : data;
+   applyRes(`${a.s}_${ci}`, doc || {}, env ? data.v : null);
+   return S.res[rk(a, ci)] || {};
+  }
   const msg = String(error.message || error.code || '');
   if (/res_bat|PGRST202|Could not find the function/i.test(msg) && !/BAT_/.test(msg)) { resBatOk = false; return undefined; }
   if (/BAT_MAX/.test(msg)) avisar(`O máximo é de ${BAT_MAX} baterias.`);
@@ -6965,7 +7006,7 @@ document.addEventListener('change', async e => {
  if (db) {   // relê do servidor os resultados dessa modalidade antes de converter
   const { data, error } = await db.from('res').select('*').in('id', cis.map(ci => `${a.s}_${ci}`));
   if (error) { fail(error); el.disabled = false; el.value = nbDe(a); return; }
-  (data || []).forEach(r => { applyRes(r.id, r.d); docs[r.id] = r.d; });
+  (data || []).forEach(r => { applyRes(r.id, r.d, r.v); docs[r.id] = clone(r.d); });
  } else cis.forEach(ci => { const d = S.res[rk(a, ci)]; if (d) docs[`${a.s}_${ci}`] = d; });
  const conv = Object.entries(docs).map(([id, d]) => ({id, ...converteBat(d, nb)})).filter(x => x.mudou);
  const perdidas = conv.reduce((n, x) => n + x.perdidas, 0);
@@ -6974,9 +7015,7 @@ document.addEventListener('change', async e => {
    (nb > nbDe(a) && nbDe(a) > 1 ? `\nAs novas baterias ficam em aberto: os pontos só entram quando todas forem confirmadas.` : ''))) { el.disabled = false; el.value = nbDe(a); return; }
  const ok = await DB.patchCfg(['mods'], () => { S.mods = listaMods(); const x = S.mods.find(y => y.id === id); if (x) { if (nb > 1) x.nb = nb; else delete x.nb; } buildActs(); });
  if (ok && conv.length) {
-  conv.forEach(x => { const k = parseId(x.id); if (k) { S.res[k] = x.d; delete D[k]; } });
-  save();
-  if (db) { const { error } = await db.from('res').upsert(conv.map(x => ({id: x.id, d: x.d}))); if (error) fail(error); }
+  for (const x of conv) { const k = parseId(x.id); if (!k) continue; S.res[k] = x.d; delete D[k]; await DB.persistRes(a, +x.id.slice(a.s.length + 1)); }
  }
  render();
 });
@@ -7106,6 +7145,194 @@ window.addEventListener('click', async e => {
  if (!b || b.disabled) return;
  b._confirmado = true; b.click();
 }, true);
+
+/* ==========================================================================
+   56. GRAVAÇÃO SEGURA DOS RESULTADOS E CONTAS ONLINE
+   - Cada resultado tem uma versão (coluna v). O aparelho grava dizendo de
+     qual versão partiu (função res_salvar). Se outro aparelho gravou antes,
+     o servidor recusa e devolve a versão nova; o site junta as duas
+     alterações e grava de novo. Nada é sobrescrito sem ser visto.
+   - Junção: campos diferentes alterados por aparelhos diferentes somam;
+     linhas de atletas e lançamentos são identificadas por chave (_k / id),
+     então incluir ou remover linhas ao mesmo tempo não troca uma pela outra.
+     Se os dois mudaram o MESMO campo com valores diferentes, fica o que
+     chegou primeiro e o segundo aparelho recebe um aviso para conferir.
+     Apagar de um lado e alterar do outro: a alteração é mantida.
+   - Rascunhos abertos recebem na hora o que outro aparelho gravou.
+   - Online: canal de presença do tempo real (sem gravar nada no banco).
+   ========================================================================== */
+function canonJ(x) {
+ return JSON.stringify(x, (k, v) => v && typeof v === 'object' && !Array.isArray(v) ? Object.keys(v).sort().reduce((o, kk) => (o[kk] = v[kk], o), {}) : v);
+}
+const eqJ = (a, b) => canonJ(a) === canonJ(b);
+const ehObj = x => !!x && typeof x === 'object' && !Array.isArray(x);
+const chaveDe = x => ehObj(x) ? (x._k != null ? 'k' + x._k : x.id != null ? 'i' + x.id : null) : null;
+/* junta três versões: b = de onde as duas partiram, m = minha, t = a outra.
+   pref = true: conflito no mesmo campo fica com a minha; false: com a outra (já gravada) */
+function merge3(b, m, t, pref, c = [], p = '') {
+ if (eqJ(m, t)) return {v: m, c};
+ if (eqJ(m, b)) return {v: t, c};
+ if (eqJ(t, b)) return {v: m, c};
+ if (m === undefined) return {v: t, c};   // apagado de um lado, alterado do outro: mantém a alteração
+ if (t === undefined) return {v: m, c};
+ if (ehObj(m) && ehObj(t)) {
+  const bb = ehObj(b) ? b : {}, o = {};
+  new Set([...Object.keys(t), ...Object.keys(m)]).forEach(k => { const r = merge3(bb[k], m[k], t[k], pref, c, p ? p + '.' + k : k).v; if (r !== undefined) o[k] = r; });
+  return {v: o, c};
+ }
+ if (Array.isArray(m) && Array.isArray(t)) {
+  const bb = Array.isArray(b) ? b : [], todos = [...bb, ...m, ...t];
+  if (todos.length && todos.every(x => chaveDe(x) != null)) {   // lista com chave: junta linha a linha
+   const mb = new Map(bb.map(x => [chaveDe(x), x])), mm = new Map(m.map(x => [chaveDe(x), x])), o = [], visto = new Set();
+   t.forEach(x => {
+    const k = chaveDe(x); visto.add(k);
+    if (mm.has(k)) o.push(merge3(mb.get(k), mm.get(k), x, pref, c, p + '[' + k + ']').v);
+    else if (mb.has(k) && eqJ(mb.get(k), x)) return;   // eu removi e o outro não mexeu
+    else o.push(x);                                      // o outro incluiu (ou alterou o que eu removi)
+   });
+   m.forEach(x => { const k = chaveDe(x); if (visto.has(k)) return; if (mb.has(k) && eqJ(mb.get(k), x)) return; o.push(x); });
+   return {v: o, c};
+  }
+  const n = Math.max(m.length, t.length), o = [];   // lista por posição (baterias, notas por critério)
+  for (let i = 0; i < n; i++) o.push(merge3(bb[i], m[i], t[i], pref, c, p + '[' + i + ']').v);
+  while (o.length && o[o.length - 1] === undefined) o.pop();   // item final removido (ex.: bateria vazia)
+  return {v: o.map(x => x === undefined ? null : x), c};
+ }
+ c.push(p || '(tudo)');
+ return {v: pref ? m : t, c};
+}
+/* chaves das linhas de atletas: as que vieram do servidor sem chave recebem uma chave
+   calculada (igual em todos os aparelhos); as novas, uma chave aleatória */
+function listasLinhas(d) {
+ const l = [];
+ if (ehObj(d)) {
+  if (Array.isArray(d.e)) l.push(d.e);
+  if (Array.isArray(d.bat)) d.bat.forEach(b => { if (ehObj(b) && Array.isArray(b.e)) l.push(b.e); });
+ }
+ return l;
+}
+function chavesFixas(d) {
+ listasLinhas(d).forEach(e => {
+  const usadas = new Set(e.filter(x => ehObj(x) && x._k != null).map(x => String(x._k)));
+  e.forEach((x, i) => { if (!ehObj(x) || x._k != null || x.id != null) return; let k = 'L' + i, j = 0; while (usadas.has(k)) k = 'L' + i + '_' + (++j); x._k = k; usadas.add(k); });
+ });
+ return d;
+}
+function chavesNovas(d) {
+ listasLinhas(d).forEach(e => e.forEach((x, i) => { if (ehObj(x) && x._k == null && x.id == null) x._k = uid(); else if (x == null) e[i] = {_k: uid()}; }));
+ return d;
+}
+/* rascunho aberto: traz para ele o que chegou do servidor desde que foi aberto */
+function rebaseD(k) {
+ if (!D[k] || !DO[k] || !RB[k] || eqJ(DO[k], RB[k].d)) return false;
+ chavesNovas(D[k]);
+ D[k] = merge3(DO[k], D[k], RB[k].d, true).v;
+ DO[k] = clone(RB[k].d);
+ return true;
+}
+const FILA_RES = {};
+function filaRes(key, fn) {
+ const p = (FILA_RES[key] || Promise.resolve()).then(fn, fn);
+ FILA_RES[key] = p.catch(() => {});
+ return p;
+}
+let resSalvarOk = true;
+async function gravarRes(key, id, mine0, base0, v0) {
+ if (!resSalvarOk) {   // banco ainda sem a função: gravação antiga
+  const { error } = await db.from('res').upsert({id, d: mine0});
+  if (error) { fail(error); return false; }
+  return true;
+ }
+ EMVOO[key] = (EMVOO[key] || 0) + 1;
+ try {
+  let mine = mine0, base = base0 || {}, v = v0 === undefined ? null : v0;
+  const conf = [];
+  for (let n = 0; n < 10; n++) {
+   const { data, error } = await db.rpc('res_salvar', {p_id: id, p_v: v, p_d: mine});
+   if (error) {
+    if (/res_salvar|PGRST202|Could not find the function/i.test(String(error.message || error.code))) { resSalvarOk = false; EMVOO[key]--; const r = await gravarRes(key, id, mine, base, v); EMVOO[key]++; return r; }
+    fail(error); return false;
+   }
+   if (data && data.ok) {
+    if (!RB[key] || RB[key].v == null || +data.v >= RB[key].v) RB[key] = {d: clone(mine), v: +data.v};
+    const atual = S.res[key];   // o que mudou aqui depois do envio continua por cima
+    S.res[key] = atual && !eqJ(atual, mine0) ? merge3(mine0, atual, mine, true).v : clone(mine);
+    save();
+    if (mine !== mine0) { if (cur && rk(cur, curC) === key) { rebaseD(key); sec(curC); } else softRender(); }
+    if (conf.length) avisar('Outro aparelho gravou este mesmo resultado ao mesmo tempo, com um valor diferente no mesmo campo.\nFoi mantido o valor que chegou primeiro e as demais alterações foram somadas. Confira o resultado na tela.');
+    return true;
+   }
+   const theirs = chavesFixas(data && data.d ? data.d : {}), tv = data ? +data.v || 0 : 0;
+   const r = merge3(base, mine, theirs, false); conf.push(...r.c);
+   if (!RB[key] || RB[key].v == null || tv >= RB[key].v) RB[key] = {d: clone(theirs), v: tv};
+   mine = r.v; base = theirs; v = tv;
+   await new Promise(ok => setTimeout(ok, 40 + Math.random() * 120 * n));
+  }
+  fail(new Error('Muitas gravações ao mesmo tempo neste resultado. Toque em confirmar de novo.'));
+  return false;
+ } catch (e) { fail(e); return false; }
+ finally { EMVOO[key]--; }
+}
+
+/* ---------- quem está online (presença do tempo real, nada gravado no banco) ---------- */
+const PRES = {
+ ch: null, uid: null, on: new Set(),
+ atualizar() {
+  const id = db && AUTH.user && AUTH.user.id ? AUTH.user.id : null;
+  if (id === this.uid) return;
+  if (this.ch) { try { db.removeChannel(this.ch); } catch (e) {} this.ch = null; }
+  this.uid = id; this.on = new Set();
+  if (!id) return;
+  const ch = db.channel('olimp-online', {config: {presence: {key: id}}});
+  ch.on('presence', {event: 'sync'}, () => { this.on = new Set(Object.keys(ch.presenceState())); marcarOnline(); });
+  ch.subscribe(st => { if (st === 'SUBSCRIBED') Promise.resolve(ch.track({p: AUTH.papel || ''})).catch(() => {}); });
+  this.ch = ch;
+ }
+};
+const aplicarAcessoAntesPres = aplicarAcesso;
+aplicarAcesso = function () { const r = aplicarAcessoAntesPres.apply(this, arguments); try { PRES.atualizar(); } catch (e) { console.error(e); } return r; };
+function marcarOnline() {
+ document.querySelectorAll('[data-online]').forEach(el => {
+  const on = PRES.on.has(el.dataset.online); el.classList.toggle('on', on);
+  el.title = on ? 'Online agora' : 'Offline'; el.setAttribute('aria-label', el.title);
+ });
+ const r = $('ctonline'); if (r && contasLista) r.innerHTML = onlineResumo();
+}
+let contasSt = {};
+const onlineResumo = () => {
+ const arbs = contasLista.filter(x => x.papel === 'arbitro'), on = arbs.filter(x => PRES.on.has(x.id)).length;
+ const conf = arbs.filter(x => contasSt[x.id] && contasSt[x.id].confirmado_em).length;
+ return `<span class="ct-dot on" aria-hidden="true"></span> Árbitros online agora: <strong>${on}</strong> de ${arbs.length}${Object.keys(contasSt).length ? ` · com conta confirmada: <strong>${conf}</strong>` : ''}`;
+};
+const quando = s => { try { return new Date(s).toLocaleString('pt-BR', {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'}); } catch (e) { return ''; } };
+const carregarContasAntesSt = carregarContas;
+carregarContas = async function () {
+ const st = db ? db.rpc('contas_status').then(r => r, e => ({error: e})) : null;
+ await carregarContasAntesSt();
+ if (st) { const { data, error } = await st; contasSt = {}; if (!error && Array.isArray(data)) data.forEach(x => contasSt[x.id] = x); }
+ const l = $('contaslista'); if (l) l.innerHTML = contasHTML();
+ marcarOnline();
+};
+const contasHTMLAntesOn = contasHTML;
+contasHTML = function () {
+ let h = contasHTMLAntesOn();
+ if (!contasLista || !contasLista.length) return h;
+ /* bolinha de online antes do nome e situação da conta embaixo do email */
+ return h.replace(/<div class="ct-row"><span class="ct-info"><strong>/g, '<div class="ct-row"><span class="ct-info"><strong>\u0001')
+  .split('\u0001').map((parte, i) => {
+   if (!i) return parte;
+   const m = parte.match(/<small>([^<]*)<\/small>/), mail = m && m[1].split(' · ')[0];
+   const x = contasLista.find(y => esc(y.email) === mail); if (!x) return parte;
+   const st = contasSt[x.id], on = PRES.on.has(x.id);
+   const sit = st ? (st.confirmado_em ? `<span class="ct-ok">✔ conta confirmada</span>${st.ultimo_login ? ` · último login ${quando(st.ultimo_login)}` : ' · ainda não entrou'}` : '<span class="ct-aguarda">aguardando confirmação do email</span>') : '';
+   return `<span class="ct-dot ${on ? 'on' : ''}" data-online="${esc(x.id)}" role="img" aria-label="${on ? 'Online agora' : 'Offline'}" title="${on ? 'Online agora' : 'Offline'}"></span>` + parte.replace(/<\/small>/, `</small>${sit ? `<small class="ct-st">${sit}</small>` : ''}`);
+  }).join('');
+};
+const ViewsContasAntesOn = Views.contas;
+Views.contas = function () {
+ const h = ViewsContasAntesOn.apply(this, arguments);
+ return h.replace('<div class="row ct-resumo" id="contasresumo">', `<p class="ct-online" id="ctonline">${contasLista ? onlineResumo() : ''}</p><div class="row ct-resumo" id="contasresumo">`);
+};
 
 /* Inicialização: primeiro descobre quem está conectado, depois abre a página */
 iniciarAuth().finally(route);
