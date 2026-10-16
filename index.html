@@ -6,6 +6,15 @@
 <meta name="theme-color" content="#eef2f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0a1020" media="(prefers-color-scheme: dark)">
 <title>Olimpíadas Escolares - Mr Léo</title>
+<!-- App instalável (PWA): abre em tela cheia, com ícone na tela inicial -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="favicon-64.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Olimpíadas">
+<meta name="application-name" content="Olimpíadas">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -669,6 +678,13 @@ a.mv-mod:hover{border-color:var(--ink)}
 .trava-aviso{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff7e6;border:1px solid #f0c36d;color:#7a4b00;border-radius:12px;padding:8px 12px;margin:0 0 10px;font-size:14px;text-align:left}
 .trava-aviso .ico{flex:0 0 auto}.trava-aviso span{flex:1 1 180px}.trava-aviso .btn{padding:6px 12px;min-height:0}
 [data-travado]{opacity:.55;cursor:not-allowed}
+.app-inst{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:60;max-width:520px;margin:0 auto;display:flex;align-items:center;gap:12px;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:10px 10px 10px 12px;box-shadow:0 10px 30px rgba(15,28,54,.18);animation:hmSobe2 .35s ease both}
+@keyframes hmSobe2{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.app-inst img{width:40px;height:40px;border-radius:10px;flex:0 0 auto}
+.app-inst div{flex:1;min-width:0;font-size:13px;line-height:1.35}.app-inst strong{display:block;font-size:14px}
+.app-inst .btn{padding:8px 14px;min-height:0;white-space:nowrap}
+.app-inst .app-x{background:none;border:0;color:var(--mute);font-size:20px;line-height:1;padding:6px;cursor:pointer}
+.app-ios-share{display:inline-block;vertical-align:-3px;width:15px;height:15px}
 .ct-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#c3cad6;margin-right:7px;vertical-align:1px;flex:0 0 auto}
 .ct-dot.on{background:#1fbf5b;box-shadow:0 0 0 3px rgba(31,191,91,.22)}
 .ct-st{display:block;font-size:12px;color:var(--mute,#64748b)}.ct-ok{color:#1f9d55;font-weight:600}.ct-aguarda{color:#b7791f;font-weight:600}
@@ -7597,6 +7613,51 @@ function porHTML(x, rot) {
  const quem = x.por && x.por.n ? `<span class="por-n" title="Lançado por ${esc(x.por.n)}">${icone('apito')}${esc(x.por.n)}${h ? ' · ' + h : ''}</span>` : '';
  return `<p class="por-quem"><span class="fim-tag">✓ ${rot || 'Finalizada'}</span>${quem}</p>`;
 }
+
+/* ==========================================================================
+   59. APP INSTALÁVEL (TELA CHEIA NO CELULAR)
+   - manifest.webmanifest + sw.js (arquivos ao lado desta página no GitHub).
+   - Android/Chrome: botão "Instalar" quando o navegador permitir.
+   - iPhone/iPad (Safari): dica "Compartilhar → Adicionar à Tela de Início".
+   - Depois de instalado abre em tela cheia, sem barra do navegador.
+   - O aviso aparece uma vez; se fechar, volta só depois de 14 dias.
+   ========================================================================== */
+(function () {
+ const instalado = () => matchMedia('(display-mode: fullscreen)').matches || matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+ if (instalado()) document.documentElement.classList.add('app');
+ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+ }
+ const CH = 'olimp-app-aviso';
+ const podeMostrar = () => { try { const t = +localStorage.getItem(CH) || 0; return Date.now() - t > 14 * 864e5; } catch (e) { return true; } };
+ const fechou = () => { try { localStorage.setItem(CH, String(Date.now())); } catch (e) {} };
+ let pedido = null;
+ function aviso(html, acao) {
+  if (instalado() || !podeMostrar() || document.querySelector('.app-inst')) return;
+  const el = document.createElement('div'); el.className = 'app-inst'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Instalar o app');
+  el.innerHTML = `<img src="icon-192.png" alt=""><div>${html}</div>${acao ? '<button class="btn" data-appinst>Instalar</button>' : ''}<button class="app-x" data-appx aria-label="Agora não">×</button>`;
+  document.body.appendChild(el);
+  el.addEventListener('click', async e => {
+   if (e.target.closest('[data-appx]')) { fechou(); el.remove(); }
+   else if (e.target.closest('[data-appinst]') && pedido) {
+    pedido.prompt(); const r = await pedido.userChoice.catch(() => ({})); pedido = null;
+    if (!r || r.outcome !== 'accepted') fechou();
+    el.remove();
+   }
+  });
+ }
+ addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); pedido = e;
+  setTimeout(() => aviso('<strong>Instale o app das Olimpíadas</strong>Abre direto em tela cheia, como um aplicativo.', true), 2500);
+ });
+ addEventListener('appinstalled', () => { fechou(); const el = document.querySelector('.app-inst'); if (el) el.remove(); });
+ /* iPhone/iPad no Safari: não existe botão automático, então mostra o caminho */
+ const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+ const safari = /safari/i.test(navigator.userAgent) && !/crios|fxios|edgios|opios/i.test(navigator.userAgent);
+ if (ios && safari && !instalado() && location.protocol === 'https:') {
+  setTimeout(() => aviso('<strong>Instale o app das Olimpíadas</strong>Toque em <svg class="app-ios-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Compartilhar"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg> e depois em <b>Adicionar à Tela de Início</b>.', false), 3000);
+ }
+})();
 
 /* Inicialização: primeiro descobre quem está conectado, depois abre a página */
 iniciarAuth().finally(route);
