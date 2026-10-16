@@ -661,6 +661,11 @@ a.mv-mod:hover{border-color:var(--ink)}
 /* Baterias e tempo inválido */
 .bat{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px}
 .bat.bat-ok{border-color:#1f9d55;background:rgba(31,157,85,.04)}
+.por-quem{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 10px;margin:10px 0 0;font-size:12px;color:var(--mute,#64748b);line-height:1.3}
+.por-quem .ico{width:13px;height:13px;opacity:.7}.por-n{display:inline-flex;align-items:center;gap:4px}
+.fim-tag{color:#1f9d55;font-weight:600;letter-spacing:.01em}
+.por-lin{display:block;justify-content:flex-start;margin:2px 0 0}
+.pub-fim{display:block;text-align:center;margin:12px 0 2px;font-size:12px;font-weight:600;color:#1f9d55}
 .trava-aviso{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff7e6;border:1px solid #f0c36d;color:#7a4b00;border-radius:12px;padding:8px 12px;margin:0 0 10px;font-size:14px;text-align:left}
 .trava-aviso .ico{flex:0 0 auto}.trava-aviso span{flex:1 1 180px}.trava-aviso .btn{padding:6px 12px;min-height:0}
 [data-travado]{opacity:.55;cursor:not-allowed}
@@ -1377,7 +1382,7 @@ function mfim(x, m, label) {
  return `<div class="match fim"><h3>${label}</h3>
  <div class="fim-placar">${lado(m.a, ga)}<div class="fim-nums"><span class="${ga?'win':''}">${num(m.sa)}</span><span class="fim-x">×</span><span class="${gb?'win':''}">${num(m.sb)}</span></div>${lado(m.b, gb)}</div>
  ${tie ? `<div class="fim-desemp"><span>Desempate</span><div class="fim-desemp-nums"><span class="${ga?'win':''}">${num(m.da)}</span><span class="fim-x">×</span><span class="${gb?'win':''}">${num(m.db)}</span></div></div>` : ''}
- <div class="row" style="margin-top:10px"><button class="btn alt" data-edit="${x}">Editar</button></div>${inscPartidaHTML(x, m)}</div>`;
+ <div class="row" style="margin-top:10px"><button class="btn alt" data-edit="${x}">Editar</button></div>${inscPartidaHTML(x, m)}${porHTML(m)}</div>`;
 }
 
 /* Placar editável vertical: + em cima, número, − embaixo */
@@ -1418,7 +1423,7 @@ function secHTML(ci) {
    : `<div class="row" style="margin-bottom:12px"><button class="btn alt" data-sortear="${ci}" ${isLocked?'disabled':''}>Sortear semifinais</button></div>`;
   return btnSortear + mrow('s1', chavM(d).s1, true, 'Semifinal 1', d) + mrow('s2', chavM(d).s2, true, 'Semifinal 2', d) + mrow('t3', chavM(d).t3, false, 'Disputa de 3º lugar', d) + mrow('f', chavM(d).f, false, 'Final', d) + pvHTML(a.t, d, true);
  }
- const foot = lock ? `<div class="row" style="margin-top:10px"><span class="ok">✔ Resultado confirmado</span><button class="btn alt" data-edit="">Editar</button></div>` : `<div class="row" style="margin-top:10px"><button class="btn" data-conf="" ${ready(a.t, d)?'':'disabled'}>Confirmar resultado final</button></div>`;
+ const foot = lock ? `<div class="row" style="margin-top:10px"><button class="btn alt" data-edit="">Editar</button></div>` + porHTML(d) : `<div class="row" style="margin-top:10px"><button class="btn" data-conf="" ${ready(a.t, d)?'':'disabled'}>Confirmar resultado final</button></div>`;
  return (lock ? `<div class="fim-campos">${h}</div>` : h) + pvHTML(a.t, d, lock) + foot + `<div class="insc-geral">${inscBlocoHTML('g', T)}</div>`;
 }
 
@@ -1559,14 +1564,14 @@ function edit(ci, k, v, fs) {
 function confirmAct(ci, x) {
  const key = rk(cur, ci); ensureD(key); rebaseD(key); const d = D[key];
  if (cur.t == 'chav') {
-  d.m = d.m || {}; const v = chavM(d); const m = {...(x=='s1'||x=='s2' ? d.m[x] : v[x]), ok:true}; if (!win(m)) return;
+  d.m = d.m || {}; const v = chavM(d); const m = {...(x=='s1'||x=='s2' ? d.m[x] : v[x]), ok:true}; if (!win(m)) return; assinar(m);
   const sorteada = S.res[key] && S.res[key].sorteio && S.res[key].m && S.res[key].m[x];
   if (sorteada && (x == 's1' || x == 's2')) { m.a = sorteada.a; m.b = sorteada.b; d.sorteio = S.res[key].sorteio; }
   d.m[x] = m; const sm = (S.res[key] = S.res[key] || {}).m = S.res[key].m || {}; sm[x] = clone(m);
   if (x=='s1'||x=='s2') { delete sm.t3; delete sm.f; delete d.m.t3; delete d.m.f; }
  } else {
   if (!ready(cur.t, d)) return;
-  d.ok = true; S.res[key] = clone(d); delete D[key];
+  d.ok = true; assinar(d); S.res[key] = clone(d); delete D[key];
  }
  DB.persistRes(cur, ci);
  sec(ci);
@@ -2858,7 +2863,7 @@ function extraHTML(a) {
   <button class="btn" data-exadd>Adicionar</button>
  </div>
  <div class="scroll"><table><thead><tr><th>Descrição</th><th style="text-align:left">Equipe</th><th>Pontos</th><th></th></tr></thead><tbody>
- ${e.length ? e.map(x => `<tr><td>${esc(x.desc || '—')}</td><td style="text-align:left">${tn(+x.team)}</td><td>${+x.pts || 0}</td><td><button class="btn warn" data-exdel="${esc(x.id)}">Remover</button></td></tr>`).join('') : '<tr><td colspan="4" class="muted">Nenhum lançamento ainda.</td></tr>'}
+ ${e.length ? e.map(x => `<tr><td>${esc(x.desc || '—')}${x.por ? `<small class="por-quem por-lin">por ${esc(x.por.n)}</small>` : ''}</td><td style="text-align:left">${tn(+x.team)}</td><td>${+x.pts || 0}</td><td><button class="btn warn" data-exdel="${esc(x.id)}">Remover</button></td></tr>`).join('') : '<tr><td colspan="4" class="muted">Nenhum lançamento ainda.</td></tr>'}
  </tbody></table></div>`;
 }
 
@@ -2880,7 +2885,7 @@ document.addEventListener('click', async e => {
   const desc = $('exdesc').value.trim(), team = +$('exteam').value, pts = Math.max(0, +$('expts').value || 0);
   if (!pts) { avisar('Informe os pontos do lançamento.'); return; }
   t.disabled = true;
-  await patchExtra(cur, d => d.e.push({id: uid(), desc, team, pts}));
+  await patchExtra(cur, d => d.e.push(assinar({id: uid(), desc, team, pts})));
  }
  else if (t.dataset.exdel) {
   const id = t.dataset.exdel;
@@ -5147,7 +5152,7 @@ function jogoPub(label, m) {
  if (w) {
   const tie = num(m.sa) === num(m.sb);
   return `<div class="match fim pub"><h3>${label}</h3><div class="fim-placar">${lado(m.a, ga)}<div class="fim-nums"><span class="${ga ? 'win' : ''}">${num(m.sa)}</span><span class="fim-x">×</span><span class="${gb ? 'win' : ''}">${num(m.sb)}</span></div>${lado(m.b, gb)}</div>
-  ${tie ? `<div class="fim-desemp"><span>Desempate</span><div class="fim-desemp-nums"><span class="${ga ? 'win' : ''}">${num(m.da)}</span><span class="fim-x">×</span><span class="${gb ? 'win' : ''}">${num(m.db)}</span></div></div>` : ''}</div>`;
+  ${tie ? `<div class="fim-desemp"><span>Desempate</span><div class="fim-desemp-nums"><span class="${ga ? 'win' : ''}">${num(m.da)}</span><span class="fim-x">×</span><span class="${gb ? 'win' : ''}">${num(m.db)}</span></div></div>` : ''}${porHTML(m)}</div>`;
  }
  return `<div class="match pub"><h3>${label}</h3><div class="fim-placar">${lado(m.a)}<div class="fim-nums"><span>–</span><span class="fim-x">×</span><span>–</span></div>${lado(m.b)}</div><p class="pub-aguarda">${has ? 'Aguardando resultado' : 'Aguardando a definição das equipes'}</p></div>`;
 }
@@ -5166,14 +5171,17 @@ function marcasPub(a, d) {
  return `<div class="scroll pub-tab"><table><thead><tr><th>Atleta</th><th>Equipe</th><th>${a.u === 'dist' ? 'Distância' : 'Tempo'}</th></tr></thead><tbody>${l.map(e => `<tr><td>${esc(e.n || '—')}</td><td>${tn(+e.team)}</td><td>${esc(e.t)}</td></tr>`).join('')}</tbody></table></div>`;
 }
 
+/* situação: "em andamento"/"não iniciada" no topo; "finalizada" discreta no fim do resultado */
+const stTopo = st => st.cls === 'fim' ? '' : `<span class="pub-st ${st.cls}">${esc(st.txt)}</span>`;
+const stFim = st => st.cls === 'fim' ? '<span class="pub-fim">✓ Modalidade finalizada</span>' : '';
 function publicoHTML(ci) {
  const a = cur, d = S.res[rk(a, ci)] || {}, st = situacaoPub(a, ci, d);
- let h = `<span class="pub-st ${st.cls}">${esc(st.txt)}</span>`;
+ let h = stTopo(st);
  if (a.t == 'chav') {
   const x = chavM(d);
-  h += [['s1', 'Semifinal 1'], ['s2', 'Semifinal 2'], ['t3', 'Disputa de 3º lugar'], ['f', 'Final']].map(([k, l]) => jogoPub(l, x[k] || {})).join('') + classPub(a, d);
+  h += [['s1', 'Semifinal 1'], ['s2', 'Semifinal 2'], ['t3', 'Disputa de 3º lugar'], ['f', 'Final']].map(([k, l]) => jogoPub(l, x[k] || {})).join('') + classPub(a, d) + stFim(st);
  } else if (d.ok) {
-  h += classPub(a, d) + (a.t == 'marca' && d.modo !== 'class' ? marcasPub(a, d) : '');
+  h += classPub(a, d) + (a.t == 'marca' && d.modo !== 'class' ? marcasPub(a, d) : '') + porHTML(d);
  } else h += '<p class="muted">O resultado aparece aqui assim que for confirmado pela arbitragem.</p>';
  return h;
 }
@@ -5278,7 +5286,7 @@ async function suicoConfirmar(ci, x, btn) {
  await DB.fetchSingleRes(cur, ci);
  const salvo = clone(S.res[key] || {}), s0 = (salvo.m || {})[x] || {};
  salvo.m = salvo.m || {};
- salvo.m[x] = {...s0, sa: num(m.sa), sb: num(m.sb), a: temEq(s0.a) ? s0.a : m.a, b: temEq(s0.b) ? s0.b : m.b, ok: true};
+ salvo.m[x] = {...s0, sa: num(m.sa), sb: num(m.sb), a: temEq(s0.a) ? s0.a : m.a, b: temEq(s0.b) ? s0.b : m.b, ok: true}; assinar(salvo.m[x]);
  S.res[key] = salvo;
  /* rascunho: mantém só o que ainda está sendo digitado nos outros jogos */
  const nd = clone(salvo);
@@ -5298,7 +5306,7 @@ function placarFimSui(m) {
 /* Jogo para quem lança o resultado */
 function suicoJogoHTML(x, m, label) {
  m = m || {};
- if (suicoJogoOk(m)) return `<div class="match fim"><h3>${label}</h3>${placarFimSui(m)}<div class="row" style="margin-top:10px"><button class="btn alt" data-edit="${x}">Editar</button></div>${inscPartidaHTML(x, m)}</div>`;
+ if (suicoJogoOk(m)) return `<div class="match fim"><h3>${label}</h3>${placarFimSui(m)}<div class="row" style="margin-top:10px"><button class="btn alt" data-edit="${x}">Editar</button></div>${inscPartidaHTML(x, m)}${porHTML(m)}</div>`;
  const has = temEq(m.a) && temEq(m.b), dis = !has, pronto = has && num(m.sa) != null && num(m.sb) != null;
  return `<div class="match"><h3>${label}</h3><div class="fim-placar">${ladoSui(m.a)}<div class="fim-nums">${VST(`m.${x}.sa`, m.sa, dis)}<span class="fim-x">×</span>${VST(`m.${x}.sb`, m.sb, dis)}</div>${ladoSui(m.b)}</div>
  <div class="row" style="margin-top:12px"><button class="btn" data-conf="${x}" ${pronto ? '' : 'disabled'}>Salvar resultado</button></div>${inscPartidaHTML(x, m)}</div>`;
@@ -5306,7 +5314,7 @@ function suicoJogoHTML(x, m, label) {
 /* Jogo só para leitura */
 function suicoJogoPubHTML(x, m, label) {
  m = m || {};
- if (suicoJogoOk(m)) return `<div class="match fim pub"><h3>${label}</h3>${placarFimSui(m)}</div>`;
+ if (suicoJogoOk(m)) return `<div class="match fim pub"><h3>${label}</h3>${placarFimSui(m)}${porHTML(m)}</div>`;
  return `<div class="match pub"><h3>${label}</h3><div class="fim-placar">${ladoSui(m.a)}<div class="fim-nums"><span>–</span><span class="fim-x">×</span><span>–</span></div>${ladoSui(m.b)}</div><p class="pub-aguarda">Aguardando resultado</p></div>`;
 }
 const rodadasSui = (d, fn) => [1, 2].map(n => `<h3 class="sui-rod">${n}ª rodada</h3>` + SUICO_JOGOS.filter(([k]) => k[1] == n).map(([k], i) => fn(k, (d.m || {})[k], `Jogo ${i + 1}`)).join('')).join('');
@@ -5329,9 +5337,9 @@ function suicoPubHTML(ci) {
  const a = cur, d = S.res[rk(a, ci)] || {}, fim = suicoFim(d);
  const algum = !!d.m && SUICO_JOGOS.some(([k]) => suicoJogoOk(d.m[k]));
  const st = fim ? {cls: 'fim', txt: 'Finalizada'} : algum ? {cls: 'and', txt: 'Em andamento'} : situacaoPub(a, ci, {});
- let h = `<span class="pub-st ${st.cls}">${esc(st.txt)}</span>`;
+ let h = stTopo(st);
  if (!d.sorteio) return h + '<p class="muted">Os jogos ainda não foram sorteados.</p>';
- return h + rodadasSui(d, suicoJogoPubHTML) + (fim ? suicoPontosHTML(a, d) : '');
+ return h + rodadasSui(d, suicoJogoPubHTML) + (fim ? suicoPontosHTML(a, d) : '') + stFim(st);
 }
 
 const secHTMLAntesSuico = secHTML;
@@ -6906,7 +6914,7 @@ function batEditHTML(ci) {
    .replace(/data-k="e\./g, `data-k="bat.${n}.e.`).replace(/data-k="p\./g, `data-k="bat.${n}.p.`)
    .replace(/data-rme="/g, `data-rmeb="${n},`).replace(/data-adde(?=[\s>])/g, `data-addeb="${n}"`).replace(/data-cmodo="/g, `data-cmodob="${n},`);
   const pronto = ready('marca', {...b, modo: ''}) && (a.u === 'dist' || !temposInvalidos(b.e).length);
-  const foot = lock ? `<div class="row" style="margin-top:10px"><span class="ok">✔ Bateria confirmada</span><button class="btn alt" data-editb="${n}">Editar</button></div>`
+  const foot = lock ? `<div class="row" style="margin-top:10px"><button class="btn alt" data-editb="${n}">Editar</button></div>` + porHTML(b, 'Bateria finalizada')
    : `<div class="row" style="margin-top:10px"><button class="btn" data-confb="${n}" ${pronto ? '' : 'disabled'}>Confirmar bateria ${n + 1}</button></div>`;
   return `<div class="bat ${lock ? 'bat-ok' : ''}"><h3 class="sui-rod">Bateria ${n + 1}</h3>${lock ? `<div class="fim-campos">${h}</div>` : h}${batClassHTML(aS, b, lock)}${foot}</div>`;
  }).join('') + batAcoesHTML(ci) + batTotalHTML(salvo, a) + `<div class="insc-geral">${inscBlocoHTML('g', T)}</div>`;
@@ -6920,7 +6928,7 @@ function batAcoesHTML(ci) {
 function batPubHTML(ci) {
  const a = cur, d = S.res[rk(a, ci)] || {}, aS = aUnica(a), bats = batsDe(d, a), feitas = bats.filter(b => b.ok).length;
  const st = feitas === bats.length ? {cls: 'fim', txt: 'Finalizada'} : feitas ? {cls: 'and', txt: `Em andamento · ${feitas} de ${bats.length} baterias`} : situacaoPub(a, ci, {});
- return `<span class="pub-st ${st.cls}">${esc(st.txt)}</span>` + bats.map((b, n) => `<div class="bat ${b.ok ? 'bat-ok' : ''}"><h3 class="sui-rod">Bateria ${n + 1}</h3>${b.ok ? marcasPub(aS, b) || '<p class="muted">Sem marcas.</p>' : '<p class="muted">Aguardando resultado.</p>'}</div>`).join('') + (feitas ? batTotalHTML(d, a) : '');
+ return stTopo(st) + bats.map((b, n) => `<div class="bat ${b.ok ? 'bat-ok' : ''}"><h3 class="sui-rod">Bateria ${n + 1}</h3>${b.ok ? (marcasPub(aS, b) || '<p class="muted">Sem marcas.</p>') + porHTML(b, 'Bateria finalizada') : '<p class="muted">Aguardando resultado.</p>'}</div>`).join('') + (feitas ? batTotalHTML(d, a) : '') + stFim(st);
 }
 const secHTMLAntesBat = secHTML;
 secHTML = function (ci) {
@@ -6939,6 +6947,7 @@ async function resBat(a, ci, op, n, b) {
   if (!error) {
    const env = data && typeof data === 'object' && 'd' in data && typeof data.v === 'number', doc = env ? data.d : data;
    applyRes(`${a.s}_${ci}`, doc || {}, env ? data.v : null);
+   conferirDepois(rk(a, ci), `${a.s}_${ci}`);
    return S.res[rk(a, ci)] || {};
   }
   const msg = String(error.message || error.code || '');
@@ -6967,6 +6976,7 @@ document.addEventListener('click', async e => {
   if (cur.u !== 'dist') { const inv = temposInvalidos(b.e); if (inv.length) { avisaTempo(inv); return; } }
   if (!ready('marca', b)) return;
   t.disabled = true;
+  assinar(b);
   let salvo = await resBat(cur, ci, 'set', n, {...b, ok: true});   // grava só esta bateria, de forma atômica no servidor
   if (salvo === null) { t.disabled = false; return; }
   const viaServidor = !!salvo;
@@ -7180,7 +7190,10 @@ function merge3(b, m, t, pref, c = [], p = '') {
  if (t === undefined) return {v: m, c};
  if (ehObj(m) && ehObj(t)) {
   const bb = ehObj(b) ? b : {}, o = {};
-  new Set([...Object.keys(t), ...Object.keys(m)]).forEach(k => { const r = merge3(bb[k], m[k], t[k], pref, c, p ? p + '.' + k : k).v; if (r !== undefined) o[k] = r; });
+  new Set([...Object.keys(t), ...Object.keys(m)]).forEach(k => {
+   if (k === 'por' && ehObj(m[k]) && ehObj(t[k])) { o[k] = String(m[k].em || '') > String(t[k].em || '') ? m[k] : t[k]; return; }   // quem lançou: fica o mais recente, sem aviso
+   const r = merge3(bb[k], m[k], t[k], pref, c, p ? p + '.' + k : k).v; if (r !== undefined) o[k] = r;
+  });
   return {v: o, c};
  }
  if (Array.isArray(m) && Array.isArray(t)) {
@@ -7201,7 +7214,7 @@ function merge3(b, m, t, pref, c = [], p = '') {
   while (o.length && o[o.length - 1] === undefined) o.pop();   // item final removido (ex.: bateria vazia)
   return {v: o.map(x => x === undefined ? null : x), c};
  }
- c.push(p || '(tudo)');
+ if (!/(^|\.)por(\.|$)/.test(p)) c.push(p || '(tudo)');   // quem lançou não conta como conflito
  return {v: pref ? m : t, c};
 }
 /* chaves das linhas de atletas: as que vieram do servidor sem chave recebem uma chave
@@ -7240,12 +7253,52 @@ function filaRes(key, fn) {
  return p;
 }
 let resSalvarOk = true;
+/* Depois de gravar, relê UMA vez este resultado (1,5 s depois): se outro aparelho gravou
+   no mesmo instante e o aviso do tempo real não chegou, a tela se acerta sozinha. */
+const CONF_RES = {};
+function conferirDepois(key, id) {
+ clearTimeout(CONF_RES[key]);
+ CONF_RES[key] = setTimeout(async () => {
+  if (EMVOO[key]) { conferirDepois(key, id); return; }
+  try {
+   const { data, error } = await db.from('res').select('id,d,v').eq('id', id);
+   if (error || !data || !data.length) return;
+   const antes = S.res[key] ? canonJ(S.res[key]) : '';
+   applyRes(data[0].id, data[0].d, data[0].v);
+   if (canonJ(S.res[key]) === antes) return;
+   save();
+   if (cur && rk(cur, curC) === key) { if (D[key]) rebaseD(key); if (!typing()) sec(curC); else pendente = true; } else softRender();
+  } catch (e) {}
+ }, 1500);
+}
+/* Banco ainda sem res_salvar: relê, junta, grava e confere se a alteração ficou;
+   se outro aparelho gravou por cima no mesmo instante, junta de novo e regrava */
+async function gravarResSemVersao(key, id, mine0, base0) {
+ const ler = async () => { const { data, error } = await db.from('res').select('d').eq('id', id); if (error) throw error; return chavesFixas(data && data[0] && data[0].d ? data[0].d : {}); };
+ EMVOO[key] = (EMVOO[key] || 0) + 1;
+ try {
+  let srv = await ler(), mine = merge3(base0 || {}, mine0, srv, false).v;
+  for (let n = 0; n < 8; n++) {
+   if (!eqJ(mine, srv)) { const { error } = await db.from('res').upsert({id, d: mine}); if (error) { fail(error); return false; } }
+   await new Promise(ok => setTimeout(ok, 250 + Math.random() * 400));
+   srv = await ler();
+   const x = merge3(base0 || {}, mine0, srv, false).v;   // minha alteração está no servidor?
+   if (eqJ(x, srv)) {
+    applyRes(id, srv, null);
+    const atual = S.res[key]; S.res[key] = atual && !eqJ(atual, mine0) ? merge3(mine0, atual, srv, true).v : clone(srv);
+    save(); if (cur && rk(cur, curC) === key) { rebaseD(key); sec(curC); } else softRender();
+    conferirDepois(key, id);
+    return true;
+   }
+   mine = x;
+  }
+  fail(new Error('Muitas gravações ao mesmo tempo neste resultado. Toque em confirmar de novo.'));
+  return false;
+ } catch (e) { fail(e); return false; }
+ finally { EMVOO[key]--; }
+}
 async function gravarRes(key, id, mine0, base0, v0) {
- if (!resSalvarOk) {   // banco ainda sem a função: gravação antiga
-  const { error } = await db.from('res').upsert({id, d: mine0});
-  if (error) { fail(error); return false; }
-  return true;
- }
+ if (!resSalvarOk) return gravarResSemVersao(key, id, mine0, base0);
  EMVOO[key] = (EMVOO[key] || 0) + 1;
  try {
   let mine = mine0, base = base0 || {}, v = v0 === undefined ? null : v0;
@@ -7253,7 +7306,7 @@ async function gravarRes(key, id, mine0, base0, v0) {
   for (let n = 0; n < 10; n++) {
    const { data, error } = await db.rpc('res_salvar', {p_id: id, p_v: v, p_d: mine});
    if (error) {
-    if (/res_salvar|PGRST202|Could not find the function/i.test(String(error.message || error.code))) { resSalvarOk = false; EMVOO[key]--; const r = await gravarRes(key, id, mine, base, v); EMVOO[key]++; return r; }
+    if (/res_salvar|PGRST202|Could not find the function/i.test(String(error.message || error.code))) { resSalvarOk = false; EMVOO[key]--; const r = await gravarResSemVersao(key, id, mine, base); EMVOO[key]++; return r; }
     fail(error); return false;
    }
    if (data && data.ok) {
@@ -7262,6 +7315,7 @@ async function gravarRes(key, id, mine0, base0, v0) {
     S.res[key] = atual && !eqJ(atual, mine0) ? merge3(mine0, atual, mine, true).v : clone(mine);
     save();
     if (mine !== mine0) { if (cur && rk(cur, curC) === key) { rebaseD(key); sec(curC); } else softRender(); }
+    conferirDepois(key, id);
     if (conf.length) avisar('Outro aparelho gravou este mesmo resultado ao mesmo tempo, com um valor diferente no mesmo campo.\nFoi mantido o valor que chegou primeiro e as demais alterações foram somadas. Confira o resultado na tela.');
     return true;
    }
@@ -7523,6 +7577,26 @@ setInterval(async () => {
  marcarTravas();   // travas que expiraram somem
 }, 30000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden && cur) { TRAV.carregar(); [...TRAV.minhas].forEach(p => TRAV.pegar(p)); } });
+
+/* ==========================================================================
+   58. QUEM LANÇOU O RESULTADO
+   Vai junto na mesma gravação do resultado (nenhuma consulta ou gravação a
+   mais): cada jogo, bateria, resultado ou lançamento guarda o nome de quem
+   confirmou e a hora. Árbitro aparece pelo nome cadastrado; editor e
+   administrador pelo nome da conta (nunca pelo email).
+   ========================================================================== */
+function nomeLancador() {
+ if (!db || !AUTH.user) return '';
+ return (AUTH.arb && typeof nomeArb === 'function' && nomeArb(AUTH.arb)) || AUTH.nome || (podeEditar() ? 'Organização' : '');
+}
+function assinar(x) { const n = nomeLancador(); if (x && n) x.por = {n: n.slice(0, 60), em: new Date().toISOString()}; return x; }
+/* linha discreta no fim de cada resultado salvo: "✓ Finalizada · apito Carlos · 15/10 18:00" */
+function porHTML(x, rot) {
+ if (!x) return '';
+ let h = ''; if (x.por && x.por.em) try { h = new Date(x.por.em).toLocaleString('pt-BR', {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'}); } catch (e) {}
+ const quem = x.por && x.por.n ? `<span class="por-n" title="Lançado por ${esc(x.por.n)}">${icone('apito')}${esc(x.por.n)}${h ? ' · ' + h : ''}</span>` : '';
+ return `<p class="por-quem"><span class="fim-tag">✓ ${rot || 'Finalizada'}</span>${quem}</p>`;
+}
 
 /* Inicialização: primeiro descobre quem está conectado, depois abre a página */
 iniciarAuth().finally(route);
