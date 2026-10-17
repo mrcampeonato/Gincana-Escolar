@@ -292,7 +292,8 @@ select[data-csel]{position:absolute!important;width:1px!important;height:1px!imp
 .mem-sub{font-size:13px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mem-form{display:grid;gap:12px}
 .mem-form label{display:grid;gap:4px;font-size:13px;font-weight:600;color:var(--mute)}
-.mem-foto-ed{display:flex;flex-direction:column;align-items:center;gap:10px}
+img.mem-foto{display:inline-block;object-fit:cover;object-position:center;aspect-ratio:1/1;max-width:none}
+ .mem-foto-ed{display:flex;flex-direction:column;align-items:center;gap:10px}
 .mem-foto-ed .mem-foto{width:112px;height:112px;font-size:38px}
 .mem-foto-bts{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
 .mem-foot{flex-wrap:wrap}
@@ -2631,20 +2632,28 @@ async function permutar(idB) {
 
 /* ---------- Foto: arquivo ou câmera, recortada em quadrado e reduzida ---------- */
 async function reduzir(src) {
+ /* Lê a foto por um <img> (respeita a rotação gravada pela câmera do celular em todos os
+    navegadores) e desenha preenchendo o quadrado sem deformar: a imagem é escalada por
+    igual nos dois sentidos e só o excesso é cortado. Não usa recorte da origem, que no
+    Safari esticava a foto quando a largura/altura vinham trocadas. */
+ let url = null;
  try {
   let img = src, w, h;
   if (src instanceof HTMLVideoElement) { w = src.videoWidth; h = src.videoHeight; }
   else {
-   img = await (window.createImageBitmap ? createImageBitmap(src).catch(() => null) : null);
-   if (!img) img = await new Promise((ok, erro) => { const i = new Image(); i.onload = () => ok(i); i.onerror = erro; i.src = URL.createObjectURL(src); });
-   w = img.width; h = img.height;
+   url = URL.createObjectURL(src);
+   img = await new Promise((ok, erro) => { const i = new Image(); i.decoding = 'async'; i.onload = () => ok(i); i.onerror = erro; i.src = url; });
+   w = img.naturalWidth; h = img.naturalHeight;
   }
   if (!w || !h) return null;
-  const lado = Math.min(w, h), TAM = 400, c = document.createElement('canvas');
-  c.width = c.height = TAM;
-  c.getContext('2d').drawImage(img, (w - lado) / 2, (h - lado) / 2, lado, lado, 0, 0, TAM, TAM);
-  return await new Promise(r => c.toBlob(r, 'image/jpeg', .82));
+  const TAM = 400, esc = TAM / Math.min(w, h), dw = Math.round(w * esc), dh = Math.round(h * esc);
+  const c = document.createElement('canvas'); c.width = c.height = TAM;
+  const g = c.getContext('2d'); g.imageSmoothingQuality = 'high';
+  g.fillStyle = '#fff'; g.fillRect(0, 0, TAM, TAM);
+  g.drawImage(img, Math.round((TAM - dw) / 2), Math.round((TAM - dh) / 2), dw, dh);
+  return await new Promise(r => c.toBlob(r, 'image/jpeg', .85));
  } catch (e) { console.error(e); return null; }
+ finally { if (url) setTimeout(() => URL.revokeObjectURL(url), 1000); }
 }
 function definirFoto(blob) {
  memEd.blob = blob;
