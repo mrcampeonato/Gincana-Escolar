@@ -295,6 +295,7 @@ select[data-csel]{position:absolute!important;width:1px!important;height:1px!imp
 img.mem-foto{display:inline-block;object-fit:cover;object-position:center;aspect-ratio:1/1;max-width:none}
 .mem-foto-ed{display:flex;flex-direction:column;align-items:center;gap:10px}
 .mem-foto-ed .mem-foto{width:112px;height:112px;font-size:38px}
+@media (max-width:620px){.mem-foto-ed .mem-foto{width:min(58vw,255px);height:min(58vw,255px);font-size:min(18vw,78px);border-radius:24px}}
 .mem-foto-bts{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
 .mem-foot{flex-wrap:wrap}
 .mem-esp{flex:1}
@@ -849,6 +850,11 @@ input[type=checkbox]:focus{box-shadow:none}
 .reg-body{flex:1 1 auto;min-height:0;overscroll-behavior:contain}
 .reg-head,.reg-foot{flex:none}
 .csel-pop{max-height:min(60vh,360px);overscroll-behavior:contain}
+/* janela aberta: a página de fundo fica parada; só a janela rola */
+html.dlg-aberto,html.dlg-aberto body{overflow:hidden!important}
+html.dlg-aberto body{position:fixed;left:0;right:0;width:100%}
+.reg-dlg{overscroll-behavior:contain}
+.reg-body{overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
 .btn-del .ico{width:17px;height:17px}
 
 .cfg-card{text-align:center;padding:16px 14px}
@@ -7671,6 +7677,27 @@ function porHTML(x, rot) {
  if (ios && safari && !instalado() && location.protocol === 'https:') {
   setTimeout(() => aviso('<strong>Instale o app das Olimpíadas</strong>Toque em <svg class="app-ios-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Compartilhar"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg> e depois em <b>Adicionar à Tela de Início</b>.', false), 3000);
  }
+})();
+
+/* ==========================================================================
+   60. ROLAGEM SÓ NA JANELA ABERTA
+   Com qualquer janela (dialog) aberta, a página de fundo fica travada no
+   lugar; ao fechar a última janela, volta exatamente para onde estava.
+   Vale para todas as janelas do site, inclusive as que abrem por cima de
+   outra (ex.: confirmação sobre o cadastro de integrante).
+   ========================================================================== */
+(function () {
+ let travado = false, y = 0;
+ function sincronizar() {
+  const aberto = !!document.querySelector('dialog[open]');
+  if (aberto === travado) return;
+  travado = aberto;
+  const h = document.documentElement, b = document.body;
+  if (aberto) { y = window.scrollY || h.scrollTop || 0; b.style.top = -y + 'px'; h.classList.add('dlg-aberto'); }
+  else { h.classList.remove('dlg-aberto'); b.style.top = ''; window.scrollTo({top: y, left: 0, behavior: 'instant'}); }
+ }
+ new MutationObserver(sincronizar).observe(document.body, {subtree: true, childList: true, attributes: true, attributeFilter: ['open']});
+ document.addEventListener('close', () => setTimeout(sincronizar, 0), true);
 })();
 
 /* Inicialização: primeiro descobre quem está conectado, depois abre a página */
