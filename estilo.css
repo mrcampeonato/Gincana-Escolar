@@ -1002,3 +1002,10 @@ html.dlg-aberto body{position:fixed;left:0;right:0;width:100%}
 .fm-row{min-width:0;overflow:hidden}.fm-info .csel,.fm-info select{width:100%;max-width:100%;min-width:0}
 .fm-info .csel .csel-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fm-abas strong{margin-left:5px}
+.fm-subst{flex-wrap:wrap}.fm-subst .btn{padding:6px 12px;min-height:0;font-size:13px}
+.fm-esc2{align-items:center}.fm-opcs{display:flex;gap:8px;flex:none}
+.fm-op{display:grid;justify-items:center;gap:3px;padding:4px;border:2px solid transparent;border-radius:12px;background:none;cursor:pointer;font:600 12px Figtree,sans-serif;color:var(--mute)}
+.fm-op img{width:54px;height:54px;border-radius:10px;object-fit:cover;background:var(--soft)}
+.fm-op[aria-pressed="true"]{border-color:#1f9d55;color:#1f9d55;background:rgba(31,157,85,.08)}
+.fm-op[aria-pressed="true"] span::before{content:"✓ "}
+.fm-tem{opacity:1}
