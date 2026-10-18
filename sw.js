@@ -4,8 +4,8 @@
      a cópia guardada só é usada sem internet.
    - Não mexe em nada do Supabase (dados, login, tempo real): só arquivos
      do próprio site passam por aqui. */
-const VERSAO = 'olimp-app-v1';
-const BASE = ['./', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png', './favicon-64.png'];
+const VERSAO = 'olimp-app-v2';
+const BASE = ['./', './estilo.css', './app.js', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png', './favicon-64.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSAO).then(c => Promise.all(BASE.map(u => c.add(u).catch(() => {})))).then(() => self.skipWaiting()));
@@ -26,6 +26,15 @@ self.addEventListener('fetch', e => {
       fetch(req, {cache: 'no-cache'})
         .then(res => { if (res.ok) { const cp = res.clone(); caches.open(VERSAO).then(c => c.put('./', cp)); } return res; })
         .catch(() => caches.match('./').then(r => r || caches.match(req)))
+    );
+    return;
+  }
+  /* código e visual (app.js, estilo.css): sempre a versão nova; sem internet, a guardada */
+  if (/\.(js|css)$/.test(url.pathname)) {
+    e.respondWith(
+      fetch(req, {cache: 'no-cache'})
+        .then(res => { if (res.ok) { const cp = res.clone(); caches.open(VERSAO).then(c => c.put(req, cp)); } return res; })
+        .catch(() => caches.match(req, {ignoreSearch: true}))
     );
     return;
   }
