@@ -1611,7 +1611,7 @@ Views.membros = () => `<div class="page-head"><a class="back" href="#/configurac
   <select id="memfteam" aria-label="Filtrar por equipe"><option value="">Todas as equipes</option>${T.map(i => `<option value="${i}" ${memF.team === String(i) ? 'selected' : ''}>${tn(i)}</option>`).join('')}</select>
   <select id="memfcat" aria-label="Filtrar por categoria"><option value="">Todas as categorias</option>${CATS.map(c => `<option value="${c.id}" ${memF.cat === String(c.id) ? 'selected' : ''}>${esc(c.n)}</option>`).join('')}</select>
  </div>
- <div class="row">${ordemMemHTML()}<button class="btn" data-memnovo>Novo integrante</button><button class="btn alt" data-memmassa>Inserir em massa</button><a class="btn alt" href="#/configuracoes/equipes" style="text-decoration:none;display:inline-flex;align-items:center">Montar equipes</a><a class="btn alt" href="#/configuracoes/inscricoes" style="text-decoration:none;display:inline-flex;align-items:center">Inscrições nas modalidades</a></div>
+ <div class="row">${ordemMemHTML()}<button class="btn" data-memnovo>Novo integrante</button><button class="btn alt" data-memmassa>Inserir em massa</button><button class="btn alt" data-fotomassa>Fotos em massa</button><a class="btn alt" href="#/configuracoes/equipes" style="text-decoration:none;display:inline-flex;align-items:center">Montar equipes</a><a class="btn alt" href="#/configuracoes/inscricoes" style="text-decoration:none;display:inline-flex;align-items:center">Inscrições nas modalidades</a></div>
  <div id="memlista">${memListaHTML()}</div></section>`;
 
 /* ---------- Janela de cadastro / edição ---------- */
@@ -1707,7 +1707,8 @@ async function reduzir(src) {
   const c = document.createElement('canvas'); c.width = c.height = TAM;
   const g = c.getContext('2d'); g.imageSmoothingQuality = 'high';
   g.fillStyle = '#fff'; g.fillRect(0, 0, TAM, TAM);
-  g.drawImage(img, Math.round((TAM - dw) / 2), Math.round((TAM - dh) / 2), dw, dh);
+  /* foto em pé (ex.: 3x4): o corte guarda um pouco mais do alto, onde fica o rosto */
+  g.drawImage(img, Math.round((TAM - dw) / 2), Math.round((TAM - dh) * (h > w ? .38 : .5)), dw, dh);
   return await new Promise(r => c.toBlob(r, 'image/jpeg', .85));
  } catch (e) { console.error(e); return null; }
  finally { if (url) setTimeout(() => URL.revokeObjectURL(url), 1000); }
@@ -7193,6 +7194,187 @@ DB.setupRealtime = function () {
   }).subscribe();
  } catch (e) { console.error(e); }
 };
+
+/* ---- 14-fotos.js ---- */
+/* ==========================================================================
+   63. FOTOS EM MASSA (Configurações → Integrantes → "Fotos em massa")
+   - Escolhe várias fotos (ou uma pasta); o nome do arquivo diz de quem é a
+     foto ("Ana Beatriz Souza.jpg"). Comparação sem acentos/maiúsculas, com
+     conserto dos nomes que vieram "quebrados" do Windows (Gon├ºalves → Gonçalves).
+   - Conferência antes de enviar: encontrados, nomes parecidos/repetidos
+     (escolha na lista) e sem aluno. Quem já tem foto é pulado por padrão.
+   - Envio: cada foto passa pelo mesmo tratamento da foto individual e grava
+     SÓ a coluna foto do aluno. Sem "substituir", a gravação só acontece se o
+     aluno continuar sem foto no servidor (nada que já existe é sobrescrito).
+   - Três envios por vez; se cair a internet, o que foi enviado fica salvo.
+   ========================================================================== */
+const CP850 = "\u00c7\u00fc\u00e9\u00e2\u00e4\u00e0\u00e5\u00e7\u00ea\u00eb\u00e8\u00ef\u00ee\u00ec\u00c4\u00c5\u00c9\u00e6\u00c6\u00f4\u00f6\u00f2\u00fb\u00f9\u00ff\u00d6\u00dc\u00f8\u00a3\u00d8\u00d7\u0192\u00e1\u00ed\u00f3\u00fa\u00f1\u00d1\u00aa\u00ba\u00bf\u00ae\u00ac\u00bd\u00bc\u00a1\u00ab\u00bb\u2591\u2592\u2593\u2502\u2524\u00c1\u00c2\u00c0\u00a9\u2563\u2551\u2557\u255d\u00a2\u00a5\u2510\u2514\u2534\u252c\u251c\u2500\u253c\u00e3\u00c3\u255a\u2554\u2569\u2566\u2560\u2550\u256c\u00a4\u00f0\u00d0\u00ca\u00cb\u00c8\u0131\u00cd\u00ce\u00cf\u2518\u250c\u2588\u2584\u00a6\u00cc\u2580\u00d3\u00df\u00d4\u00d2\u00f5\u00d5\u00b5\u00fe\u00de\u00da\u00db\u00d9\u00fd\u00dd\u00af\u00b4\u00ad\u00b1\u2017\u00be\u00b6\u00a7\u00f7\u00b8\u00b0\u00a8\u00b7\u00b9\u00b3\u00b2\u25a0\u00a0";
+/* nome gravado em UTF-8 e lido como página de código 850 (zip do Windows): desfaz */
+function consertaNome(s) {
+ if (!/[─-■ÃÂ]/.test(s)) return s;
+ try {
+  const b = [];
+  for (const ch of s) { const i = CP850.indexOf(ch), c = ch.codePointAt(0); if (i >= 0) b.push(128 + i); else if (c < 128) b.push(c); else return s; }
+  return new TextDecoder('utf-8', {fatal: true}).decode(new Uint8Array(b));
+ } catch (e) { return s; }
+}
+const chaveNome = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+function distancia(a, b, max) {
+ if (Math.abs(a.length - b.length) > max) return max + 1;
+ let ant = Array.from({length: b.length + 1}, (_, j) => j);
+ for (let i = 1; i <= a.length; i++) {
+  const lin = [i]; let menor = i;
+  for (let j = 1; j <= b.length; j++) { const v = Math.min(ant[j] + 1, lin[j - 1] + 1, ant[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); lin.push(v); if (v < menor) menor = v; }
+  if (menor > max) return max + 1;
+  ant = lin;
+ }
+ return ant[b.length];
+}
+let FM = null;   // {itens, substituir, filtro, lim, enviando, fim}
+document.body.insertAdjacentHTML('beforeend', '<dialog id="fotodlg" class="reg-dlg" aria-label="Fotos em massa"></dialog><input type="file" id="fmarq" accept="image/*" multiple hidden><input type="file" id="fmpasta" accept="image/*" multiple webkitdirectory hidden>');
+function fmAbrir() {
+ FM = {itens: [], substituir: false, filtro: 'conf', lim: 150, enviando: false, fim: null};
+ fmDesenha(); if (!$('fotodlg').open) $('fotodlg').showModal();
+}
+function fmFechar() {
+ if (FM && FM.enviando) return;
+ (FM && FM.itens || []).forEach(x => URL.revokeObjectURL(x.url));
+ FM = null; if ($('fotodlg').open) $('fotodlg').close();
+}
+/* casa cada arquivo com um aluno */
+function fmCasar(files) {
+ const alunos = membros(), porChave = new Map();
+ alunos.forEach(m => { const k = chaveNome(m.nome); if (!porChave.has(k)) porChave.set(k, []); porChave.get(k).push(m); });
+ const itens = [...files].filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|webp|heic|heif|gif|bmp)$/i.test(f.name)).map(f => {
+  const nome = consertaNome(f.name.replace(/\.[^.]+$/, '')).trim(), k = chaveNome(nome);
+  const it = {f, nome, url: URL.createObjectURL(f), alvo: '', st: 'sem', sug: [], nota: ''};
+  const ex = porChave.get(k) || [];
+  if (ex.length === 1) { it.alvo = ex[0].id; it.st = 'ok'; }
+  else if (ex.length > 1) { it.st = 'duv'; it.sug = ex.map(m => m.id); it.nota = 'nome repetido no cadastro'; }
+  else {
+   const max = Math.max(2, Math.floor(k.length * .12)), cands = [];
+   const t1 = k.split(' ')[0];
+   alunos.forEach(m => { const km = chaveNome(m.nome); if (Math.abs(km.length - k.length) > Math.max(max, Math.floor(k.length * .35))) return; if (km.split(' ')[0] !== t1 && distancia(km.split(' ')[0], t1, 2) > 2) return; const d = distancia(k, km, Math.floor(k.length * .35)); if (d <= Math.floor(k.length * .35)) cands.push([d, m]); });
+   cands.sort((a, b) => a[0] - b[0]);
+   it.sug = cands.slice(0, 5).map(c => c[1].id);
+   if (cands.length && cands[0][0] <= max && !(cands[1] && cands[1][0] === cands[0][0])) { it.alvo = cands[0][1].id; it.st = 'duv'; it.nota = 'nome parecido: confira'; }
+   else if (cands.length) it.nota = 'escolha o aluno';
+  }
+  return it;
+ });
+ /* o mesmo aluno em dois arquivos: os dois vão para conferência */
+ const uso = new Map(); itens.forEach(x => { if (x.alvo) uso.set(x.alvo, (uso.get(x.alvo) || 0) + 1); });
+ itens.forEach(x => { if (x.alvo && uso.get(x.alvo) > 1) { x.st = 'duv'; x.nota = 'mesmo aluno em mais de um arquivo'; } });
+ return itens.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+}
+const fmAluno = id => todosMem().find(m => m.id === id);
+const fmTemFoto = x => { const m = x.alvo && fmAluno(x.alvo); return !!(m && m.foto); };
+const fmVai = x => !!x.alvo && (FM.substituir || !fmTemFoto(x));
+function fmGrupo(x) { if (!x.alvo) return 'sem'; if (fmTemFoto(x) && !FM.substituir) return 'tem'; return x.st === 'duv' ? 'duv' : 'ok'; }
+function fmDesenha() {
+ const dlg = $('fotodlg'); if (!FM) return;
+ const cab = '<div class="reg-head"><h2>Fotos em massa</h2><button class="btn alt" data-fmfechar aria-label="Fechar" ' + (FM.enviando ? 'disabled' : '') + '>✕</button></div>';
+ if (FM.enviando || FM.fim) {
+  const p = FM.prog || {feitos: 0, total: 0, ok: 0, pulados: 0, falhas: []};
+  const pct = p.total ? Math.round(p.feitos / p.total * 100) : 0;
+  dlg.innerHTML = '<div class="reg-box">' + cab + '<div class="reg-body" style="white-space:normal">' +
+   '<p><strong>' + (FM.fim ? 'Envio concluído' : 'Enviando fotos…') + '</strong> ' + p.feitos + ' de ' + p.total + '</p><div class="fm-barra"><i style="width:' + pct + '%"></i></div>' +
+   '<p class="muted">✓ ' + p.ok + ' fotos gravadas' + (p.pulados ? ' · ' + p.pulados + (p.pulados == 1 ? ' pulada' : ' puladas') + ' (o aluno ganhou foto por outro aparelho enquanto isso)' : '') + (p.falhas.length ? ' · ' + p.falhas.length + ' com erro' : '') + '</p>' +
+   (p.falhas.length ? '<div class="fm-falhas"><strong>Não enviadas (tente de novo):</strong>' + p.falhas.map(f => '<div>' + esc(f) + '</div>').join('') + '</div>' : '') +
+   (FM.enviando ? '<p class="muted" style="font-size:13px">Deixe esta janela aberta até terminar. Se a internet cair, o que já foi enviado fica salvo.</p>' : '') +
+   '</div><div class="reg-foot">' + (FM.fim ? '<button class="btn" data-fmfechar>Fechar</button>' : '') + '</div></div>';
+  return;
+ }
+ if (!FM.itens.length) {
+  dlg.innerHTML = '<div class="reg-box">' + cab + '<div class="reg-body" style="white-space:normal">' +
+   '<p>Escolha as fotos dos alunos. O <strong>nome do arquivo</strong> deve ser o nome do aluno, como no cadastro (ex.: <em>Ana Beatriz Souza.jpg</em>). Acentos e maiúsculas não importam.</p>' +
+   '<p class="muted">Antes de enviar você confere tudo. Quem já tem foto é pulado, a não ser que você marque para substituir.</p>' +
+   '<div class="row fm-esc"><button class="btn" data-fmarq>Escolher fotos</button><button class="btn alt" data-fmpasta>Escolher uma pasta</button></div>' +
+   '</div><div class="reg-foot"><button class="btn alt" data-fmfechar>Fechar</button></div></div>';
+  return;
+ }
+ const g = {ok: [], duv: [], sem: [], tem: []}; FM.itens.forEach(x => g[fmGrupo(x)].push(x));
+ const vao = FM.itens.filter(fmVai).length;
+ if (FM.filtro === 'conf' && !g.duv.length && !g.sem.length) FM.filtro = 'ok';
+ const abas = [['conf', 'Conferir', g.duv.length + g.sem.length], ['ok', 'Prontas', g.ok.length], ['tem', 'Já têm foto', g.tem.length], ['todas', 'Todas', FM.itens.length]];
+ const lista = FM.filtro === 'conf' ? g.duv.concat(g.sem) : FM.filtro === 'todas' ? FM.itens : g[FM.filtro];
+ const opc = (x) => {
+  const ids = [...new Set([x.alvo, ...x.sug].filter(Boolean))];
+  return '<select data-fmalvo="' + FM.itens.indexOf(x) + '" aria-label="Aluno da foto ' + esc(x.nome) + '"><option value="">(não enviar)</option>' + ids.map(id => { const m = fmAluno(id); return m ? '<option value="' + esc(id) + '" ' + (id === x.alvo ? 'selected' : '') + '>' + esc(m.nome) + ' · ' + esc(memSub(m)) + '</option>' : ''; }).join('') + '</select>';
+ };
+ const linha = x => { const m = x.alvo && fmAluno(x.alvo), gr = fmGrupo(x);
+  return '<div class="fm-row fm-' + gr + '"><img src="' + x.url + '" alt="" loading="lazy"><div class="fm-info"><small>' + esc(x.nome) + '</small>' +
+   (gr === 'ok' || gr === 'tem' ? '<strong>' + esc(m ? m.nome : '') + '</strong><span class="fm-sub">' + esc(m ? memSub(m) : '') + (gr === 'tem' ? ' · já tem foto' : '') + '</span>' : opc(x) + '<span class="fm-nota">' + esc(x.nota || (x.sug.length ? 'escolha o aluno' : 'nenhum aluno com esse nome')) + '</span>') +
+   '</div>' + (m && m.foto ? '<img class="fm-atual" src="' + esc(m.foto) + '" alt="Foto atual" title="Foto atual" loading="lazy">' : '') + '</div>'; };
+ dlg.innerHTML = '<div class="reg-box">' + cab + '<div class="reg-body" style="white-space:normal">' +
+  '<div class="fm-resumo"><span><strong>' + FM.itens.length + '</strong> fotos</span><span class="ok">✓ ' + g.ok.length + ' prontas</span><span class="duv">⚠ ' + g.duv.length + ' conferir</span><span class="sem">✗ ' + g.sem.length + ' sem aluno</span><span>' + g.tem.length + ' já têm foto</span></div>' +
+  '<label class="fm-subst"><input type="checkbox" data-fmsubst ' + (FM.substituir ? 'checked' : '') + '> Substituir as fotos que os alunos já têm</label>' +
+  '<div class="filters fm-abas" role="group">' + abas.map(([k, r, n]) => '<button class="chipbtn" data-fmfiltro="' + k + '" aria-pressed="' + (FM.filtro === k) + '">' + r + ' <strong>' + n + '</strong></button>').join('') + '</div>' +
+  '<div class="fm-lista">' + (lista.length ? lista.slice(0, FM.lim).map(linha).join('') : '<p class="muted">Nada aqui.</p>') + '</div>' +
+  (lista.length > FM.lim ? '<div class="row" style="justify-content:center"><button class="btn alt" data-fmmais>Mostrar mais (' + (lista.length - FM.lim) + ')</button></div>' : '') +
+  '</div><div class="reg-foot"><button class="btn alt" data-fmtrocar>Escolher outras</button><button class="btn" data-fmenviar ' + (vao ? '' : 'disabled') + '>Enviar ' + vao + ' ' + (vao == 1 ? 'foto' : 'fotos') + '</button></div></div>';
+}
+/* uma foto: trata, envia ao Storage e grava só a coluna foto */
+async function fmEnviaUma(x) {
+ const m = fmAluno(x.alvo); if (!m) throw new Error('aluno não encontrado');
+ const blob = await reduzir(x.f); if (!blob) throw new Error('imagem não pôde ser lida');
+ if (!db) { const url = await MEM.enviarFoto(m.id, blob); aplicaMemLocal([{...m, foto: url}]); return 'ok'; }
+ const nome = m.id + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6) + '.jpg';
+ const up = await db.storage.from('fotos').upload(nome, blob, {contentType: 'image/jpeg', cacheControl: '31536000'});
+ if (up.error) throw up.error;
+ const url = db.storage.from('fotos').getPublicUrl(nome).data.publicUrl, antiga = m.foto;
+ let q = db.from('membros').update({foto: url, updated_at: new Date().toISOString()}).eq('id', m.id);
+ if (!FM.substituir) q = q.is('foto', null);   // nunca sobrescreve uma foto que já esteja no servidor
+ const { data, error } = await q.select('id,foto');
+ if (error) { db.storage.from('fotos').remove([nome]).catch(() => {}); throw error; }
+ if (!data || !data.length) { db.storage.from('fotos').remove([nome]).catch(() => {}); return 'pulado'; }
+ aplicaMemLocal([{...m, foto: url}]);
+ if (FM.substituir && antiga && antiga !== url) MEM.apagarFoto(antiga);
+ return 'ok';
+}
+async function fmEnviar() {
+ const fila = FM.itens.filter(fmVai); if (!fila.length) return;
+ FM.enviando = true; FM.prog = {feitos: 0, total: fila.length, ok: 0, pulados: 0, falhas: []}; fmDesenha();
+ let i = 0, ultimo = 0;
+ const trabalhador = async () => {
+  while (i < fila.length) {
+   const x = fila[i++];
+   try { const r = await fmEnviaUma(x); if (r === 'ok') FM.prog.ok++; else FM.prog.pulados++; }
+   catch (e) { FM.prog.falhas.push(x.nome + ' — ' + String(e && (e.message || e.error || e.code) || e).slice(0, 80)); }
+   FM.prog.feitos++;
+   if (Date.now() - ultimo > 250 || FM.prog.feitos === FM.prog.total) { ultimo = Date.now(); fmDesenha(); }
+  }
+ };
+ await Promise.all([trabalhador(), trabalhador(), trabalhador()]);
+ FM.enviando = false; FM.fim = true; save(); fmDesenha();
+ if (typeof atualizaListaMem === 'function') atualizaListaMem();
+}
+document.addEventListener('click', e => {
+ const t = e.target.closest('button'); if (!t) return;
+ const d = t.dataset;
+ if (d.fotomassa !== undefined) fmAbrir();
+ if (!FM || !$('fotodlg').contains(t)) return;
+ if (d.fmfechar !== undefined) fmFechar();
+ else if (d.fmarq !== undefined || d.fmtrocar !== undefined) $('fmarq').click();
+ else if (d.fmpasta !== undefined) $('fmpasta').click();
+ else if (d.fmfiltro) { FM.filtro = d.fmfiltro; FM.lim = 150; fmDesenha(); }
+ else if (d.fmmais !== undefined) { FM.lim += 150; fmDesenha(); }
+ else if (d.fmenviar !== undefined) fmEnviar();
+});
+document.addEventListener('change', e => {
+ const el = e.target;
+ if ((el.id === 'fmarq' || el.id === 'fmpasta') && FM) {
+  const fs = el.files; if (!fs || !fs.length) return;
+  FM.itens.forEach(x => URL.revokeObjectURL(x.url));
+  FM.itens = fmCasar(fs); FM.filtro = 'conf'; FM.lim = 150; el.value = '';
+  if (!FM.itens.length) avisar('Nenhuma imagem encontrada entre os arquivos escolhidos.');
+  fmDesenha(); return;
+ }
+ if (!FM || !el.dataset) return;
+ if (el.dataset.fmsubst !== undefined) { FM.substituir = el.checked; fmDesenha(); }
+ else if (el.dataset.fmalvo !== undefined) { const x = FM.itens[+el.dataset.fmalvo]; if (x) { x.alvo = el.value; x.st = 'ok'; x.nota = ''; } fmDesenha(); }
+});
+$('fotodlg').addEventListener('cancel', e => { e.preventDefault(); fmFechar(); });
 
 /* ---- 99-inicio.js ---- */
 /* Inicialização: primeiro descobre quem está conectado, depois abre a página */

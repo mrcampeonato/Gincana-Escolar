@@ -981,3 +981,24 @@ html.dlg-aberto body{position:fixed;left:0;right:0;width:100%}
 .eq-campo{display:inline-flex;align-items:center;gap:6px}.eq-campo select,.eq-campo input{min-width:0;width:auto;max-width:150px;padding:7px 10px}
 .eq-campo input{width:84px}
 .hi-e{font-weight:400;color:var(--mute);margin:0 4px}
+
+/* Fotos em massa */
+.fm-esc{justify-content:center;gap:8px;margin-top:12px}
+.fm-resumo{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:center;font-size:14px;margin-bottom:8px}
+.fm-resumo .ok{color:#1f9d55;font-weight:600}.fm-resumo .duv{color:#b7791f;font-weight:600}.fm-resumo .sem{color:#c8283a;font-weight:600}
+.fm-subst{display:flex;align-items:center;gap:8px;justify-content:center;font-size:14px;margin:4px 0 8px}.fm-subst input{width:18px;height:18px}
+.fm-abas{justify-content:center;margin-bottom:8px}
+.fm-lista{display:grid;gap:6px}
+.fm-row{display:flex;align-items:center;gap:10px;padding:6px 8px;border:1px solid var(--line);border-radius:12px;text-align:left}
+.fm-row>img{width:48px;height:64px;object-fit:cover;border-radius:8px;flex:none;background:var(--soft)}
+.fm-row .fm-atual{width:36px;height:36px;border-radius:50%;opacity:.75}
+.fm-info{flex:1;min-width:0;display:grid;gap:2px}.fm-info small{color:var(--mute);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fm-info strong{font-size:14px}.fm-sub,.fm-nota{font-size:12px;color:var(--mute)}
+.fm-info select{width:100%;max-width:100%;padding:6px 8px}
+.fm-duv{border-color:#f0c36d;background:#fff9ec}.fm-sem{border-color:#efb3bb;background:#fff5f6}.fm-tem{opacity:.7}
+.fm-duv .fm-nota{color:#b7791f}.fm-sem .fm-nota{color:#c8283a}
+.fm-barra{height:12px;border-radius:9px;background:var(--soft);overflow:hidden;margin:6px 0 10px}.fm-barra i{display:block;height:100%;background:#1f9d55;transition:width .3s}
+.fm-falhas{font-size:13px;color:#c8283a;display:grid;gap:2px;margin-top:6px}
+.fm-row{min-width:0;overflow:hidden}.fm-info .csel,.fm-info select{width:100%;max-width:100%;min-width:0}
+.fm-info .csel .csel-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fm-abas strong{margin-left:5px}
