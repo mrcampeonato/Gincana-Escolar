@@ -3058,6 +3058,7 @@ function icone(n) {
   bandeira: '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/>',
   camadas: '<path d="M12 2l10 5-10 5L2 7z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>',
   escudo: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  escudos: '<path d="M8.5 21.5s6.5-3.2 6.5-8.6V7L8.5 4.6 2 7v5.9c0 5.4 6.5 8.6 6.5 8.6z"/><path d="M12 4 16 2.5 22 4.8v5.7c0 4.5-4 7.2-5.8 8"/>',
   medalha: '<circle cx="12" cy="15" r="6"/><path d="M8.2 9.8L5 2h4l3 6 3-6h4l-3.2 7.8"/><path d="M12 13v4"/>',
   casa: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/>',
   pessoa: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>',
@@ -6598,7 +6599,7 @@ document.addEventListener('click', e => { const a = e.target.closest('a[href="#/
 
 /* Atalhos das Configurações separados por assunto */
 const GRUPOS_CFG = [
- ['Competição', ['Modalidades', 'Categorias', 'Equipes', 'Pontos por posição']],
+  ['Competição', ['Modalidades', 'Categorias', 'Equipes', 'Montar equipes', 'Pontos por posição']],
  ['Agenda', ['Período dos jogos', 'Cronograma', 'Locais', 'Árbitros']],
  ['Pessoas', ['Integrantes', 'Inscrições', 'Chamada', 'Contas']],
  ['Site', ['Visibilidade', 'Dados']]
@@ -7740,7 +7741,7 @@ function porHTML(x, rot) {
 ROUTES['#/configuracoes/equipes'] = 'equipes';
 COLS.equipes = 'teams,colors,cats';
 PAG_RESTRITAS.equipes = 'editor';
-TILES_CFG.splice(1, 0, {titulo: 'Montar equipes', sub: 'Pré-jogo: distribuir alunos nas equipes', ico: 'grupo', abre: 'href="#/configuracoes/equipes"'});
+TILES_CFG.splice(1, 0, {titulo: 'Montar equipes', sub: 'Pré-jogo: distribuir alunos nas equipes', ico: 'escudos', abre: 'href="#/configuracoes/equipes"'});
 let eqF = {q: '', cat: '', turma: '', sit: 'sem'}, eqLim = 200, eqGravando = false;
 const eqSel = new Set();
 const eqTeam = m => m.team === '' || m.team == null ? '' : +m.team;
