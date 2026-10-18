@@ -692,6 +692,31 @@ a.mv-mod:hover{border-color:var(--ink)}
 .app-inst .btn{padding:8px 14px;min-height:0;white-space:nowrap}
 .app-inst .app-x{background:none;border:0;color:var(--mute);font-size:20px;line-height:1;padding:6px;cursor:pointer}
 .app-ios-share{display:inline-block;vertical-align:-3px;width:15px;height:15px}
+.eq-chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:6px 0 10px}
+.eq-chip[style]{border-color:var(--c)}.eq-chip[style][aria-pressed="true"]{background:var(--c);color:#0f1c36}
+.eq-chip strong{margin-left:4px}
+.eq-tab{font-size:13px;margin:0 auto 12px}.eq-tab th,.eq-tab td{text-align:center;padding:4px 8px}.eq-tab td:first-child,.eq-tab th:first-child{text-align:left}
+.eq-pt{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--c);margin-right:4px}
+.eq-falta{color:#b7791f;font-weight:700}
+.eq-filtros{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr);gap:8px;margin:8px 0 10px}
+@media (max-width:620px){.eq-filtros{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.eq-filtros input{grid-column:1/-1}}
+.eq-lista{display:grid;gap:6px}
+.eq-todos{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;padding:4px 2px}
+.eq-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;cursor:pointer;text-align:left}
+.eq-row.sel{border-color:var(--ink);background:var(--soft)}
+.eq-row input{width:20px;height:20px;flex:none;accent-color:#0f1c36}
+.eq-row .mem-foto{width:40px;height:40px;font-size:15px}
+.eq-row .mem-info{flex:1;min-width:0}
+.eq-tag{flex:none;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--c);color:#0f1c36;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eq-tag.sem{background:transparent;color:var(--mute);border:1px dashed var(--line)}
+.eq-barra{position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:50;max-width:740px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 34px rgba(15,28,54,.22);padding:10px 12px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.eq-n{font-size:14px;white-space:nowrap}.eq-limpa{background:none;border:0;color:var(--mute);text-decoration:underline;cursor:pointer;font-size:13px;padding:2px 4px}
+.eq-acoes{display:flex;flex-wrap:wrap;gap:6px;flex:1;justify-content:flex-end}
+.eq-rot{align-self:center;font-size:12px;color:var(--mute);margin-right:2px}
+.eq-para[style]{background:var(--c);color:#0f1c36;border-color:var(--c)}
+body.eq-com-barra .wrap{padding-bottom:150px}
+.eq-nota{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translate(-50%,-20px);opacity:0;z-index:70;background:#0f1c36;color:#fff;font-size:14px;font-weight:600;padding:9px 16px;border-radius:999px;transition:.25s;pointer-events:none;max-width:calc(100vw - 32px)}
+.eq-nota.on{opacity:1;transform:translate(-50%,0)}
 .ct-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#c3cad6;margin-right:7px;vertical-align:1px;flex:0 0 auto}
 .ct-dot.on{background:#1fbf5b;box-shadow:0 0 0 3px rgba(31,191,91,.22)}
 .ct-st{display:block;font-size:12px;color:var(--mute,#64748b)}.ct-ok{color:#1f9d55;font-weight:600}.ct-aguarda{color:#b7791f;font-weight:600}
@@ -1486,7 +1511,7 @@ function pvHTML(t, d, final) {
 function sec(ci) { const el = $('sec'+ci); if (el) el.innerHTML = secHTML(ci); }
 
 function renderNav() {
- const ativa = pg == 'modedit' || pg == 'membros' || pg == 'insc' || pg == 'cronoed' || pg == 'cronoauto' || pg == 'dados' ? 'cfg' : pg == 'insta' || pg == 'torc' ? 'mod' : pg;
+ const ativa = pg == 'modedit' || pg == 'membros' || pg == 'equipes' || pg == 'insc' || pg == 'cronoed' || pg == 'cronoauto' || pg == 'dados' ? 'cfg' : pg == 'insta' || pg == 'torc' ? 'mod' : pg;
  $('tabs').innerHTML = TABS.map(([k, n, h]) => `<a href="${h}" ${ativa==k?'aria-current="page"':''} ${k=='cfg'?'aria-label="Configurações" title="Configurações"':''}>${k=='cfg' ? icone('eng') : k=='placar' ? 'Placar<span class="nav-x">geral</span>' : n}</a>`).join('');
 }
 
@@ -1550,7 +1575,7 @@ async function route() {
  pendente = false;
 
  /* Páginas com edição só abrem depois de buscar a versão mais recente do servidor */
- const editavel = !!cur || pg == 'insta' || pg == 'torc' || pg == 'cfg' || pg == 'modedit' || pg == 'membros' || pg == 'insc' || pg == 'cronoed' || pg == 'cronoauto' || pg == 'penal';
+ const editavel = !!cur || pg == 'insta' || pg == 'torc' || pg == 'cfg' || pg == 'modedit' || pg == 'membros' || pg == 'equipes' || pg == 'insc' || pg == 'cronoed' || pg == 'cronoauto' || pg == 'penal';
  carregando = editavel && !!db;
  if (carregando) loadingView(); else render();
  scrollTo(0, 0);
@@ -1566,7 +1591,7 @@ async function route() {
   else if (pg == 'placar') tarefas.push(DB.fetchAllRes(), PEN.listar(false));
   else if (pg == 'penal') tarefas.push(PEN.listar(true), MEM.listar());
   else if (pg == 'mod') tarefas.push(DB.fetchAllRes(), AG.listar());
-  else if (pg == 'membros' || pg == 'memver') tarefas.push(MEM.listar());
+  else if (pg == 'membros' || pg == 'memver' || pg == 'equipes') tarefas.push(MEM.listar());
   else if (pg == 'insc') tarefas.push(MEM.listar(), AG.listar(), inscSel ? carregarInsc() : null);
   else if (pg == 'crono' || pg == 'cronoed' || pg == 'cronoauto' || pg == 'minhas' || pg == 'modedit') tarefas.push(AG.listar());
   if (tarefas.length && precisaSusp()) tarefas.push(SUSP.listar(ehAdmin()));
@@ -2503,14 +2528,14 @@ function aplicaMemLocal(lista) {
 const MEM = {
  async listar() {
   if (!db) return;
-  const { data, error } = await db.from('membros').select('*');
-  if (error) { console.error(error); return; }
+  let data;   // em lotes de 1000: o servidor devolve no máximo 1000 linhas por vez
+  try { data = await lerTudo(() => db.from('membros').select('*').order('id')); } catch (error) { console.error(error); return; }
   S.membros = (data || []).map(normMem);
  },
  async salvar(lista) {
   if (db) {
    const agora = new Date().toISOString();
-   const { error } = await db.from('membros').upsert(lista.map(m => ({id: m.id, nome: m.nome, team: m.team, cat: m.cat, turma: m.turma || null, foto: m.foto || null, updated_at: agora})));
+   const { error } = await db.from('membros').upsert(lista.map(m => ({id: m.id, nome: m.nome, team: m.team === '' || m.team == null ? null : m.team, cat: m.cat, turma: m.turma || null, foto: m.foto || null, updated_at: agora})));
    if (error) { fail(error); return false; }
   }
   aplicaMemLocal(lista); return true;
@@ -2565,7 +2590,7 @@ Views.membros = () => `<div class="page-head"><a class="back" href="#/configurac
   <select id="memfteam" aria-label="Filtrar por equipe"><option value="">Todas as equipes</option>${T.map(i => `<option value="${i}" ${memF.team === String(i) ? 'selected' : ''}>${tn(i)}</option>`).join('')}</select>
   <select id="memfcat" aria-label="Filtrar por categoria"><option value="">Todas as categorias</option>${CATS.map(c => `<option value="${c.id}" ${memF.cat === String(c.id) ? 'selected' : ''}>${esc(c.n)}</option>`).join('')}</select>
  </div>
- <div class="row">${ordemMemHTML()}<button class="btn" data-memnovo>Novo integrante</button><button class="btn alt" data-memmassa>Inserir em massa</button><a class="btn alt" href="#/configuracoes/inscricoes" style="text-decoration:none;display:inline-flex;align-items:center">Inscrições nas modalidades</a></div>
+ <div class="row">${ordemMemHTML()}<button class="btn" data-memnovo>Novo integrante</button><button class="btn alt" data-memmassa>Inserir em massa</button><a class="btn alt" href="#/configuracoes/equipes" style="text-decoration:none;display:inline-flex;align-items:center">Montar equipes</a><a class="btn alt" href="#/configuracoes/inscricoes" style="text-decoration:none;display:inline-flex;align-items:center">Inscrições nas modalidades</a></div>
  <div id="memlista">${memListaHTML()}</div></section>`;
 
 /* ---------- Janela de cadastro / edição ---------- */
@@ -2590,7 +2615,7 @@ function abrirMem(m) {
     <div class="mem-foto-ed" id="memfotoarea">${memFotoAreaHTML()}</div>
     <input type="file" id="memfile" accept="image/*" hidden><input type="file" id="memcap" accept="image/*" capture="user" hidden>
     <label>Nome<input id="memnome" value="${esc(m.nome)}" placeholder="Nome do integrante" autocomplete="off"></label>
-    <label>Equipe<select id="memteam"><option value="">— escolha —</option>${T.map(i => `<option value="${i}" ${m.team === i ? 'selected' : ''}>${tn(i)}</option>`).join('')}</select></label>
+    <label>Equipe<select id="memteam"><option value="">— escolha —</option>${T.map(i => `<option value="${i}" ${m.team === i ? 'selected' : ''}>${tn(i)}</option>`).join('')}<option value="x" ${!memEd.novo && m.team === '' ? 'selected' : ''}>Sem equipe (definir depois)</option></select></label>
     <label>Categoria<select id="memcat"><option value="">— escolha —</option>${CATS.map(c => `<option value="${c.id}" ${m.cat === c.id ? 'selected' : ''}>${esc(c.n)}</option>`).join('')}</select></label>
     <label>Turma<input id="memturma" value="${esc(m.turma)}" placeholder="Ex.: 8º B" autocomplete="off"></label>
     ${novo ? '' : '<p class="muted" style="margin:0">Para transferir, basta mudar a equipe e salvar.</p><button class="btn alt" data-meminsc>Modalidades em que está inscrito</button>'}
@@ -2611,7 +2636,7 @@ async function salvarMem(btn) {
  const volta = () => { btn.disabled = false; btn.textContent = 'Salvar'; };
  let foto = memEd.prev ? memEd.fotoAtual : '';
  if (memEd.blob) { const url = await MEM.enviarFoto(memEd.id, memEd.blob); if (url == null) return volta(); foto = url; }
- if (!await MEM.salvar([{id: memEd.id, nome, team: +team, cat: +cat, turma, foto}])) return volta();
+ if (!await MEM.salvar([{id: memEd.id, nome, team: team === 'x' ? '' : +team, cat: +cat, turma, foto}])) return volta();
  if (!memEd.novo && memEd.orig.cat !== +cat) INSC.mudarCat(memEd.id, +cat);
  if (memEd.fotoAtual && memEd.fotoAtual !== foto) MEM.apagarFoto(memEd.fotoAtual);
  $('memdlg').close();
@@ -2805,7 +2830,7 @@ function telaMassa() {
   <div class="reg-body" style="white-space:normal"><div class="mem-form">
    <label>Nomes (um por linha)<textarea id="massatxt" class="massa-txt" placeholder="Ana Souza&#10;Bruno Lima&#10;Carla Dias" autocomplete="off">${esc(massa.txt)}</textarea></label>
    <p class="muted" id="massacont" style="margin:-6px 0 0;text-align:left">${massaContagem()}</p>
-   <label>Equipe de todos<select id="massateam"><option value="">— escolha —</option>${T.map(i => `<option value="${i}" ${massa.team === String(i) ? 'selected' : ''}>${tn(i)}</option>`).join('')}</select></label>
+   <label>Equipe de todos<select id="massateam"><option value="">— escolha —</option>${T.map(i => `<option value="${i}" ${massa.team === String(i) ? 'selected' : ''}>${tn(i)}</option>`).join('')}<option value="x" ${massa.team === 'x' ? 'selected' : ''}>Sem equipe (definir depois)</option></select></label>
    <label>Categoria de todos<select id="massacat"><option value="">— escolha —</option>${CATS.map(c => `<option value="${c.id}" ${massa.cat === String(c.id) ? 'selected' : ''}>${esc(c.n)}</option>`).join('')}</select></label>
    <label>Turma de todos (opcional)<input id="massaturma" value="${esc(massa.turma)}" placeholder="Ex.: 8º B" autocomplete="off"></label>
   </div></div>
@@ -2823,7 +2848,7 @@ function telaRevisao() {
   <div class="reg-head"><h2>Confirme antes de salvar</h2><button class="btn alt" data-memfechar aria-label="Fechar">✕</button></div>
   <div class="reg-body" style="white-space:normal">
    <div class="massa-resumo">
-    <div><span>Equipe</span><strong>${esc(teamNome(massa.team))}</strong></div>
+    <div><span>Equipe</span><strong>${esc(massa.team === 'x' ? 'Sem equipe (definir depois)' : teamNome(massa.team))}</strong></div>
     <div><span>Categoria</span><strong>${esc(catNome(massa.cat))}</strong></div>
     <div><span>Turma</span><strong>${esc(massa.turma || '—')}</strong></div>
    </div>
@@ -2849,13 +2874,13 @@ document.addEventListener('click', async e => {
  else if (d.massavoltar !== undefined) { telaMassa(); }
  else if (d.massasalvar !== undefined) {
   const lista = lerNomes(massa.txt).filter(x => x.st == 'novo' || (x.st == 'existe' && massa.incluirExist))
-   .map(x => ({id: uid(), nome: x.nome, team: +massa.team, cat: +massa.cat, turma: massa.turma, foto: ''}));
+   .map(x => ({id: uid(), nome: x.nome, team: massa.team === 'x' ? '' : +massa.team, cat: +massa.cat, turma: massa.turma, foto: ''}));
   if (!lista.length) return;
   t.disabled = true; t.textContent = 'Salvando…';
   if (!await MEM.salvar(lista)) { t.disabled = false; t.textContent = 'Confirmar e salvar'; return; }
   $('memdlg').close();
   atualizaListaMem();
-  avisar(`${lista.length} ${lista.length == 1 ? 'integrante adicionado' : 'integrantes adicionados'} em ${teamNome(+massa.team)} · ${catNome(+massa.cat)}. Toque em qualquer um para editar.`);
+  avisar(`${lista.length} ${lista.length == 1 ? 'integrante adicionado' : 'integrantes adicionados'} em ${massa.team === 'x' ? 'Sem equipe' : teamNome(+massa.team)} · ${catNome(+massa.cat)}. Toque em qualquer um para editar.`);
  }
 });
 
@@ -5450,7 +5475,7 @@ async function lerTudo(fazer) {
   const { data, error } = await fazer().range(ini, ini + 999);
   if (error) throw error;
   l.push(...(data || []));
-  if (!data || data.length < 1000) return l;
+  if (!data || data.length !== 1000) return l;   // última página (ou servidor que ignora o intervalo)
  }
 }
 
@@ -7699,6 +7724,178 @@ function porHTML(x, rot) {
  new MutationObserver(sincronizar).observe(document.body, {subtree: true, childList: true, attributes: true, attributeFilter: ['open']});
  document.addEventListener('close', () => setTimeout(sincronizar, 0), true);
 })();
+
+/* ==========================================================================
+   61. MONTAR EQUIPES (PRÉ-JOGO) · #/configuracoes/equipes
+   Todos os integrantes cadastrados numa lista só, para a organização
+   distribuir os alunos entre as equipes no começo da competição.
+   - Grava SÓ a coluna "team" dos alunos marcados (nome, foto, categoria,
+     turma e inscrições não são tocados), em lotes.
+   - Antes de gravar relê a equipe atual dos marcados: se outro aparelho
+     mexeu neles enquanto a página estava aberta, avisa antes.
+   - Lista lida em lotes de 1000 e desenhada aos poucos (200 por vez);
+     filtros e marcações não vão ao servidor.
+   - Tempo real: o que outro aparelho mudar aparece na hora.
+   ========================================================================== */
+ROUTES['#/configuracoes/equipes'] = 'equipes';
+COLS.equipes = 'teams,colors,cats';
+PAG_RESTRITAS.equipes = 'editor';
+TILES_CFG.splice(1, 0, {titulo: 'Montar equipes', sub: 'Pré-jogo: distribuir alunos nas equipes', ico: 'grupo', abre: 'href="#/configuracoes/equipes"'});
+let eqF = {q: '', cat: '', turma: '', sit: 'sem'}, eqLim = 200, eqGravando = false;
+const eqSel = new Set();
+const eqTeam = m => m.team === '' || m.team == null ? '' : +m.team;
+function eqFiltrados() {
+ const q = slug(eqF.q);
+ return membros().filter(m => {
+  const t = eqTeam(m);
+  if (eqF.sit === 'sem' && t !== '') return false;
+  if (eqF.sit !== 'sem' && eqF.sit !== 'todos' && String(t) !== eqF.sit) return false;
+  if (eqF.cat !== '' && String(m.cat) !== eqF.cat) return false;
+  if (eqF.turma && (m.turma || '') !== eqF.turma) return false;
+  return !q || slug(m.nome + ' ' + (m.turma || '')).includes(q);
+ }).sort(porNome);
+}
+function eqResumoHTML() {
+ const l = membros(), sem = l.filter(m => eqTeam(m) === '').length;
+ const chip = (k, rot, n, cor) => `<button class="chipbtn eq-chip" data-eqsit="${k}" aria-pressed="${eqF.sit === k}" ${cor != null ? `style="--c:var(--t${cor})"` : ''}>${rot} <strong>${n}</strong></button>`;
+ const cats = CATS.filter(c => l.some(m => m.cat === c.id));
+ const tab = cats.length ? `<div class="scroll"><table class="eq-tab"><thead><tr><th>Categoria</th>${T.map(i => `<th><span class="eq-pt" style="--c:var(--t${i})"></span>${tn(i)}</th>`).join('')}<th>Sem equipe</th></tr></thead><tbody>${cats.map(c => `<tr><td>${esc(c.n)}</td>${T.map(i => `<td>${l.filter(m => m.cat === c.id && eqTeam(m) === i).length}</td>`).join('')}<td class="${l.some(m => m.cat === c.id && eqTeam(m) === '') ? 'eq-falta' : ''}">${l.filter(m => m.cat === c.id && eqTeam(m) === '').length}</td></tr>`).join('')}</tbody></table></div>` : '';
+ return `<div class="eq-chips">${chip('sem', 'Sem equipe', sem, null)}${T.map(i => chip(String(i), tn(i), l.filter(m => eqTeam(m) === i).length, i)).join('')}${chip('todos', 'Todos', l.length, null)}</div>${tab}`;
+}
+function eqListaHTML() {
+ const f = eqFiltrados();
+ if (!membros().length) return '<p class="muted">Nenhum integrante cadastrado ainda. Cadastre em Integrantes (um a um ou "Inserir em massa", escolhendo "Sem equipe").</p>';
+ if (!f.length) return `<p class="muted">${eqF.sit === 'sem' && !eqF.q && eqF.cat === '' && !eqF.turma ? 'Todos os integrantes já estão em alguma equipe. ✓' : 'Nenhum integrante com esses filtros.'}</p>`;
+ const todos = f.every(m => eqSel.has(m.id));
+ return `<label class="eq-todos"><input type="checkbox" data-eqtodos ${todos ? 'checked' : ''}> Marcar os ${f.length} da lista</label>` +
+  f.slice(0, eqLim).map(m => { const t = eqTeam(m), on = eqSel.has(m.id);
+   return `<label class="eq-row ${on ? 'sel' : ''}"><input type="checkbox" data-eqsel="${esc(m.id)}" ${on ? 'checked' : ''}>${fotoHTML(m)}<span class="mem-info"><span class="mem-nome">${esc(m.nome)}</span><span class="mem-sub">${esc(memSub(m))}</span></span>${t === '' ? '<span class="eq-tag sem">Sem equipe</span>' : `<span class="eq-tag" style="--c:var(--t${t})">${tn(t)}</span>`}</label>`; }).join('') +
+  (f.length > eqLim ? `<div class="row" style="justify-content:center;margin-top:10px"><button class="btn alt" data-eqmais>Mostrar mais (${f.length - eqLim} restantes)</button></div>` : '');
+}
+function eqBarraHTML() {
+ const n = eqSel.size; if (!n) return '';
+ return `<div class="eq-barra" role="region" aria-label="Ações para os marcados"><span class="eq-n"><strong>${n}</strong> ${n == 1 ? 'marcado' : 'marcados'} <button class="eq-limpa" data-eqlimpar>limpar</button></span>
+  <div class="eq-acoes"><span class="eq-rot">Colocar em</span>${T.map(i => `<button class="btn eq-para" data-eqpara="${i}" style="--c:var(--t${i})" ${eqGravando ? 'disabled' : ''}>${tn(i)}</button>`).join('')}<button class="btn alt" data-eqpara="" ${eqGravando ? 'disabled' : ''}>Tirar da equipe</button></div></div>`;
+}
+const turmasDe = () => [...new Set(membros().map(m => m.turma).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR', {numeric: true}));
+Views.equipes = () => `<div class="page-head"><a class="back" href="#/configuracoes">← Voltar às configurações</a><h2 class="ptitle">Montar equipes</h2></div>
+ <section class="panel">
+  <p class="muted">Pré-jogo: todos os integrantes cadastrados. Marque os alunos e toque na equipe para colocá-los nela. Só a equipe muda; nome, foto, categoria, turma e inscrições continuam como estão.</p>
+  <div id="eqresumo">${eqResumoHTML()}</div>
+  <div class="eq-filtros">
+   <input id="eqbusca" type="search" placeholder="Buscar por nome ou turma" value="${esc(eqF.q)}" autocomplete="off">
+   <select data-eqf="cat" aria-label="Categoria"><option value="">Todas as categorias</option>${CATS.map(c => `<option value="${c.id}" ${eqF.cat === String(c.id) ? 'selected' : ''}>${esc(c.n)}</option>`).join('')}</select>
+   <select data-eqf="turma" aria-label="Turma"><option value="">Todas as turmas</option>${turmasDe().map(t => `<option value="${esc(t)}" ${eqF.turma === t ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>
+  </div>
+  <div id="eqlista" class="eq-lista">${eqListaHTML()}</div>
+ </section>
+ <div id="eqbarra">${eqBarraHTML()}</div>`;
+/* atualiza só as partes da página (a busca não perde o foco) */
+function eqAtualiza(lista = true) {
+ if (pg !== 'equipes' || cur) return;
+ const r = $('eqresumo'), l = $('eqlista'), b = $('eqbarra');
+ if (r) r.innerHTML = eqResumoHTML();
+ if (l && lista) l.innerHTML = eqListaHTML();
+ if (b) b.innerHTML = eqBarraHTML();
+ document.body.classList.toggle('eq-com-barra', eqSel.size > 0);
+}
+document.addEventListener('input', e => { if (e.target.id === 'eqbusca') { eqF.q = e.target.value; eqLim = 200; eqAtualiza(); } });
+document.addEventListener('change', e => {
+ const el = e.target; if (pg !== 'equipes' || cur || !el.dataset) return;
+ if (el.dataset.eqf) { eqF[el.dataset.eqf] = el.value; eqLim = 200; eqAtualiza(); }
+ else if (el.dataset.eqsel) { if (el.checked) eqSel.add(el.dataset.eqsel); else eqSel.delete(el.dataset.eqsel); const r = el.closest('.eq-row'); if (r) r.classList.toggle('sel', el.checked); const t = document.querySelector('[data-eqtodos]'); if (t) t.checked = eqFiltrados().every(m => eqSel.has(m.id)); eqAtualiza(false); }
+ else if (el.dataset.eqtodos !== undefined) { eqFiltrados().forEach(m => el.checked ? eqSel.add(m.id) : eqSel.delete(m.id)); eqAtualiza(); }
+});
+document.addEventListener('click', e => {
+ if (pg !== 'equipes' || cur) return;
+ const t = e.target.closest('button'); if (!t) return;
+ const d = t.dataset;
+ if (d.eqsit !== undefined) { eqF.sit = d.eqsit; eqLim = 200; eqAtualiza(); }
+ else if (d.eqmais !== undefined) { eqLim += 200; eqAtualiza(); }
+ else if (d.eqlimpar !== undefined) { eqSel.clear(); eqAtualiza(); }
+ else if (d.eqpara !== undefined) moverEquipe(d.eqpara);
+});
+/* lê do servidor só a equipe atual dos marcados, em lotes */
+async function eqLerAtuais(ids) {
+ const m = new Map();
+ for (let i = 0; i < ids.length; i += 150) {
+  const { data, error } = await db.from('membros').select('id,team').in('id', ids.slice(i, i + 150));
+  if (error) throw error;
+  (data || []).forEach(r => m.set(r.id, r.team == null || r.team === '' ? '' : +r.team));
+ }
+ return m;
+}
+async function eqComInscricao(ids) {
+ const s = new Set();
+ for (let i = 0; i < ids.length; i += 150) {
+  const { data, error } = await db.from('inscricoes').select('membro').in('membro', ids.slice(i, i + 150));
+  if (error) throw error;
+  (data || []).forEach(r => s.add(r.membro));
+ }
+ return s;
+}
+async function moverEquipe(destino) {
+ if (eqGravando) return;
+ const alvo = destino === '' ? '' : +destino, nomeAlvo = alvo === '' ? 'Sem equipe' : tn(alvo);
+ const local = new Map(membros().map(m => [m.id, m]));
+ let ids = [...eqSel].filter(id => local.has(id)); if (!ids.length) return;
+ eqGravando = true; eqAtualiza(false);
+ try {
+  let atuais = null, comInsc = new Set();
+  if (db) {
+   atuais = await eqLerAtuais(ids);
+   const sumiram = ids.filter(id => !atuais.has(id));
+   if (sumiram.length) { sumiram.forEach(id => eqSel.delete(id)); ids = ids.filter(id => atuais.has(id)); }
+  }
+  const agora = id => atuais ? atuais.get(id) : eqTeam(local.get(id));
+  const mudaramFora = ids.filter(id => atuais && atuais.get(id) !== eqTeam(local.get(id)));
+  const trocam = ids.filter(id => agora(id) !== '' && agora(id) !== alvo);
+  if (db && trocam.length) comInsc = await eqComInscricao(trocam);
+  const ja = ids.filter(id => agora(id) === alvo).length;
+  /* confirma só quando há risco: tirar/trocar quem já tinha equipe, ou mudança feita por outro aparelho */
+  if (trocam.length || mudaramFora.length) {
+   const L = [`Colocar ${ids.length} ${ids.length == 1 ? 'integrante' : 'integrantes'} em: ${nomeAlvo}?`];
+   if (trocam.length) L.push(`• ${trocam.length} ${trocam.length == 1 ? 'já estava' : 'já estavam'} em outra equipe e ${trocam.length == 1 ? 'vai trocar' : 'vão trocar'}.`);
+   if (comInsc.size) L.push(`• ${comInsc.size} ${comInsc.size == 1 ? 'tem inscrições' : 'têm inscrições'} em modalidades: as inscrições continuam e passam a valer pela nova equipe.`);
+   if (mudaramFora.length) L.push(`• ${mudaramFora.length} ${mudaramFora.length == 1 ? 'foi alterado' : 'foram alterados'} por outro aparelho depois que você abriu a página (a lista foi atualizada).`);
+   if (atuais) aplicaMemLocal(ids.map(id => ({...local.get(id), team: atuais.get(id)})));
+   if (!await confirmar(L.join('\n'))) { eqGravando = false; eqAtualiza(); return; }
+  }
+  const mudar = ids.filter(id => agora(id) !== alvo);
+  if (db) {
+   const quando = new Date().toISOString();
+   for (let i = 0; i < mudar.length; i += 100) {
+    const lote = mudar.slice(i, i + 100);
+    const { data, error } = await db.from('membros').update({team: alvo === '' ? null : alvo, updated_at: quando}).in('id', lote).select('id,team');
+    if (error) { fail(error); break; }
+    const ok = new Set((data || []).map(r => r.id));
+    aplicaMemLocal(lote.filter(id => ok.has(id)).map(id => ({...local.get(id), team: alvo})));
+    lote.forEach(id => { if (ok.has(id)) eqSel.delete(id); });
+   }
+  } else { aplicaMemLocal(mudar.map(id => ({...local.get(id), team: alvo}))); mudar.forEach(id => eqSel.delete(id)); }
+  ids.forEach(id => { if (agora(id) === alvo) eqSel.delete(id); });
+  eqNota(`${mudar.length} ${mudar.length == 1 ? 'integrante' : 'integrantes'} em ${nomeAlvo}${ja ? ` · ${ja} já ${ja == 1 ? 'estava' : 'estavam'}` : ''}`);
+ } catch (er) { fail(er); }
+ eqGravando = false; eqAtualiza();
+}
+/* aviso rápido que some sozinho */
+function eqNota(txt) {
+ let el = $('eqnota'); if (!el) { el = document.createElement('div'); el.id = 'eqnota'; el.className = 'eq-nota'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+ el.textContent = '✓ ' + txt; el.classList.add('on'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('on'), 2600);
+}
+/* tempo real dos integrantes nesta página */
+const rtAntesEq = DB.setupRealtime;
+DB.setupRealtime = function () {
+ rtAntesEq.apply(this, arguments);
+ if (!db || cur || pg !== 'equipes') return;
+ try { db.channel('olimp-equipes-' + (++eqCanal)).on('postgres_changes', {event: '*', schema: 'public', table: 'membros'}, x => {
+  if (x.eventType === 'DELETE') { const id = x.old && x.old.id; S.membros = membros().filter(m => m.id !== id); eqSel.delete(id); }
+  else if (x.new) aplicaMemLocal([x.new]);
+  clearTimeout(eqRt); eqRt = setTimeout(() => { if (!typing()) eqAtualiza(); else pendente = true; }, 250);   // várias mudanças juntas: um desenho só
+ }).subscribe(); } catch (e) { console.error(e); }
+};
+let eqRt = 0, eqCanal = 0;
+addEventListener('hashchange', () => { if (location.hash !== '#/configuracoes/equipes') { eqSel.clear(); document.body.classList.remove('eq-com-barra'); } });
 
 /* Inicialização: primeiro descobre quem está conectado, depois abre a página */
 iniciarAuth().finally(route);
