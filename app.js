@@ -40,7 +40,7 @@ S = Object.assign(fresh(), S || {});
 /* Monta ACTS e BY a partir da lista de modalidades salva */
 function buildActs() {
  const lista = Array.isArray(S.mods) ? S.mods : MODS_PADRAO;
- ACTS = lista.filter(m => m && m.id && m.n && TN[m.t]).map(m => ({n: m.n, t: m.t, s: m.id, r: !!m.r, oc: !!m.oc, u: m.u === 'dist' ? 'dist' : 'tempo', inv: !!m.inv, cn: m.cn || null, xv: m.xv == null ? 100 : +m.xv, sp: Array.isArray(m.sp) && m.sp.length === 3 ? m.sp.map(Number) : null, grp: ['junto', 'dia', 'periodo'].includes(m.grp) ? m.grp : '', nb: Math.max(1, Math.min(8, +m.nb || 1)), loc: m.loc || '', dt: m.dt || '', hr: m.hr || '', arb: m.arb || '', agc: m.agc || {}, cats: Array.isArray(m.cats) ? m.cats.map(Number) : null, semIns: !!m.si, semCrono: !!m.sc}));
+ ACTS = lista.filter(m => m && m.id && m.n && TN[m.t]).map(m => ({n: m.n, t: m.t, s: m.id, r: !!m.r, oc: !!m.oc, u: m.u === 'dist' ? 'dist' : 'tempo', inv: !!m.inv, cn: m.cn || null, xv: m.xv == null ? 100 : +m.xv, sp: Array.isArray(m.sp) && m.sp.length === 3 ? m.sp.map(Number) : null, grp: ['junto', 'dia', 'periodo'].includes(m.grp) ? m.grp : '', nb: Math.max(1, Math.min(8, +m.nb || 1)), loc: m.loc || '', dt: m.dt || '', hr: m.hr || '', arb: m.arb || '', agc: m.agc || {}, cats: Array.isArray(m.cats) ? m.cats.map(Number) : null, semIns: !!m.si, pc: !!m.pc, semCrono: !!m.sc}));
  BY = Object.fromEntries(ACTS.map(a => [a.s, a]));
 }
 buildActs();
@@ -374,7 +374,11 @@ function place(t, d, a) {
   return crank(b, menorVence);
  }
 }
-const ready = (t, d) => { const p = place(t, {...d, ok: true}); return t == 'marca' && d.modo !== 'class' ? !!p : !!p && p.every(Boolean) };
+const ready = (t, d) => {
+ if (t == 'rank' && cur && cur.pc) return T.every(i => ['0', '1'].includes(String((d.cum || {})[i] ?? '')));   // prova cumprida: decidir cada equipe
+ const p = place(t, {...d, ok: true});
+ return t == 'marca' && d.modo !== 'class' ? !!p : !!p && p.every(Boolean) && colocacaoValida(p);
+};
 function totals() {
  const cat = {}; let done = 0; CATS.forEach(c => cat[c.id] = [0,0,0,0]);
  ACTS.forEach(a => CATS.filter(c => temCat(a, c.id)).forEach(c => { if (a.t == 'suico') { const sp = suicoPts(S.res[rk(a, c.id)], a); if (sp) { done++; sp.forEach((v, i) => cat[c.id][i] += v); } return; } const rb = S.res[rk(a, c.id)]; if (a.t == 'marca' && rb && Array.isArray(rb.bat)) { const m = batMelhor(rb, a); if (m && m.fim) { done++; m.p.forEach((x, i) => { if (x) cat[c.id][i] += S.pts[x-1] || 0 }); } return; } const p = place(a.t, S.res[rk(a, c.id)], a); if (p) { done++; p.forEach((x, i) => { if (x) cat[c.id][i] += S.pts[x-1] || 0 }) } }));
@@ -5181,6 +5185,7 @@ salvarAgenda = async function (id, limpar, btn) {
    if (Object.keys(agc).length) x.agc = agc; else if (!porCat && x.agc) { /* ajustes antigos por categoria ficam como estão */ } else delete x.agc;
    if (cats) { if (cats.length < CATS.length) x.cats = cats; else delete x.cats; }
    if (insc) { if (insc.checked) delete x.si; else x.si = 1; }
+   const pcx = $('agpc'); if (pcx && x.t == 'rank') { if (pcx.checked) x.pc = 1; else delete x.pc; }
    if (cron) { if (cron.checked) delete x.sc; else x.sc = 1; }
   }
   buildActs();
@@ -5523,6 +5528,7 @@ salvarAgenda = async function (id, limpar, btn) {
   if (x) {
    if (cats) { if (cats.length < CATS.length) x.cats = cats; else delete x.cats; }
    if (insc) { if (insc.checked) delete x.si; else x.si = 1; }
+   const pcx = $('agpc'); if (pcx && x.t == 'rank') { if (pcx.checked) x.pc = 1; else delete x.pc; }
    if (cron) { if (cron.checked) delete x.sc; else x.sc = 1; }
    if (agEd.grp) x.grp = agEd.grp; else delete x.grp;
    /* local e árbitros sugeridos ao agendar (gerador automático) acompanham o que foi salvo */
@@ -6217,7 +6223,7 @@ function rankLivreHTML(d, lock) {
 /* mesma colocação para duas equipes: pede confirmação do empate */
 document.addEventListener('change', async e => {
  const el = e.target, k = el.dataset && el.dataset.k, m = k && k.match(/^p\.(\d)$/);
- if (!m || !cur || cur.t != 'marca' || el.value === '') return;
+ if (!m || !cur || !['marca', 'rank', 'pontos', 'crit'].includes(cur.t) || el.value === '') return;
  const s = el.closest('[id^=sec]'); if (!s || temBat(cur, +s.id.slice(3))) return;
  const ci = +s.id.slice(3), d = view(rk(cur, ci)), eu = +m[1], v = el.value;
  const outros = T.filter(i => i !== eu && String(d.p?.[i] ?? '') === String(v));
@@ -7382,6 +7388,73 @@ document.addEventListener('change', e => {
  if (el.dataset.fmalvo !== undefined) { const x = FM.itens[+el.dataset.fmalvo]; if (x) { x.alvo = el.value; x.st = 'ok'; x.nota = ''; } fmDesenha(); }
 });
 $('fotodlg').addEventListener('cancel', e => { e.preventDefault(); fmFechar(); });
+
+/* ---- 15-empates.js ---- */
+/* ==========================================================================
+   64. EMPATES NAS COLOCAÇÕES E "PROVA CUMPRIDA"
+   - Ranking e "só classificação final" (pontuação e critérios): mais de uma
+     equipe pode ficar na mesma colocação e todas levam os pontos dela.
+     A colocação seguinte pula as que ficaram empatadas (padrão olímpico):
+     dois em 1º → o próximo é 3º; dois em 2º → o próximo é 4º.
+   - Prova cumprida (só ranking, marcada na janela da modalidade): cada
+     equipe que realizar a prova ganha os pontos de 1º lugar.
+   ========================================================================== */
+/* colocações coerentes com os empates: cada uma = 1 + quantas equipes ficaram à frente */
+function colocacaoValida(p) {
+ const v = T.map(i => num(p[i])).filter(x => x != null);
+ return v.every(x => x === 1 + v.filter(y => y < x).length);
+}
+/* explica o que está errado nas colocações escolhidas (ou '' se estiver certo) */
+function dicaColocacao(p) {
+ const v = T.map(i => num(p && p[i])).filter(x => x != null);
+ if (!v.length) return '';
+ const ord = [...new Set(v)].sort((a, b) => a - b);
+ for (const x of ord) {
+  const certo = 1 + v.filter(y => y < x).length;
+  if (x !== certo) {
+   const antes = v.filter(y => y < x), emp = ord.filter(y => y < x).find(y => v.filter(z => z === y).length > 1);
+   return emp ? `Com ${v.filter(z => z === emp).length} equipes empatadas em ${emp}º, a colocação seguinte é ${certo}º (e não ${x}º).`
+              : `Falta alguém em ${certo}º lugar antes do ${x}º (${antes.length} ${antes.length == 1 ? 'equipe está' : 'equipes estão'} à frente).`;
+  }
+ }
+ return '';
+}
+const rankHTMLAntesEmp = rankHTML;
+rankHTML = function (d, lock) {
+ /* prova cumprida: só "cumpriu / não cumpriu" por equipe */
+ if (cur && cur.t == 'rank' && cur.pc) {
+  return `<p class="muted">Prova cumprida: cada equipe que realizar a prova ganha os pontos de 1º lugar (${S.pts[0] || 0} pontos).</p>` +
+   T.map(t => `<div class="row" style="justify-content:space-between">${who(t)}<div style="flex:1;max-width:180px">${SEL('cum.' + t, (d.cum || {})[t], [['', '—'], ['1', '✓ Cumpriu'], ['0', 'Não cumpriu']], lock)}</div></div>`).join('');
+ }
+ const dica = lock ? '' : dicaColocacao(d.p);
+ return `<p class="muted">Em caso de empate, dê a mesma colocação às equipes empatadas: elas levam os mesmos pontos e a colocação seguinte pula (dois em 1º → o próximo é 3º).</p>` +
+  T.map(t => `<div class="row" style="justify-content:space-between">${who(t)}<div style="flex:1;max-width:180px">${SEL('p.' + t, d.p?.[t], [['', '—'], ...[1, 2, 3, 4].map(n => [n, n + 'º lugar'])], lock)}</div></div>`).join('') +
+  (dica ? `<p class="col-dica" role="alert">${esc(dica)}</p>` : '');
+};
+/* prova cumprida: quem cumpriu fica em 1º; quem não cumpriu fica sem colocação */
+const placeAntesPc = place;
+place = function (t, d, a) {
+ const m = a || cur;
+ if (t == 'rank' && m && m.pc) {
+  if (!d || !d.ok) return null;
+  return T.map(i => String((d.cum || {})[i] ?? '') === '1' ? 1 : null);
+ }
+ return placeAntesPc.apply(this, arguments);
+};
+/* janela da modalidade: opção "Prova cumprida" nas modalidades de ranking */
+const abrirAgendaAntesPc = abrirAgenda;
+abrirAgenda = function (a) {
+ abrirAgendaAntesPc(a);
+ if (!a || a.t != 'rank') return;
+ const corpo = $('agdlg').querySelector('.reg-body'); if (!corpo || $('agpc')) return;
+ corpo.insertAdjacentHTML('afterbegin', `<label class="ag-por ag-pc"><input type="checkbox" id="agpc" ${a.pc ? 'checked' : ''}> <span><strong>Prova cumprida</strong><small>Basta a equipe realizar a prova para ganhar os pontos de 1º lugar.</small></span></label>`);
+};
+document.addEventListener('change', async e => {
+ const el = e.target; if (el.id !== 'agpc') return;
+ const a = typeof agEd !== 'undefined' && agEd ? BY[agEd.mod] : null;
+ const tem = a && CATS.some(c => { const d = S.res[rk(a, c.id)]; return d && d.ok; });
+ if (tem && !await confirmar(el.checked ? 'Esta modalidade já tem resultados confirmados por colocação.\nCom "Prova cumprida", cada categoria precisa ser lançada de novo marcando quem cumpriu. As colocações já lançadas ficam guardadas e voltam se você desmarcar.' : 'Desmarcar "Prova cumprida"?\nAs categorias voltam a usar as colocações (as marcações de quem cumpriu ficam guardadas).')) el.checked = !el.checked;
+});
 
 /* ---- 99-inicio.js ---- */
 /* Inicialização: primeiro descobre quem está conectado, depois abre a página */
