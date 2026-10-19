@@ -160,7 +160,7 @@ function opsCfg(cols, antes) {
  return ops;
 }
 const fail = e => {
- if (/INTEGRANTE_SUSPENSO/.test(String(e && (e.message || e.details) || ''))) { avisar('Aluno suspenso: sem poder participar de modalidade até liberação.'); SUSP.listar(ehAdmin()).then(() => { if (cur) sec(curC); }); return; }
+ if (/INTEGRANTE_SUSPENSO/.test(String(e && (e.message || e.details) || ''))) { avisar(SUSP_TXT); SUSP.listar(ehAdmin()).then(() => { if (cur) sec(curC); }); return; }
  const m = String(e && (e.message || e.code) || JSON.stringify(e)).replace(/^(?:\w*Error:\s*)+/, '');
  avisar(/row-level security|permission denied|42501|sem permiss/i.test(m + ' ' + (e && e.code || ''))
   ? 'Sua conta não tem permissão para alterar os dados. Entre com uma conta liberada pelo administrador.'
@@ -2524,7 +2524,7 @@ INSC.presencaPartida = async (ins, x, v) => {
 /* ==========================================================================
    23. NOME DOS JOGOS (topo de todas as páginas, editável nas Configurações)
    ========================================================================== */
-const NOME_PADRAO = 'Olimpíadas IN-NOVA 2026';
+const NOME_PADRAO = 'Olimpíadas In-Nova';
 const nomeJogos = () => String(S.nome || '').trim() || NOME_PADRAO;
 function aplicarNome() { const a = $('nomejogos'); if (a) a.textContent = nomeJogos(); }
 
@@ -5836,7 +5836,7 @@ renderNav = function () { renderNavAntesPen(); if (pg === 'penal') { const a = $
      também recusa marcar presença de quem está suspenso.
    - A chamada dos dias de jogos não muda.
    ========================================================================== */
-const SUSP_TXT = 'Aluno suspenso: sem poder participar de modalidade até liberação';
+const SUSP_TXT = 'Aluno temporariamente suspenso:\nsem poder participar de modalidade até liberação.';
 const suspenso = id => !!(S.susp && S.susp[id]);
 const precisaSusp = () => !!db && (podeEditar() || ehArbitro());
 const SUSP = {
@@ -5868,7 +5868,7 @@ const SUSP = {
 const rtAntesSusp = DB.setupRealtime;
 DB.setupRealtime = function () {
  rtAntesSusp.call(DB);
- if (!precisaSusp() || !(cur || pg === 'membros' || pg === 'insc' || pg === 'penal')) return;
+ if (!precisaSusp() || !(cur || pg === 'membros' || pg === 'memver' || pg === 'insc' || pg === 'penal')) return;
  db.channel('olimp-susp-' + (cur ? cur.s : pg)).on('postgres_changes', {event: '*', schema: 'public', table: 'suspensoes'}, () => {
   SUSP.listar(ehAdmin()).then(() => { if (cur) sec(curC); else softRender(); });
  }).subscribe();
@@ -7455,6 +7455,74 @@ document.addEventListener('change', async e => {
  const tem = a && CATS.some(c => { const d = S.res[rk(a, c.id)]; return d && d.ok; });
  if (tem && !await confirmar(el.checked ? 'Esta modalidade já tem resultados confirmados por colocação.\nCom "Prova cumprida", cada categoria precisa ser lançada de novo marcando quem cumpriu. As colocações já lançadas ficam guardadas e voltam se você desmarcar.' : 'Desmarcar "Prova cumprida"?\nAs categorias voltam a usar as colocações (as marcações de quem cumpriu ficam guardadas).')) el.checked = !el.checked;
 });
+
+/* ---- 16-atalhos-integrante.js ---- */
+/* ==========================================================================
+   62. ATALHOS DO ADMINISTRADOR NA JANELA DO INTEGRANTE (página Integrantes)
+   - Engrenagem: abre a janela oficial "Editar integrante" (mesma de
+     Configurações → Integrantes, mesmo salvamento em membros).
+   - Suspender / Liberar: usa a mesma janela e o mesmo banco (suspensoes)
+     da suspensão oficial. Aqui só existem os atalhos, nada é duplicado.
+   ========================================================================== */
+const iconeAntesAtalho = icone;
+icone = n => n === 'bloq'
+ ? '<svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>'
+ : n === 'liberar'
+ ? '<svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16.5 9.5"/></svg>'
+ : iconeAntesAtalho(n);
+
+let mvAberto = null;   // id do integrante aberto na janela da página Integrantes
+function mvAcoesHTML(id) {
+ if (!ehAdmin()) return '';
+ const s = (S.susp || {})[id];
+ return `${s ? `<div class="susp-box mv-susp"><strong>${esc(SUSP_TXT)}</strong>${s.motivo ? `<br>${esc(s.motivo)}` : ''}</div>` : ''}
+  <div class="mv-acoes">
+   <button class="btn alt" data-mvconfig="${esc(id)}" title="Configurações do aluno">${icone('eng')}<span>Configurar</span></button>
+   ${s ? `<button class="btn alt" data-suliberar="${esc(id)}" title="Liberar para as modalidades">${icone('liberar')}<span>Liberar</span></button>`
+       : `<button class="btn warn" data-suabrir="${esc(id)}" title="Suspender das modalidades">${icone('bloq')}<span>Suspender</span></button>`}
+  </div>`;
+}
+function mvAtualizaAcoes() {
+ const dlg = $('memverdlg'), c = $('mvacoes');
+ if (!dlg || !dlg.open || !c || !mvAberto) return;
+ c.innerHTML = mvAcoesHTML(mvAberto);
+}
+const abrirMemVerAntesAtalho = abrirMemVer;
+abrirMemVer = function (id) {
+ mvAberto = id;
+ const p = abrirMemVerAntesAtalho(id);
+ const cab = $('memverdlg').querySelector('.mv-cab');
+ if (cab && ehAdmin()) cab.insertAdjacentHTML('afterend', `<div id="mvacoes">${mvAcoesHTML(id)}</div>`);
+ return p;
+};
+/* abrir a janela oficial de edição do aluno */
+document.addEventListener('click', e => {
+ const t = e.target.closest('[data-mvconfig]'); if (!t) return;
+ if (!ehAdmin()) { avisar('Só o administrador pode alterar o cadastro do aluno.'); return; }
+ const m = membros().find(x => x.id === t.dataset.mvconfig); if (!m) return;
+ mvVolta = m.id;            // lembra de onde o administrador veio
+ $('memverdlg').close();
+ abrirMem(m);
+});
+/* ao sair da janela oficial (Salvar, Cancelar, ✕, Esc, Permutar) volta para a
+   janela do integrante; não volta se ele foi excluído ou se o administrador
+   escolheu ir para outra página (ex.: "Modalidades em que está inscrito") */
+let mvVolta = null;
+document.addEventListener('click', e => { if (mvVolta && e.target.closest('#memdlg [data-meminsc]')) mvVolta = null; }, true);
+window.addEventListener('hashchange', () => { mvVolta = null; });
+$('memdlg').addEventListener('close', () => {
+ const id = mvVolta; mvVolta = null;
+ if (!id || cur || pg !== 'memver' || !membros().some(x => x.id === id)) return;
+ setTimeout(() => { if (!$('memdlg').open && !$('memverdlg').open) abrirMemVer(id); }, 0);
+});
+/* depois de suspender/liberar (aqui, em outra tela ou em outro aparelho) os botões acompanham */
+const suspListarAntesAtalho = SUSP.listar;
+SUSP.listar = async function (...a) { const r = await suspListarAntesAtalho.apply(this, a); mvAtualizaAcoes(); return r; };
+const suspLiberarAntesAtalho = SUSP.liberar;
+SUSP.liberar = async function (...a) { const r = await suspLiberarAntesAtalho.apply(this, a); mvAtualizaAcoes(); return r; };
+$('memverdlg').addEventListener('close', () => { mvAberto = null; });
+const suspSuspenderAntesAtalho = SUSP.suspender;
+SUSP.suspender = async function (...a) { const r = await suspSuspenderAntesAtalho.apply(this, a); mvAtualizaAcoes(); return r; };
 
 /* ---- 99-inicio.js ---- */
 /* Inicialização: primeiro descobre quem está conectado, depois abre a página */

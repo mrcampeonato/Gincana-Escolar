@@ -1011,3 +1011,12 @@ html.dlg-aberto body{position:fixed;left:0;right:0;width:100%}
 .fm-tem{opacity:1}
 .col-dica{margin:8px 0 0;padding:8px 12px;border-radius:10px;background:#fff7e6;border:1px solid #f0c36d;color:#7a4b00;font-size:14px}
 .ag-pc{display:flex;align-items:flex-start;gap:8px;text-align:left}.ag-pc small{display:block;color:var(--mute);font-size:12px}
+
+/* aviso de aluno suspenso em duas linhas */
+.susp .mem-sub,.insc-lin.susp small,.cx-body{white-space:pre-line}
+.insc-lin.susp span{white-space:normal}
+
+/* atalhos do administrador na janela do integrante */
+.mv-acoes{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:4px 0 12px}
+.mv-acoes .btn{display:inline-flex;align-items:center;gap:6px}
+.mv-susp{margin:2px 0 8px;white-space:pre-line}
