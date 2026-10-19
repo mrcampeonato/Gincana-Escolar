@@ -403,10 +403,10 @@ const Views = {
  },
 
  mod() {
-  const fl = ['todas', ...Object.keys(TN)].map(k => `<button class="chipbtn" data-flt="${k}" aria-pressed="${flt==k}">${k=='todas'?'Todas':TN[k]}</button>`).join('');
+  const fl = ['todas', ...Object.keys(TN)].map(k => `${k == 'marca' ? '<span class="flt-br" aria-hidden="true"></span>' : ''}<button class="chipbtn" data-flt="${k}" aria-pressed="${flt==k}" style="--g:${(k=='todas'?'Todas':TN[k]).length + 1}">${k=='todas'?'Todas':TN[k]}</button>`).join('');
   const itens = ACTS.filter(a => a.t != 'extra' && !a.oc && (flt=='todas'||a.t==flt)).map(a => ({n: a.n, t: a.t, prog: catsDe(a).filter(c => place(a.t, S.res[rk(a, c.id)], a)).length / catsDe(a).length, h: `<div class="act" style="--n:${CATS.length}"><div><a href="#/m/${a.s}/${catsDe(a)[0].id}"><strong>${esc(a.n)}</strong></a><small>${descTipo(a)}</small>${agHTML(a)}</div>${CATS.map(c => { if (!temCat(a, c.id)) return `<span class="cell off" aria-hidden="true"><span class="l">${esc(c.n)}</span><span class="chips"></span></span>`; const p = place(a.t, S.res[rk(a, c.id)], a); return`<a class="cell ${p?'done':''}" href="#/m/${a.s}/${c.id}"><span class="l">${esc(c.n)}</span>${chips(p)}</a>` }).join('')}</div>`}));
   const rows = ordenarMods(itens.concat(extrasItens())).map(x => x.h).join('');
-  return`<section class="panel"><h2>Modalidades e atividades</h2><p class="muted">Cada modalidade e cada categoria têm a sua própria página. Toque numa categoria para lançar o resultado.</p><div class="filters">${ordemHTML()}${fl}</div><div class="acts">${rows}</div></section>`;
+  return`<section class="panel"><h2>Modalidades e atividades</h2><p class="muted">Cada modalidade e cada categoria têm a sua própria página. Toque numa categoria para lançar o resultado.</p><div class="filters mod-flt">${ordemHTML()}${fl}</div><div class="acts">${rows}</div></section>`;
  },
 
  insta() {
@@ -543,7 +543,7 @@ function page() {
   sec(EXTRA_CI); return;
  }
  const links = catsDe(cur).map(c => `<a href="#/m/${cur.s}/${c.id}" ${c.id===curC?'aria-current="page"':''}>${esc(c.n)}</a>`).join('');
- const btnReg = `<div class="row" style="margin-top:8px">${cur.semIns ? '' : '<button class="btn alt" data-inscver>Inscritos</button>'}${cur.r ? '<button class="btn alt" data-verreg>Ver regulamento</button>' : ''}</div>`;
+ const btnReg = `<div class="row mod-acoes" style="margin-top:8px">${cur.semIns ? '' : '<button class="btn alt" data-inscver>Inscritos</button>'}${cur.r ? '<button class="btn alt" data-verreg><span class="so-lg">Ver regulamento</span><span class="so-sm">Regulamento</span></button>' : ''}</div>`;
  $('main').innerHTML = `<div class="page-head"><a class="back" href="#/modalidades">← Voltar às modalidades</a><h2 class="ptitle">${esc(cur.n)}</h2><p class="muted">${descTipo(cur)}</p>${agHTML(cur, curC) ? `<p class="ag-pag">${agHTML(cur, curC)}</p>` : ''}${btnReg}</div><nav class="catnav" aria-label="Categorias">${links}</nav><section class="panel"><h2>${esc(catNome(curC))}</h2><div id="sec${curC}"></div></section>`;
  sec(curC);
 }
@@ -4291,8 +4291,8 @@ render = function () {
  if (cur && podeEditar() && !$('main').querySelector('[data-modcfg]')) {
   const head = $('main').querySelector('.page-head'); if (!head) return;
   let row = head.querySelector('.row');
-  if (!row) { head.insertAdjacentHTML('beforeend', '<div class="row" style="margin-top:8px"></div>'); row = head.querySelector('.row'); }
-  row.insertAdjacentHTML('beforeend', `<button class="btn alt" data-modcfg="${esc(cur.s)}" style="display:inline-flex;align-items:center;gap:6px">${icone('eng')}Configurar modalidade</button>`);
+  if (!row) { head.insertAdjacentHTML('beforeend', '<div class="row mod-acoes" style="margin-top:8px"></div>'); row = head.querySelector('.row'); }
+  row.insertAdjacentHTML('beforeend', `<button class="btn alt" data-modcfg="${esc(cur.s)}" style="display:inline-flex;align-items:center;gap:6px">${icone('eng')}<span class="so-lg">Configurar modalidade</span><span class="so-sm">Configurar</span></button>`);
  }
  if (!cur && pg == 'modedit' && modCfgAlvo) {
   const el = $('main').querySelector(`[data-mn="${CSS.escape(modCfgAlvo)}"]`);
