@@ -1047,3 +1047,12 @@ html.dlg-aberto body{position:fixed;left:0;right:0;width:100%}
  .mod-flt{flex-wrap:nowrap}
  .mod-flt .chipbtn{flex:0 1 auto;min-width:0;padding:7px 11px;font-size:13px;white-space:nowrap}
 }
+
+/* Montar equipes: botões das equipes lado a lado */
+.eq-times{display:contents}
+@media (max-width:620px){
+ .eq-barra .eq-acoes:not(.eq-acoes2){flex-basis:100%;justify-content:flex-start;align-items:center}
+ .eq-barra .eq-tirar{order:1;margin-left:auto;min-height:34px;padding:6px 12px;font-size:13px}
+ .eq-barra .eq-times{order:2;display:flex;flex-basis:100%;gap:6px}
+ .eq-barra .eq-times .eq-para{flex:1 1 0;min-width:0;padding:8px 4px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;justify-content:center}
+}
